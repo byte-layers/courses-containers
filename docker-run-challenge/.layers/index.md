@@ -23,10 +23,11 @@ Les utiliser ne coûte rien : seule la vérification compte.
 
 ## Avant de commencer
 
-- **Ce qu'il faut savoir** : ce qu'enseigne le skill « Lancer, configurer et observer un conteneur ».
+- **Ce qu'il faut savoir** : ce qu'enseigne le cours « Lancer, configurer et observer un conteneur ».
   Le lab « Héberger une page dans un conteneur » montre aussi comment publier un port.
 - **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, et le port 28080 libre.
-- **Un dossier de travail** : `~/layers-l1` est créé pour vous, et la dernière tâche le supprime.
+- **Un dossier de travail** : `~/layers-l1` est créé pour vous, et la dernière tâche le supprime. La vérification y garde aussi un fichier caché, `.web-id`, qui lui sert à reconnaître votre conteneur.
+- **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l1-`.
   Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : les tâches 2 et 3 reprennent le conteneur de la tâche 1. Faites-les dans l'ordre.
@@ -40,7 +41,8 @@ Démarrez un conteneur nginx qui tourne en arrière-plan et répond sur le port 
 - un conteneur s'appelle exactement `layers-l1-web` ;
 - il est **en cours d'exécution** ;
 - il vient d'une image `nginx` ;
-- le port **28080** de la machine mène au port **80** du conteneur.
+- le port **28080** de la machine mène au port **80** du conteneur ;
+- sa mémoire est limitée à **128 Mio**.
 
 ```hint
 Trois choses doivent être vraies en même temps : le conteneur rend la main à votre terminal, il porte un nom fixe, et un port est publié.
@@ -51,7 +53,7 @@ On publie un port avec `-p <port-machine>:<port-conteneur>`. Le port de la machi
 ```
 
 ```hint
-L'image `nginx:1.30-alpine` écoute sur le port 80. Il vous faut `docker run` avec l'option de détachement, celle du nom et celle du port.
+L'image `nginx:1.30-alpine` écoute sur le port 80. Il vous faut `docker run` avec l'option de détachement, celle du nom, celle du port et celle de la mémoire.
 ```
 
 ```verify
@@ -100,6 +102,12 @@ case " $MAPPED" in
      echo "  Supprimez le conteneur et recréez-le avec le bon port."
      exit 1 ;;
 esac
+MEM=$(docker container inspect "$C" --format '{{.HostConfig.Memory}}')
+if [ "$MEM" != "134217728" ]; then
+  echo "ÉCHEC : la mémoire de $C n'est pas limitée à 128 Mio (trouvé : $MEM octets, 0 veut dire aucune limite)."
+  echo "  Une limite se pose à la création : supprimez le conteneur et recréez-le."
+  exit 1
+fi
 mkdir -p "$HOME/layers-l1"
 docker container inspect "$C" --format '{{.Id}}' > "$HOME/layers-l1/.web-id"
 echo "RÉUSSI : $C utilise $IMG, avec 28080 vers 80."
@@ -107,7 +115,7 @@ echo "RÉUSSI : $C utilise $IMG, avec 28080 vers 80."
 
 ````solution
 ```bash
-docker run -d --name layers-l1-web -p 28080:80 nginx:1.30-alpine
+docker run -d --name layers-l1-web -p 28080:80 --memory 128m nginx:1.30-alpine
 ```
 ````
 
@@ -338,7 +346,7 @@ La sous-commande qui relit cette sortie porte le nom de ce qu'elle lit. Redirige
 ```
 
 ```hint
-`docker run --name layers-l1-logger alpine:3.22 echo LAYERS-LOG-OK` crée le conteneur. Il reste à envoyer `docker logs` de ce conteneur vers le fichier.
+`docker run --name layers-l1-logger alpine:3.22 echo LAYERS-LOG-OK` crée le conteneur, sans `--rm` : celui-ci effacerait les logs. Il reste à envoyer `docker logs` de ce conteneur vers le fichier.
 ```
 
 ```verify
@@ -391,7 +399,7 @@ Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l1-web`, `l
 ```
 
 ```hint
-Pour un dossier et ce qu'il contient, y compris ses fichiers cachés : `rm -rf`, en vérifiant bien le chemin avant de valider.
+Pour un dossier et tout ce qu'il contient, y compris ses fichiers cachés : `rm -rf`, en vérifiant bien le chemin avant de valider.
 ```
 
 ```verify

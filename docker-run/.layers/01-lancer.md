@@ -3,15 +3,19 @@ title: "Lancer un conteneur"
 description: "docker run, au premier plan, en arrière-plan, avec un nom, avec un shell"
 ---
 
+Un **conteneur** est un programme lancé à partir d'une image, isolé du reste de votre machine, que l'on appelle l'**hôte**. Cette étape vous montre les quatre façons de le lancer, et pourquoi chacune existe.
+
 ## Vérifier que Docker répond
+
+Commencez par demander sa version à Docker. Il se compose de deux parties : la commande `docker` que vous tapez, et un moteur qui tourne en tâche de fond, appelé **serveur** ou **démon**.
 
 ```exec
 docker version --format '{{.Server.Version}}'
 ```
 
-`--format` choisit ce qu'une commande affiche, ici la version du serveur. Vous en verrez le détail à l'étape 4.
+`--format` choisit ce qu'une commande affiche, ici la version du moteur. Vous en verrez le détail à l'étape 4.
 
-Vous devez lire un numéro de version. `Cannot connect to the Docker daemon` veut dire que Docker n'est pas démarré : ouvrez Docker Desktop, ou lancez `sudo systemctl start docker` sous Linux. `permission denied` veut dire que votre utilisateur n'a pas le droit d'utiliser Docker : essayez avec `sudo`, ou ajoutez-le au groupe `docker`.
+Vous devez lire un numéro de version. `Cannot connect to the Docker daemon` veut dire que Docker n'est pas démarré : ouvrez Docker Desktop, ou lancez `sudo systemctl start docker` sous Linux. `permission denied` veut dire que votre utilisateur n'a pas le droit d'utiliser Docker : ajoutez-le au groupe `docker` avec `sudo usermod -aG docker $USER`, puis rouvrez votre session. Ce groupe donne des droits équivalents à l'administrateur de la machine : réservez-le à votre propre poste.
 
 ```verify
 if ! docker info >/dev/null 2>&1; then
@@ -34,6 +38,8 @@ docker run --rm alpine:3.22 cat /etc/alpine-release
 Le conteneur a démarré, lancé `cat`, affiché la version, et s'est arrêté : **il vit aussi longtemps que son processus principal**.
 `--rm` le supprime à l'arrêt, sinon il resterait sur le disque.
 
+Le processus principal est le programme que le conteneur a lancé, ici `cat`. Quand il s'arrête, le conteneur s'arrête.
+
 ```verify
 if ! docker image inspect alpine:3.22 >/dev/null 2>&1; then
   echo "L'image alpine:3.22 n'est pas là. Lancez la commande ci-dessus."
@@ -51,7 +57,7 @@ Docker en invente un.
 docker run -d --name layers-l1-sleep alpine:3.22 sleep 3600
 ```
 
-Docker affiche un long identifiant et vous rend la main. Voyez ce qui tourne. `--filter` limite la liste aux noms qui contiennent ce texte :
+Docker affiche l'identifiant complet du conteneur et vous rend la main. Voyez ce qui tourne ; `docker ps` n'affiche que le début de cet identifiant. `--filter` limite la liste aux noms qui contiennent ce texte :
 
 ```exec
 docker ps --filter name=layers-l1
@@ -88,7 +94,7 @@ presque toujours ensemble.
 docker run -it --name layers-l1-shell alpine:3.22 sh
 ```
 
-Votre invite a changé : vous êtes **dans** le conteneur. Créez un fichier, puis sortez :
+Votre invite a changé, elle affiche `/ #` : vous êtes **dans** le conteneur. Tapez vous-même ces deux lignes, pour créer un fichier puis sortir. Ici, vous êtes l'administrateur du conteneur, d'où le dossier `/root` :
 
 ```sh
 echo bonjour > /root/note.txt
@@ -104,12 +110,12 @@ if ! docker container inspect "$C" >/dev/null 2>&1; then
   echo "$C n'existe pas. Lancez la commande de cette section."
   exit 1
 fi
-if [ "$(docker container inspect "$C" --format '{{.Config.Tty}}')" != "true" ]; then
+if [ "$(docker container inspect "$C" --format '{{.Config.Tty}}{{.Config.OpenStdin}}')" != "truetrue" ]; then
   echo "$C n'a pas de terminal. Supprimez-le (docker rm -f $C) et relancez avec -it."
   exit 1
 fi
 if ! docker cp "$C:/root/note.txt" - 2>/dev/null | tar -xO 2>/dev/null | grep -q bonjour; then
-  echo "/root/note.txt n'est pas dans $C. docker start -ai $C redémarre le conteneur et vous y ramène."
+  echo "/root/note.txt n'est pas dans $C. docker start -ai $C redémarre le conteneur (-a affiche sa sortie, -i transmet ce que vous tapez) et vous y ramène."
   exit 1
 fi
 if [ "$(docker container inspect "$C" --format '{{.State.Status}}')" != "exited" ]; then
@@ -154,6 +160,8 @@ fi
 echo "C'est propre."
 ```
 
+> 📖 [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/) · [`docker exec`](https://docs.docker.com/reference/cli/docker/container/exec/) · [`docker ps`](https://docs.docker.com/reference/cli/docker/container/ls/) · [Droits après l'installation sous Linux](https://docs.docker.com/engine/install/linux-postinstall/)
+
 ## Questions
 
 ```quiz
@@ -161,11 +169,11 @@ title: "Lancer un conteneur"
 tracksProgress: false
 showNotice: false
 questions:
-  - prompt: "`docker run -d --name web nginx:1.30-alpine` rend la main et affiche une longue suite hexadécimale. Qu'est-ce que c'est ?"
+  - prompt: "`docker run -d --name attente alpine:3.22 sleep 600` rend la main et affiche une longue suite hexadécimale. Qu'est-ce que c'est ?"
     answers:
       - "L'empreinte de l'image"
       - "L'identifiant complet du conteneur, dont `docker ps` montre les 12 premiers caractères"
-      - "Le numéro de processus de nginx sur l'hôte"
+      - "Le numéro de processus de sleep sur l'hôte"
       - "L'adresse IP du conteneur"
     correct: 2
     explanation: "`-d` affiche l'identifiant complet du conteneur. L'identifiant court de `docker ps` en est le début, et les deux s'utilisent partout où l'on désigne un conteneur."

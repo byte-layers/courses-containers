@@ -45,7 +45,7 @@ echo "Created, puis running, puis exited."
 
 ## Figer et reprendre
 
-Lancez nginx, un serveur web, puis figez-le. `pause` suspend ses processus sans les terminer : ils restent en mémoire et ne consomment plus de CPU.
+Lancez nginx, un serveur web, puis figez-le. `pause` suspend ses processus sans les terminer : ils restent en mémoire et ne consomment plus de CPU. La dernière commande utilise `docker inspect`, qui lit la fiche d'un conteneur, pour en extraire l'état ; l'étape 4 la détaille.
 
 ```exec
 docker run -d --name layers-l1-nginx nginx:1.30-alpine
@@ -55,13 +55,13 @@ docker inspect layers-l1-nginx --format '{{.State.Status}}'
 
 ```verify
 if [ "$(docker inspect layers-l1-nginx --format '{{.State.Paused}}' 2>/dev/null)" != "true" ]; then
-  echo "layers-l1-nginx n'est pas en pause. Pour repartir de zéro : docker rm -f layers-l1-nginx, puis les commandes ci-dessus."
+  echo "layers-l1-nginx n'est pas en pause. Si vous l'avez déjà repris : docker pause layers-l1-nginx. Sinon, pour repartir de zéro : docker rm -f layers-l1-nginx, puis les commandes ci-dessus."
   exit 1
 fi
 echo "layers-l1-nginx est figé."
 ```
 
-Reprenez :
+Reprenez maintenant son exécution avec `unpause` :
 
 ```exec
 docker unpause layers-l1-nginx
@@ -88,7 +88,7 @@ Le code est `137`. Au-dessus de 128, un code veut dire « arrêté par le signal
 
 Une application qui ne gère pas cette demande perd donc ses requêtes en cours à chaque arrêt.
 
-Un conteneur arrêté se relance avec `docker start`. Sans `-a`, il rend aussitôt la main, ce qui convient à un serveur :
+Un conteneur arrêté se relance avec `docker start`. Sans `-a`, qui affiche sa sortie, il rend aussitôt la main, ce qui convient à un serveur :
 
 ```exec
 docker start layers-l1-nginx
@@ -96,14 +96,20 @@ docker inspect layers-l1-nginx --format '{{.State.Status}}'
 ```
 
 ```verify
-A=$(docker inspect layers-l1-nginx --format '{{.State.ExitCode}}' 2>/dev/null)
-B=$(docker inspect layers-l1-dort --format '{{.State.ExitCode}}' 2>/dev/null)
-if [ "$A" != "0" ] || [ "$B" != "137" ]; then
-  echo "Codes attendus : 0 pour layers-l1-nginx, 137 pour layers-l1-dort. Trouvés : ${A:-aucun} et ${B:-aucun}."
-  echo "Avez-vous bien fait le docker unpause avant le docker stop ? Pour reprendre : docker rm -f, puis les commandes de la section."
+FIN=$(docker inspect layers-l1-nginx --format '{{.State.FinishedAt}}' 2>/dev/null)
+case "$FIN" in
+  ""|0001-01-01*) echo "layers-l1-nginx n'a pas encore été arrêté. Avez-vous fait le docker unpause, puis le docker stop ?"; exit 1 ;;
+esac
+if [ "$(docker inspect layers-l1-nginx --format '{{.State.Running}}')" != "true" ]; then
+  echo "layers-l1-nginx est arrêté. Relancez-le : docker start layers-l1-nginx"
   exit 1
 fi
-echo "0 pour nginx, 137 pour sleep."
+B=$(docker inspect layers-l1-dort --format '{{.State.ExitCode}}' 2>/dev/null)
+if [ "$B" != "137" ]; then
+  echo "Code attendu pour layers-l1-dort : 137. Trouvé : ${B:-aucun}. Pour reprendre : docker rm -f layers-l1-dort, puis la commande de la section."
+  exit 1
+fi
+echo "nginx arrêté puis relancé, 137 pour sleep."
 ```
 
 ## Redémarrer tout seul
@@ -122,7 +128,7 @@ docker inspect layers-l1-plante --format '{{.State.Status}}, code {{.State.ExitC
 docker logs layers-l1-plante
 ```
 
-Trois lignes `boum` : le premier essai et deux relances. Sur un serveur, on utilise plutôt `unless-stopped`, qui relance aussi après un redémarrage de la machine, sauf si vous aviez arrêté le conteneur vous-même.
+Trois lignes `boum` : le premier essai et deux relances. Sur un serveur, on préfère souvent `unless-stopped`, qui relance aussi après un redémarrage de la machine, sauf si vous aviez arrêté le conteneur vous-même. Cette politique relance sans limite : un conteneur qui plante en boucle continuera de le faire, il vaut donc mieux le surveiller.
 
 ```verify
 N=$(docker inspect layers-l1-plante --format '{{.RestartCount}}' 2>/dev/null)
@@ -133,7 +139,7 @@ fi
 echo "Docker a relancé le conteneur deux fois, puis a abandonné."
 ```
 
-Supprimez tout :
+Il reste à tout supprimer. `-f` fonctionne sur un conteneur qui tourne ou qui est en pause :
 
 ```exec
 docker rm -f layers-l1-etapes layers-l1-nginx layers-l1-dort layers-l1-plante
@@ -146,6 +152,8 @@ if [ -n "$(docker ps -a --format '{{.Names}}' | grep -E '^layers-l1-(etapes|ngin
 fi
 echo "C'est propre."
 ```
+
+> 📖 [`docker stop`](https://docs.docker.com/reference/cli/docker/container/stop/) · [`docker pause`](https://docs.docker.com/reference/cli/docker/container/pause/) · [`docker rm`](https://docs.docker.com/reference/cli/docker/container/rm/) · [Politiques de redémarrage](https://docs.docker.com/engine/containers/start-containers-automatically/)
 
 ## Questions
 
@@ -175,7 +183,7 @@ questions:
       - "`pause` garde la couche d'écriture et `stop` la supprime"
     correct: 2
     explanation: "Un conteneur en pause reprend exactement là où il en était. Et `stop` ne supprime pas la couche d'écriture : seul `rm` le fait."
-  - prompt: "Une mise en production coupe les requêtes en cours à chaque fois. Qu'est-ce qui corrige cela le plus directement ?"
+  - prompt: "À chaque arrêt, une application coupe les requêtes qu'elle traite. Qu'est-ce qui corrige cela le plus directement ?"
     answers:
       - "Utiliser `docker kill` au lieu de `docker stop`"
       - "Faire en sorte que l'application réagisse à la demande d'arrêt : finir ses requêtes, puis sortir"
