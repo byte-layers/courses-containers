@@ -12,6 +12,8 @@ Les contenus du cluster conteneurs de byte_layers : cœur commun et stack Docker
 | `docker-first-web-page` | lab | héberger une page dans un conteneur |
 | `docker-run-challenge` | challenge | la preuve du layer, sans guide |
 
+Le parcours qui les assemble est décrit dans `stacks/docker/stack.yml`.
+
 Prérequis : un terminal, Docker qui répond à `docker ps`. Images : `alpine:3.22`, `nginx:1.30-alpine`. Objets préfixés
 `layers-l1-`, ports `28080` à `28082`.
 

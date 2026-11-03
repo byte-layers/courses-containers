@@ -1,0 +1,32 @@
+title: "Docker, de zéro à Swarm"
+description: "Lancer un conteneur, écrire ses images, les relier, composer une application : une compétence à la fois, à vérifier sur votre poste."
+level: beginner
+tags: [docker]
+prerequisites: "Savoir utiliser un terminal, et avoir Docker installé."
+layers:
+  - title: "Installer"
+    summary: "Docker prêt sur votre poste"
+  - title: "Lancer"
+    summary: "Faire tourner un conteneur et comprendre ce qu'il fait"
+    contents:
+      - { slug: image-immutable, role: read-first }
+      - { slug: container-is-a-process, role: read-first }
+      - { slug: docker-run }
+      - { slug: docker-first-web-page }
+      - { slug: docker-run-challenge, role: proof }
+  - title: "Écrire une image"
+    summary: "Le Dockerfile d'une application"
+  - title: "Optimiser une image"
+    summary: "Le cache de build, le multi-stage"
+  - title: "Distribuer"
+    summary: "Publier une image"
+  - title: "Connecter"
+    summary: "Relier des conteneurs, publier un port"
+  - title: "Persister"
+    summary: "Garder ses données"
+  - title: "Composer"
+    summary: "Décrire une application avec Compose"
+  - title: "Exploiter"
+    summary: "Fiabiliser, un reverse proxy"
+  - title: "Orchestrer"
+    summary: "Déployer sur un cluster Swarm"
