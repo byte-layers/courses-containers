@@ -6,6 +6,10 @@ prerequisites: "Savoir utiliser un terminal, et avoir Docker installé."
 layers:
   - title: "Installer"
     summary: "Docker prêt sur votre poste"
+    contents:
+      - { slug: containers-why, role: read-first }
+      - { slug: docker-install }
+      - { slug: docker-install-challenge, role: proof }
   - title: "Lancer"
     summary: "Faire tourner un conteneur et comprendre ce qu'il fait"
     contents:
@@ -16,17 +20,53 @@ layers:
       - { slug: docker-run-challenge, role: proof }
   - title: "Écrire une image"
     summary: "Le Dockerfile d'une application"
+    contents:
+      - { slug: docker-dockerfile }
+      - { slug: docker-containerize-app }
+      - { slug: docker-dockerfile-challenge, role: proof }
   - title: "Optimiser une image"
     summary: "Le cache de build, le multi-stage"
+    contents:
+      - { slug: image-layers, role: read-first }
+      - { slug: docker-build-cache }
+      - { slug: docker-multi-stage }
+      - { slug: docker-optimize-challenge, role: proof }
   - title: "Distribuer"
     summary: "Publier une image"
+    contents:
+      - { slug: image-reference, role: read-first }
+      - { slug: docker-publish }
+      - { slug: docker-publish-challenge, role: proof }
   - title: "Connecter"
     summary: "Relier des conteneurs, publier un port"
+    contents:
+      - { slug: localhost-not-host, role: read-first }
+      - { slug: docker-networks }
+      - { slug: docker-app-and-db }
+      - { slug: docker-networks-challenge, role: proof }
   - title: "Persister"
     summary: "Garder ses données"
+    contents:
+      - { slug: container-disposable, role: read-first }
+      - { slug: docker-volumes }
+      - { slug: docker-persist-dev }
+      - { slug: docker-volumes-challenge, role: proof }
   - title: "Composer"
     summary: "Décrire une application avec Compose"
+    contents:
+      - { slug: docker-compose }
+      - { slug: docker-compose-app }
+      - { slug: docker-compose-challenge, role: proof }
   - title: "Exploiter"
     summary: "Fiabiliser, un reverse proxy"
+    contents:
+      - { slug: secret-not-in-image, role: read-first }
+      - { slug: compose-reliable }
+      - { slug: compose-reverse-proxy }
+      - { slug: compose-production-challenge, role: proof }
   - title: "Orchestrer"
     summary: "Déployer sur un cluster Swarm"
+    contents:
+      - { slug: orchestrator-why, role: read-first }
+      - { slug: docker-swarm }
+      - { slug: docker-swarm-challenge, role: proof }

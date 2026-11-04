@@ -1,0 +1,4 @@
+fixtures.bin
+docs
+Dockerfile
+.dockerignore

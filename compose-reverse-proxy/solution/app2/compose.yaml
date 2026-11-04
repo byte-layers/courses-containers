@@ -1,0 +1,12 @@
+name: layers-l8-app2
+services:
+  app2:
+    image: nginx:1.30-alpine
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - edge
+networks:
+  edge:
+    name: layers-l8-edge
+    external: true

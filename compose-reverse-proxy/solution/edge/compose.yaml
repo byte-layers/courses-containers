@@ -1,0 +1,13 @@
+name: layers-l8-edge
+services:
+  proxy:
+    image: nginx:1.30-alpine
+    ports:
+      - "28380:80"
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - edge
+networks:
+  edge:
+    name: layers-l8-edge

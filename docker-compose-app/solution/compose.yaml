@@ -1,0 +1,23 @@
+name: layers-l7-todo
+services:
+  app:
+    build: .
+    ports:
+      - "28371:3000"
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_USER: root
+      MYSQL_PASSWORD: secret
+      MYSQL_DB: todos
+    depends_on:
+      - mysql
+    restart: on-failure
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: todos
+    volumes:
+      - todo-data:/var/lib/mysql
+volumes:
+  todo-data:

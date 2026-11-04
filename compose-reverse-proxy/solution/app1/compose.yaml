@@ -1,0 +1,10 @@
+name: layers-l8-app1
+services:
+  app1:
+    build: .
+    networks:
+      - edge
+networks:
+  edge:
+    name: layers-l8-edge
+    external: true

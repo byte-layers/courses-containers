@@ -1,0 +1,5 @@
+.env.local
+tests
+Dockerfile
+.dockerignore
+README.md

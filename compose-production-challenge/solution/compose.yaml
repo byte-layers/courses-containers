@@ -1,0 +1,114 @@
+name: layers-l8-prod
+services:
+  proxy:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      - "28385:80"
+    volumes:
+      - ./proxy:/etc/nginx/conf.d:ro
+    networks:
+      - edge
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1/ >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+  api:
+    build: ./api
+    restart: unless-stopped
+    init: true
+    environment:
+      REDIS_HOST: cache
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets:
+      - redis_password
+    networks:
+      - edge
+      - back
+    depends_on:
+      cache:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          pids: 100
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+  cache:
+    image: redis:8-alpine
+    restart: unless-stopped
+    user: redis
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$(cat /run/secrets/redis_password)\""]
+    secrets:
+      - redis_password
+    volumes:
+      - cache-data:/data
+    networks:
+      - back
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          pids: 100
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "3"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+volumes:
+  cache-data:
+networks:
+  edge:
+  back:
+secrets:
+  redis_password:
+    file: ./secrets/redis_password.txt
