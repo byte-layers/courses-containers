@@ -3,13 +3,13 @@ title: "Observer un conteneur"
 description: "ps, logs, top, stats et inspect : savoir ce qu'un conteneur fait et comment il est configuré"
 ---
 
+## Qu'est-ce qui tourne ?
+
 Lancez un serveur web à observer. Un **port** est le numéro auquel un service répond sur une machine. `-p 28082:80` rend le port 80 du conteneur accessible sur le port 28082 de votre machine ; un prochain cours, « Relier des conteneurs et publier un port », y reviendra. Si ce port est déjà pris, Docker affiche `port is already allocated` : libérez-le ou reprenez plus tard.
 
 ```exec
 docker run -d --name layers-l1-obs -p 28082:80 nginx:1.30-alpine
 ```
-
-## Qu'est-ce qui tourne ?
 
 Première question face à un conteneur : est-il en marche ?
 
