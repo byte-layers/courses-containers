@@ -40,7 +40,7 @@ Le cas pratique avance comme un vrai projet : d'abord l'image, puis l'applicatio
 
 Certains chapitres portent un titre qui commence par « Facultatif ». Ils scannent un `Dockerfile` ou une image, avec les outils vus dans « Scanner un Dockerfile, une image et un fichier Compose ». Ils montrent le résultat que l'on attend, et vous pouvez les lire sans lancer les commandes.
 
-> 🔍 **Pourquoi facultatifs ?** Un scanner télécharge son image, ses règles et, pour les images, des bases de vulnérabilités. Pour une application Java, cela représente environ 3 Go. Sur un serveur de formation partagé par plusieurs postes, ce volume multiplié par le nombre de stagiaires remplit vite le disque. Si votre formateur lance ces scans en démonstration, contentez-vous de lire le chapitre.
+> 🔍 **Pourquoi facultatifs ?** Un scanner télécharge son image, ses règles et, pour les images, des bases de vulnérabilités. Pour une application Java, cela représente environ 3 Go. Sur un serveur de formation partagé par plusieurs postes, ce volume multiplié par le nombre de stagiaires remplit vite le disque.
 
 ## Le dossier de travail
 

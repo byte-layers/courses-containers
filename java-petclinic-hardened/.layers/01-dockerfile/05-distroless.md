@@ -315,9 +315,7 @@ La taille n'est pourtant pas le seul critère. Une image distroless se dépanne 
 | un JRE sur Alpine (`eclipse-temurin:21.0.13_9-jre-alpine-3.24`, par exemple) | une distribution de base de quelques mégaoctets | Alpine utilise une autre bibliothèque C, `musl`, et certains comportements de Java ou de bibliothèques natives diffèrent |
 | un JRE sur mesure avec `jlink` | ne garder que les modules de Java dont l'application se sert | une étape de construction de plus, à maintenir, et un gain modeste avec Spring Boot, qui utilise beaucoup de modules |
 
-<!-- TODO Boris : ajouter ici le lien de l'article sur la taille des images, par exemple :
-> 📖 Pour aller plus loin : [Réflexion sur la taille des images](URL)
--->
+> 📖 Pour aller plus loin : [Réduire la taille d'une image Docker](https://enix.io/fr/blog/reduire-taille-image-docker/), un article d'Enix sur le sujet.
 
 ## Questions
 

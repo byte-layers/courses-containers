@@ -3,7 +3,7 @@ title: "Facultatif : scanner le Dockerfile avec Trivy"
 description: "Vérifier qu'un Dockerfile n'a plus aucune mauvaise configuration connue, et comparer avec l'image naïve"
 ---
 
-> 🔍 **Chapitre facultatif.** Ce scan télécharge l'image de Trivy, environ 250 Mo, et quelques centaines de kilo-octets de règles. Si votre formateur le lance en démonstration, lisez ce chapitre sans lancer les commandes : le résultat attendu est donné.
+> 🔍 **Chapitre facultatif.** Ce scan télécharge l'image de Trivy, environ 250 Mo, et quelques centaines de kilo-octets de règles. Vous pouvez aussi le lire sans lancer les commandes : le résultat attendu est donné.
 
 Votre `Dockerfile` corrige les défauts que vous avez relevés à la main. Un scanner de configuration fait ce travail de relecture automatiquement, avec des règles connues et numérotées, et une chaîne d'intégration continue peut le lancer à chaque modification.
 

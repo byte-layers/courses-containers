@@ -3,7 +3,7 @@ title: "Facultatif : comparer les vulnérabilités de deux images"
 description: "Scanner l'image Ubuntu et l'image distroless avec Trivy, et découvrir où se trouvent vraiment les failles"
 ---
 
-> 🔍 **Chapitre facultatif, et lourd.** Pour analyser une image Java, Trivy télécharge deux bases : celle des vulnérabilités des systèmes, environ 1,6 Go, et celle des bibliothèques Java, environ 1,5 Go. Sur un serveur de formation partagé, ces 3 Go par poste remplissent vite le disque. Si votre formateur lance ce scan en démonstration, lisez ce chapitre sans lancer les commandes : les résultats sont donnés. Pour éviter de les lancer par mégarde, les commandes de ce chapitre sont affichées sans bouton d'exécution : copiez-les dans le terminal si vous décidez de les lancer.
+> 🔍 **Chapitre facultatif, et lourd.** Pour analyser une image Java, Trivy télécharge deux bases : celle des vulnérabilités des systèmes, environ 1,6 Go, et celle des bibliothèques Java, environ 1,5 Go. Sur un serveur de formation partagé, ces 3 Go par poste remplissent vite le disque. Vous pouvez aussi le lire sans lancer les commandes : les résultats sont donnés. Pour éviter de les lancer par mégarde, les commandes de ce chapitre sont affichées sans bouton d'exécution : copiez-les dans le terminal si vous décidez de les lancer.
 
 Le chapitre sur distroless mesurait la taille des images. Celui-ci compare ce qu'elles contiennent de **vulnérabilités connues** (des CVE, pour *Common Vulnerabilities and Exposures*). Le résultat surprend souvent, et il dit où porter l'effort.
 
