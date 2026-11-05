@@ -1,0 +1,46 @@
+name: layers-l8-web-app1
+services:
+  app1:
+    build: .
+    image: layers-l8-web-app1
+    environment:
+      DB_HOST: mysql
+      DB_USER: app1
+      DB_PASSWORD: app1-dev
+      DB_NAME: app1db
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app1_net
+      - public_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app1.rule=PathPrefix(`/app1`)"
+      - "traefik.http.routers.app1.middlewares=app1-strip"
+      - "traefik.http.middlewares.app1-strip.stripprefix.prefixes=/app1"
+      - "traefik.http.services.app1.loadbalancer.server.port=3000"
+      - "traefik.docker.network=layers-l8-public"
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: root-dev
+      MYSQL_DATABASE: app1db
+      MYSQL_USER: app1
+      MYSQL_PASSWORD: app1-dev
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - app1_net
+volumes:
+  db_data:
+networks:
+  app1_net:
+  public_net:
+    name: layers-l8-public
+    external: true

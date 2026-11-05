@@ -1,0 +1,9 @@
+{
+  "name": "app1",
+  "version": "1.0.0",
+  "main": "index.js",
+  "dependencies": {
+    "express": "4.21.2",
+    "mysql2": "3.14.1"
+  }
+}
