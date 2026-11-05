@@ -1,0 +1,54 @@
+# Les bonus .env, Adminer et nom de site, réunis. Copiez .env.example vers .env à côté de ce fichier.
+name: layers-l8-web-app1
+services:
+  app1:
+    build: .
+    image: layers-l8-web-app1
+    env_file: .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - app1_net
+      - public_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.app1.rule=PathPrefix(`/app1`)"
+      - "traefik.http.routers.app1.middlewares=app1-strip"
+      - "traefik.http.middlewares.app1-strip.stripprefix.prefixes=/app1"
+      - "traefik.http.routers.app1-host.rule=Host(`app1.example.test`)"
+      - "traefik.http.services.app1.loadbalancer.server.port=3000"
+      - "traefik.docker.network=layers-l8-public"
+  mysql:
+    image: mysql:8.4
+    env_file: .env
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - app1_net
+  adminer:
+    image: adminer:5.4.2
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    networks:
+      - app1_net
+      - public_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=PathPrefix(`/adminer`)"
+      - "traefik.http.routers.adminer.middlewares=adminer-strip"
+      - "traefik.http.middlewares.adminer-strip.stripprefix.prefixes=/adminer"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+      - "traefik.docker.network=layers-l8-public"
+volumes:
+  db_data:
+networks:
+  app1_net:
+  public_net:
+    name: layers-l8-public
+    external: true

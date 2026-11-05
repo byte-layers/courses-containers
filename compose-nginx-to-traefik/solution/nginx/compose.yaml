@@ -1,0 +1,14 @@
+name: layers-l8-web-nginx
+services:
+  nginx:
+    image: nginx:1.30-alpine
+    ports:
+      - "28387:80"
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d:ro
+    networks:
+      - public_net
+networks:
+  public_net:
+    name: layers-l8-public
+    external: true
