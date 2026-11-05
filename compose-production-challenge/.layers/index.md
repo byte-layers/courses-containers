@@ -44,6 +44,8 @@ Le dossier `~/layers-l8/prod` reçoit les fichiers suivants à l'ouverture de la
 
 # Tâche 1 : un secret qui reste secret
 
+## Ce qu'il faut faire
+
 ```setup
 mkdir -p ~/layers-l8/prod/api ~/layers-l8/prod/proxy
 cat > ~/layers-l8/prod/api/app.py <<'EOF'
@@ -212,6 +214,8 @@ sleep 3
 
 # Tâche 2 : une seule porte d'entrée
 
+## Ce qu'il faut faire
+
 Ajoutez un service `proxy` devant l'application.
 
 **Critères :**
@@ -359,6 +363,8 @@ sleep 3
 
 # Tâche 3 : savoir que tout va bien
 
+## Ce qu'il faut faire
+
 Docker doit savoir si chaque service répond vraiment, et relancer ceux qui s'arrêtent.
 
 **Critères :**
@@ -478,6 +484,8 @@ cd ~/layers-l8/prod && docker compose up -d --wait --wait-timeout 45
 ````
 
 # Tâche 4 : durcir et borner
+
+## Ce qu'il faut faire
 
 Réduisez ce qu'un attaquant pourrait faire, et bornez les ressources de chaque service.
 
@@ -691,6 +699,8 @@ cd ~/layers-l8/prod && docker compose up -d --build --wait --wait-timeout 45
 
 # Tâche 5 : résister à une panne
 
+## Ce qu'il faut faire
+
 Provoquez une vraie panne de `api`, en appelant `http://localhost:28385/api/crash`, et laissez le système se rétablir sans intervenir.
 
 **Critères :**
@@ -741,6 +751,8 @@ sleep 8
 ````
 
 # Tâche 6 : garder les données
+
+## Ce qu'il faut faire
 
 Supprimez tous les conteneurs du projet, puis recréez-les, sans perdre le compteur.
 
@@ -797,6 +809,8 @@ cd ~/layers-l8/prod && docker compose down && docker compose up -d --wait --wait
 ````
 
 # Tâche 7 : ne rien laisser derrière soi
+
+## Ce qu'il faut faire
 
 Supprimez tout ce que ce challenge a créé : les conteneurs, les réseaux, le volume, l'image construite et le dossier `~/layers-l8/prod`, secret compris.
 

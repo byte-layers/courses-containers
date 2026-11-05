@@ -1,4 +1,4 @@
-# Solution du lab « Conteneuriser getting-started-app ».
+# Solution du lab « Conteneuriser une application pas à pas ».
 # À ne regarder qu'en cas de blocage : les étapes du lab vous y mènent.
 FROM node:22-alpine
 WORKDIR /app

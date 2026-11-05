@@ -1,21 +1,23 @@
 ---
 title: "Lancer un conteneur"
-description: "docker run, au premier plan, en arrière-plan, avec un nom, avec un shell"
+description: "docker run, docker ps, en arrière-plan, avec un nom, et entrer dans un conteneur avec un shell"
 ---
 
-Un **conteneur** est un programme lancé à partir d'une image, isolé du reste de votre machine, que l'on appelle l'**hôte**. Cette étape vous montre les quatre façons de le lancer, et pourquoi chacune existe.
+`docker run` crée un conteneur depuis une image et le démarre. Vous l'utilisez ici pour une commande brève, puis pour un service qui dure ; `docker ps` montre ce qui tourne, et `docker exec` vous fait entrer dans un conteneur.
 
 ## Vérifier que Docker répond
 
-Commencez par demander sa version à Docker. Il se compose de deux parties : la commande `docker` que vous tapez, et un moteur qui tourne en tâche de fond, appelé **serveur** ou **démon**.
+`docker ps` liste les conteneurs qui tournent. C'est la commande que vous taperez le plus souvent, et elle dit aussi que le moteur répond :
 
 ```exec
-docker version --format '{{.Server.Version}}'
+docker ps
 ```
 
-`--format` choisit ce qu'une commande affiche, ici la version du moteur. Vous en verrez le détail à l'étape 4.
+Vous devez lire au moins cette ligne de titres, avec éventuellement d'autres conteneurs en dessous. Si vous lisez une erreur, le lab [Installer Docker et vérifier son poste](https://byte-layers.com/fr/labs/docker-install) en donne le sens.
 
-Vous devez lire un numéro de version. `Cannot connect to the Docker daemon` veut dire que Docker n'est pas démarré : ouvrez Docker Desktop, ou lancez `sudo systemctl start docker` sous Linux. `permission denied` veut dire que votre utilisateur n'a pas le droit d'utiliser Docker : ajoutez-le au groupe `docker` avec `sudo usermod -aG docker $USER`, puis rouvrez votre session. Ce groupe donne des droits équivalents à l'administrateur de la machine : réservez-le à votre propre poste.
+```text
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+```
 
 ```verify
 if ! docker info >/dev/null 2>&1; then
@@ -25,42 +27,87 @@ fi
 echo "Docker répond."
 ```
 
-## Une commande, et c'est fini
+## Un conteneur qui exécute une commande puis s'arrête
 
-Une **image** contient les fichiers et la configuration d'un logiciel. `alpine:3.22` désigne l'image `alpine`, un Linux minimal, en version `3.22` : ce qui suit `:` s'appelle le **tag**.
+> ⚠️ **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
-`docker run` crée un conteneur depuis une image et le démarre. Si l'image n'est pas encore sur votre machine, Docker la télécharge d'abord.
+`alpine:3.22` désigne l'image `alpine`, un Linux minimal, en version `3.22` : ce qui suit `:` s'appelle le **tag**. Ce conteneur affiche le contenu d'un fichier de l'image. `--name` lui donne un nom, sinon Docker en invente un.
+
+```exec
+docker run --name layers-l1-first alpine:3.22 cat /etc/alpine-release
+```
+
+Si l'image n'est pas encore sur votre machine, Docker la télécharge d'abord depuis Docker Hub. La dernière ligne est ce que le conteneur a écrit :
+
+```text
+3.22.7
+```
+
+Le dernier chiffre peut être différent chez vous, car le tag `3.22` suit les correctifs de cette version. Le conteneur a démarré, lancé `cat`, affiché la version, et s'est arrêté. Il a tout de suite rendu la main, parce qu'**un conteneur tourne aussi longtemps que son processus principal**, le programme qu'il a lancé, ici `cat`.
+
+```verify
+if ! docker container inspect layers-l1-first >/dev/null 2>&1; then
+  echo "layers-l1-first n'existe pas. Lancez la commande de cette section."
+  exit 1
+fi
+echo "Le conteneur layers-l1-first existe, et il s'est arrêté."
+```
+
+## Un conteneur arrêté existe encore : docker ps -a
+
+`docker ps` ne montre plus rien de ce conteneur, puisqu'il ne tourne plus. Pour voir aussi les conteneurs arrêtés, ajoutez `-a` :
+
+```exec
+docker ps -a
+```
+
+Vous y trouvez cette ligne, parmi vos éventuels autres conteneurs :
+
+```text
+CONTAINER ID   IMAGE         COMMAND                  CREATED          STATUS                      PORTS     NAMES
+05e7be4c82ea   alpine:3.22   "cat /etc/alpine-rel…"   10 seconds ago   Exited (0) 9 seconds ago              layers-l1-first
+```
+
+`Exited (0)` veut dire qu'il s'est terminé, et que `0` est le code de sortie de sa commande : tout s'est bien passé. Arrêté n'est donc pas supprimé. Il reste sur le disque jusqu'à ce que vous le supprimiez avec `docker rm` :
+
+```exec
+docker rm layers-l1-first
+```
+
+Quand un conteneur ne sert qu'une fois, `--rm` le supprime tout seul à son arrêt, et plus rien ne reste à ranger. L'image, elle, reste sur votre machine pour la prochaine fois, ce que `docker images` vous montre :
 
 ```exec
 docker run --rm alpine:3.22 cat /etc/alpine-release
+docker images
 ```
-
-Le conteneur a démarré, lancé `cat`, affiché la version, et s'est arrêté : **il vit aussi longtemps que son processus principal**.
-`--rm` le supprime à l'arrêt, sinon il resterait sur le disque.
-
-Le processus principal est le programme que le conteneur a lancé, ici `cat`. Quand il s'arrête, le conteneur s'arrête.
 
 ```verify
-if ! docker image inspect alpine:3.22 >/dev/null 2>&1; then
-  echo "L'image alpine:3.22 n'est pas là. Lancez la commande ci-dessus."
+if docker container inspect layers-l1-first >/dev/null 2>&1; then
+  echo "layers-l1-first existe encore. Lancez docker rm layers-l1-first."
   exit 1
 fi
-echo "L'image alpine:3.22 est sur votre machine."
+echo "Le conteneur est supprimé."
 ```
 
-## En arrière-plan, avec un nom
+## Un conteneur en arrière-plan, qui dure
 
-Un service doit tourner sans bloquer votre terminal. C'est le rôle de `-d`, *detach*. Et `--name` lui donne un nom fixe, sinon
-Docker en invente un.
+Un service doit tourner sans bloquer votre terminal. C'est le rôle de `-d`, pour *detach*. La commande `sleep 3600`, qui attend une heure, tient ici lieu de service : elle garde le conteneur en vie.
 
 ```exec
 docker run -d --name layers-l1-sleep alpine:3.22 sleep 3600
 ```
 
-Docker affiche l'identifiant complet du conteneur et vous rend la main. Voyez ce qui tourne ; `docker ps` n'affiche que le début de cet identifiant. `--filter` limite la liste aux noms qui contiennent ce texte :
+Docker affiche l'identifiant complet du conteneur et vous rend la main. Vérifiez qu'il tourne :
 
 ```exec
-docker ps --filter name=layers-l1
+docker ps
+```
+
+Sa colonne `STATUS` commence par `Up`, et `CONTAINER ID` montre le début de l'identifiant affiché à l'instant.
+
+```text
+CONTAINER ID   IMAGE         COMMAND        CREATED         STATUS         PORTS     NAMES
+ea829e7f8ca6   alpine:3.22   "sleep 3600"   5 seconds ago   Up 4 seconds             layers-l1-sleep
 ```
 
 ```verify
@@ -71,7 +118,7 @@ fi
 echo "layers-l1-sleep tourne en arrière-plan."
 ```
 
-## Agir dans un conteneur qui tourne
+## Entrer dans un conteneur qui tourne : docker exec
 
 `docker exec` lance une commande **dans** un conteneur déjà démarré, sans le recréer. Listez les processus qu'il contient :
 
@@ -81,28 +128,66 @@ docker exec layers-l1-sleep ps
 
 Un **PID** est le numéro d'un processus. Votre `sleep 3600` est le PID 1 : c'est le processus principal du conteneur. L'autre ligne est le `ps` que vous venez de lancer.
 
-```ack
-Je vois sleep en PID 1
+```text
+PID   USER     TIME  COMMAND
+    1 root      0:00 sleep 3600
+    7 root      0:00 ps
 ```
 
-## Un shell dans un conteneur
+Pour enchaîner plusieurs commandes, on préfère ouvrir un **shell** dans le conteneur, le programme qui lit et exécute ce que vous tapez. Sur Alpine, il s'appelle `sh`, car `bash` n'y est pas installé. `-i` garde l'entrée ouverte pour transmettre ce que vous tapez, et `-t` fournit un terminal, d'où l'**invite** (le *prompt*), ce texte qui attend votre commande. On les écrit presque toujours ensemble :
 
-Pour travailler dans un conteneur, il faut un terminal. `-i` garde l'entrée ouverte et `-t` alloue un terminal. On les écrit
-presque toujours ensemble.
+```exec
+docker exec -it layers-l1-sleep sh
+```
+
+Votre invite a changé, elle affiche `/ #` : vous êtes **dans** le conteneur. Tapez vous-même ces lignes. `hostname` affiche le nom de la machine vu du conteneur, et `exit` vous fait sortir :
+
+```sh
+ps
+hostname
+exit
+```
+
+De retour sur votre machine, regardez ce que devient le conteneur :
+
+```exec
+docker ps
+```
+
+`layers-l1-sleep` tourne toujours : vous avez quitté le shell ajouté par `docker exec`, mais le processus principal, lui, n'a pas bougé. `docker exec` ne marche d'ailleurs que sur un conteneur qui tourne : sur un conteneur arrêté, Docker répond `is not running`.
+
+```ack
+Je suis entré dans le conteneur, et il tourne toujours
+```
+
+## Lancer un conteneur directement dans un shell
+
+`-it` s'utilise aussi avec `docker run`. Cette fois, le shell **est** le processus principal du conteneur :
 
 ```exec
 docker run -it --name layers-l1-shell alpine:3.22 sh
 ```
 
-Votre invite a changé, elle affiche `/ #` : vous êtes **dans** le conteneur. Tapez vous-même ces deux lignes, pour créer un fichier puis sortir. Ici, vous êtes l'administrateur du conteneur, d'où le dossier `/root` :
+Vous êtes de nouveau devant `/ #`. Tapez ces deux lignes, pour créer un fichier puis sortir. Le signe `>` envoie dans un fichier ce qui se serait affiché, et vous êtes ici l'administrateur du conteneur, d'où le dossier `/root` :
 
 ```sh
 echo bonjour > /root/note.txt
 exit
 ```
 
-Quand vous quittez le shell, le processus principal se termine, donc le conteneur s'arrête. Il n'est pas supprimé pour autant : le
-fichier reste dans sa **couche d'écriture**, l'espace où chaque conteneur garde ses propres modifications, au-dessus de l'image.
+Quitter ce shell termine le processus principal, donc le conteneur s'arrête. Il n'est pas supprimé pour autant : le fichier reste dans sa **couche d'écriture**, l'espace où chaque conteneur garde ses propres modifications, au-dessus de l'image. `docker diff` liste ce qu'elle contient, où `A` veut dire *added* et `C` veut dire *changed* :
+
+```exec
+docker diff layers-l1-shell
+```
+
+Votre fichier y est, à côté de l'historique que le shell a écrit lui-même :
+
+```text
+C /root
+A /root/.ash_history
+A /root/note.txt
+```
 
 ```verify
 C=layers-l1-shell
@@ -125,28 +210,21 @@ fi
 echo "Le fichier est bien dans la couche d'écriture de $C."
 ```
 
-## L'erreur qu'on rencontre tous
+## Nom déjà pris : le conteneur arrêté garde son nom
 
-Lancez un conteneur avec le même nom :
+Vous rencontrerez tôt ou tard cette erreur. Lancez un conteneur avec le nom de celui que vous venez de quitter :
 
 ```exec
 docker run -d --name layers-l1-shell alpine:3.22 sleep 3600
 ```
 
-Erreur : `Conflict. The container name ... is already in use`. Pourtant, `docker ps` ne le montre pas :
+Docker refuse, parce que ce nom est déjà pris :
 
-```exec
-docker ps --filter name=layers-l1-shell
+```text
+docker: Error response from daemon: Conflict. The container name "/layers-l1-shell" is already in use by container "e068f2da171b…".
 ```
 
-C'est que `docker ps` ne liste que les conteneurs **en cours d'exécution**. Ajoutez `-a` :
-
-```exec
-docker ps -a --filter name=layers-l1-shell
-```
-
-Il est là, arrêté, et il garde son nom tant qu'il n'est pas supprimé. Supprimez ce que vous avez créé. `-f` force la suppression d'un
-conteneur qui tourne :
+`docker ps` ne le montrerait pas, mais `docker ps -a` le montre, arrêté : il garde son nom tant qu'il n'est pas supprimé. Supprimez ce que vous avez créé. `-f` force la suppression d'un conteneur qui tourne, ce qui est le cas de `layers-l1-sleep` :
 
 ```exec
 docker rm -f layers-l1-sleep layers-l1-shell
@@ -160,38 +238,37 @@ fi
 echo "C'est propre."
 ```
 
-> 📖 [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/) · [`docker exec`](https://docs.docker.com/reference/cli/docker/container/exec/) · [`docker ps`](https://docs.docker.com/reference/cli/docker/container/ls/) · [Droits après l'installation sous Linux](https://docs.docker.com/engine/install/linux-postinstall/)
+> 📖 [`docker run`](https://docs.docker.com/reference/cli/docker/container/run/) · [`docker ps`](https://docs.docker.com/reference/cli/docker/container/ls/) · [`docker exec`](https://docs.docker.com/reference/cli/docker/container/exec/) · [`docker rm`](https://docs.docker.com/reference/cli/docker/container/rm/)
 
-## Questions
+## Questions sur le lancement
 
 ```quiz
 title: "Lancer un conteneur"
 tracksProgress: false
 showNotice: false
 questions:
-  - prompt: "`docker run -d --name attente alpine:3.22 sleep 600` rend la main et affiche une longue suite hexadécimale. Qu'est-ce que c'est ?"
+  - prompt: "`docker run -d --name attente alpine:3.22 sleep 600` rend la main et affiche une longue suite de chiffres et de lettres. Qu'est-ce que c'est ?"
     answers:
       - "L'empreinte de l'image"
-      - "L'identifiant complet du conteneur, dont `docker ps` montre les 12 premiers caractères"
+      - "L'identifiant complet du conteneur, dont `docker ps` montre le début"
       - "Le numéro de processus de sleep sur l'hôte"
       - "L'adresse IP du conteneur"
     correct: 2
-    explanation: "`-d` affiche l'identifiant complet du conteneur. L'identifiant court de `docker ps` en est le début, et les deux s'utilisent partout où l'on désigne un conteneur."
+    explanation: "`-d` affiche l'identifiant complet du conteneur. L'identifiant court de `docker ps` en est le début."
   - prompt: "Vous obtenez « The container name /api is already in use », mais `docker ps` n'affiche rien. Que s'est-il passé ?"
     answers:
-      - "Le démon Docker doit être redémarré"
+      - "Le daemon Docker doit être redémarré"
       - "Un conteneur arrêté existe encore et garde ce nom : `docker ps` ne liste que ceux qui tournent"
       - "Un nom reste réservé dix minutes après l'arrêt"
     correct: 2
-    explanation: "Arrêter ne supprime pas. Le conteneur garde son nom, sa couche d'écriture et ses logs jusqu'au `docker rm`. `docker ps -a` le montre."
-  - prompt: "Vous voulez un shell dans un conteneur. Quelles options vous faut-il ?"
+    explanation: "Arrêter ne supprime pas. Le conteneur garde son nom et sa couche d'écriture jusqu'au `docker rm`. `docker ps -a` le montre."
+  - prompt: "Vous quittez un shell ouvert avec `docker exec -it`. Que devient le conteneur ?"
     answers:
-      - "`-d`"
-      - "`-i` seul"
-      - "`-it`"
-      - "`-t` seul"
-    correct: 3
-    explanation: "`-i` transmet ce que vous tapez, `-t` fournit le terminal : l'invite et l'édition de ligne. Un shell a besoin des deux."
+      - "Il s'arrête, comme après `docker run -it`"
+      - "Il continue de tourner : le shell n'était pas son processus principal"
+      - "Il est supprimé"
+    correct: 2
+    explanation: "Un conteneur tourne aussi longtemps que son processus principal. Avec `docker run -it ... sh`, le shell est ce processus ; avec `docker exec -it`, il s'y ajoute."
   - prompt: "Que fait `--rm` ?"
     answers:
       - "Il supprime l'image à l'arrêt du conteneur"

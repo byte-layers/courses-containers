@@ -7,16 +7,17 @@ layers:
   - title: "Installer"
     summary: "Docker prêt sur votre poste"
     contents:
+      - { slug: app-deployment, role: read-first }
       - { slug: containers-why, role: read-first }
       - { slug: docker-install }
       - { slug: docker-install-challenge, role: proof }
   - title: "Lancer"
     summary: "Faire tourner un conteneur et comprendre ce qu'il fait"
     contents:
-      - { slug: image-immutable, role: read-first }
-      - { slug: container-is-a-process, role: read-first }
       - { slug: docker-run }
       - { slug: docker-first-web-page }
+      - { slug: image-immutable }
+      - { slug: container-is-a-process }
       - { slug: docker-run-challenge, role: proof }
   - title: "Écrire une image"
     summary: "Le Dockerfile d'une application"

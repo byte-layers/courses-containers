@@ -14,26 +14,29 @@ options:
   autoCompleteOnNext: unverifiable
 ---
 
-Ce challenge prouve que vous savez publier une image, et que vous savez retrouver une version précise quand un tag a bougé. Il n'y a **aucune commande à recopier** : chaque tâche donne un objectif et des critères, puis un bouton vérifie l'état réel de Docker et du registre. Toute suite de commandes qui produit le bon résultat est acceptée.
+Vous lancez votre propre registre, vous y publiez une image, une correction déplace son tag, et c'est à vous de retrouver l'ancienne version et de la remettre en avant. Il n'y a **aucune commande à recopier** : chaque tâche donne un objectif et des critères, puis un bouton vérifie l'état réel de Docker et du registre. Toute suite de commandes qui produit le bon résultat est acceptée.
 
 Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution** reste en dernier recours. Les utiliser ne coûte rien : seule la vérification compte.
 
 ## Avant de commencer
 
-- **Ce qu'il faut savoir** : ce qu'enseigne le cours « Publier une image : pull, tag, push », et écrire un petit Dockerfile.
-- **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, `curl`, et le port **28341** libre. Aucun compte n'est nécessaire, et rien ne quitte votre machine.
-- **Un dossier de travail** : `~/layers-l4` est créé pour vous, et la dernière tâche le supprime. La vérification y garde aussi un fichier caché, `.digest-v1`, qui lui sert à se souvenir de votre première version.
-- **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
+> ⚠️ **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
+
+- **Niveau** : ce challenge suppose ce qu'enseigne le cours [Publier une image : pull, tag, push](https://byte-layers.com/fr/skills/docker-publish), et de savoir écrire un petit Dockerfile.
+- **Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, un éditeur de texte, et le port **28341** libre. Aucun compte n'est nécessaire, et rien ne quitte votre machine.
+- **Un dossier de travail** : `~/layers-l4` est créé pour vous, et la dernière tâche le supprime.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l4-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : chaque tâche reprend le résultat de la précédente.
 
 # Tâche 1 : un registre
 
+## Démarrer le registre dans un conteneur
+
 ```setup
 mkdir -p ~/layers-l4
 ```
 
-Démarrez votre propre registre d'images.
+Démarrez votre propre registre d'images, dans un conteneur lancé avec `docker run`.
 
 **Critères :**
 
@@ -91,7 +94,9 @@ docker run -d --name layers-l4-registry -p 28341:5000 registry:3
 
 # Tâche 2 : publier une première version
 
-Écrivez un Dockerfile, construisez une image et publiez-la dans votre registre.
+## Écrire le Dockerfile, construire l'image et la pousser
+
+Créez le fichier `~/layers-l4/Dockerfile` avec votre éditeur, construisez l'image avec `docker build`, puis publiez-la dans votre registre avec `docker push`.
 
 **Critères :**
 
@@ -155,10 +160,10 @@ echo "RÉUSSI : le registre contient $R:1.0, qui écrit PUBLICATION-V1."
 
 ````solution
 ```bash
-cat > ~/layers-l4/Dockerfile <<'FIN'
+cat > ~/layers-l4/Dockerfile <<'EOF'
 FROM alpine:3.22
 CMD ["echo", "PUBLICATION-V1"]
-FIN
+EOF
 docker build -t localhost:28341/layers-l4-app:1.0 ~/layers-l4
 docker push localhost:28341/layers-l4-app:1.0
 ```
@@ -166,12 +171,16 @@ docker push localhost:28341/layers-l4-app:1.0
 
 # Tâche 3 : noter le digest
 
-Avant que quelqu'un ne republie sous ce tag, gardez de quoi retrouver cette version.
+## Garder le digest dans un fichier
+
+Avant que quelqu'un ne republie sous ce tag, gardez de quoi retrouver cette version : créez le fichier `~/layers-l4/digest.txt`, avec votre éditeur ou une redirection `>`, et mettez-y le digest.
 
 **Critères :**
 
-- le fichier `~/layers-l4/digest.txt` contient le digest de `localhost:28341/layers-l4-app:1.0`, tel que le registre le connaît ;
-- un digest commence par `sha256:`, et le nom du dépôt peut le précéder.
+- le fichier `~/layers-l4/digest.txt` contient, sur une ligne, le nom de cette version avec son digest, c'est-à-dire `localhost:28341/layers-l4-app@sha256:…` ;
+- ce digest est celui que le registre donne pour le tag `1.0`.
+
+Cliquez sur la vérification de cette tâche avant de passer à la suivante : elle garde le digest pour les tâches 4 et 5, et elle ne pourra plus réussir une fois le tag déplacé.
 
 ```hint
 `docker push` affiche ce digest en fin de publication. `docker pull` l'affiche aussi, à la ligne `Digest:`.
@@ -194,36 +203,39 @@ if [ -z "$WANT" ]; then
   echo "ÉCHEC : le registre ne connaît pas le tag 1.0. Reprenez la tâche 2."
   exit 1
 fi
-GOT=$(grep -oE 'sha256:[0-9a-f]{64}' "$F" | head -n 1)
-if [ -z "$GOT" ]; then
-  echo "ÉCHEC : le fichier ne contient pas de digest, c'est-à-dire sha256: suivi de 64 caractères."
+if ! grep -qE '^localhost:28341/layers-l4-app@sha256:[0-9a-f]{64}$' "$F"; then
+  echo "ÉCHEC : le fichier doit contenir le nom complet : localhost:28341/layers-l4-app@sha256: suivi de 64 caractères."
   exit 1
 fi
+GOT=$(grep -oE 'sha256:[0-9a-f]{64}' "$F" | head -n 1)
 if [ "$GOT" != "$WANT" ]; then
   echo "ÉCHEC : $GOT n'est pas le digest que le registre donne pour le tag 1.0."
   echo "  L'identifiant affiché par docker images n'est pas le digest. Lisez plutôt la ligne de docker push ou de docker pull."
   exit 1
 fi
 echo "$WANT" > "$HOME/layers-l4/.digest-v1"
-echo "RÉUSSI : le digest est noté."
+echo "RÉUSSI : le digest est noté. La vérification en garde une copie dans ~/layers-l4/.digest-v1 pour les tâches suivantes."
 ```
 
 ````solution
 ```bash
-docker pull localhost:28341/layers-l4-app:1.0 | grep -oE 'sha256:[0-9a-f]{64}' > ~/layers-l4/digest.txt
+docker pull localhost:28341/layers-l4-app:1.0
+docker image inspect localhost:28341/layers-l4-app:1.0 --format '{{index .RepoDigests 0}}' > ~/layers-l4/digest.txt
 ```
 ````
 
 # Tâche 4 : déplacer le tag
 
-Une correction arrive, et elle est republiée sous le même tag.
+## Republier sous le même tag, puis lancer la version 1
+
+Une correction arrive, et elle est republiée sous le même tag. Modifiez `~/layers-l4/Dockerfile` avec votre éditeur, reconstruisez et poussez sous le même nom, puis lancez l'ancienne version par son digest et enregistrez ce qu'elle écrit dans un fichier, avec une redirection `>`.
 
 **Critères :**
 
 - l'image publiée sous `localhost:28341/layers-l4-app:1.0` écrit maintenant `PUBLICATION-V2` ;
 - le fichier `~/layers-l4/ancienne.txt` contient ce qu'écrit la **version 1**, obtenue en lançant l'image par son **digest**.
 
-La vérification contrôle que ce digest donne bien la version 1, mais elle ne voit pas comment vous avez rempli le fichier : c'est le geste qui compte, et elle vous fait confiance.
+⚖️ Republier sous le même tag est une mauvaise pratique : on le fait ici pour voir ce qui se passe quand cela arrive. La vérification contrôle que ce digest donne bien la version 1, mais elle ne voit pas comment vous avez rempli le fichier : c'est le geste qui compte.
 
 ```hint
 Changez le Dockerfile, reconstruisez sous le même nom, et poussez. Le tag se déplace tout seul.
@@ -266,25 +278,29 @@ echo "RÉUSSI : le tag désigne la version 2, et le digest retrouve la version 1
 
 ````solution
 ```bash
-sed -i.bak 's/PUBLICATION-V1/PUBLICATION-V2/' ~/layers-l4/Dockerfile
+cat > ~/layers-l4/Dockerfile <<'EOF'
+FROM alpine:3.22
+CMD ["echo", "PUBLICATION-V2"]
+EOF
 docker build -t localhost:28341/layers-l4-app:1.0 ~/layers-l4
 docker push localhost:28341/layers-l4-app:1.0
-DIGEST=$(grep -oE 'sha256:[0-9a-f]{64}' ~/layers-l4/digest.txt)
-docker run --rm "localhost:28341/layers-l4-app@$DIGEST" > ~/layers-l4/ancienne.txt
+docker run --rm "$(cat ~/layers-l4/digest.txt)" > ~/layers-l4/ancienne.txt
 ```
 ````
 
 # Tâche 5 : republier l'ancienne version
 
-La correction pose problème, et la version 1 doit redevenir celle que l'on conseille, sans la reconstruire.
+## Poser le tag stable sur la version 1
+
+La correction pose problème, et la version 1 doit redevenir celle que l'on conseille, sans la reconstruire. Téléchargez-la par son digest, donnez-lui un nouveau nom avec `docker tag`, et poussez ce nom.
 
 **Critères :**
 
 - le registre connaît le tag `stable` du dépôt `layers-l4-app` ;
-- ce tag désigne **la version 1 telle qu'elle a été publiée** ; retrouvez-la par son digest plutôt que de la reconstruire, ce que la vérification ne peut pas distinguer dans tous les cas ;
+- ce tag désigne **la version 1 telle qu'elle a été publiée**, retrouvée par son digest et non reconstruite ;
 - le tag `1.0`, lui, désigne toujours la version 2.
 
-Le digest affiché par votre `docker push` est en général celui que vous avez noté. Il peut aussi en différer, et ce n'est pas une erreur : une publication peut envoyer un **index**, une liste qui regroupe les images par processeur, et un nouvel envoi peut ne renvoyer que l'image de votre processeur, avec son propre digest. La vérification accepte les deux cas.
+> **Si les digests diffèrent, ce n'est pas votre faute.** Le digest affiché par ce nouveau `docker push` peut être différent de celui que vous avez noté : selon votre installation, ce `push` peut n'envoyer que la variante de l'image pour votre processeur, qui a son propre digest. La vérification accepte ce cas, et elle ne peut pas toujours distinguer une image retrouvée d'une image reconstruite à l'identique : c'est le geste qui compte.
 
 ```hint
 Un tag n'est qu'une étiquette : on peut en poser une sur une image désignée par son digest, à condition de l'avoir d'abord tirée.
@@ -322,25 +338,28 @@ echo "RÉUSSI : le tag stable désigne la version 1."
 
 ````solution
 ```bash
-ANCIENNE="localhost:28341/layers-l4-app@$(grep -oE 'sha256:[0-9a-f]{64}' ~/layers-l4/digest.txt)"
-docker pull "$ANCIENNE"
-docker tag "$ANCIENNE" localhost:28341/layers-l4-app:stable
+docker pull "$(cat ~/layers-l4/digest.txt)"
+docker tag "$(cat ~/layers-l4/digest.txt)" localhost:28341/layers-l4-app:stable
 docker push localhost:28341/layers-l4-app:stable
 ```
 ````
 
 # Tâche 6 : ne rien laisser derrière soi
 
-Supprimez tout ce que ce challenge a créé : le conteneur `layers-l4-registry` et ses données, toutes les images dont le nom contient `layers-l4-app`, et le dossier `~/layers-l4`.
+## Retirer le registre, les images et le dossier
+
+Supprimez tout ce que ce challenge a créé, avec `docker rm`, `docker rmi` et `rm -rf` : le conteneur `layers-l4-registry` et ses données, les images de `localhost:28341/layers-l4-app`, et le dossier `~/layers-l4`.
 
 **Critères :** plus de conteneur, plus d'image à ce nom, plus de dossier. La vérification ne peut pas voir le volume du registre une fois le conteneur parti : à vous de le supprimer avec lui.
+
+Ce ménage n'est pas le sujet du challenge, et la liste des images à retirer peut être longue, car une image téléchargée par son digest garde ce nom-là. `docker images --digests | grep layers-l4-app` les montre toutes, et la solution donne les commandes si vous préférez aller droit au but.
 
 ```hint
 `docker rm` a une option pour le volume d'un conteneur, et une autre pour un conteneur qui tourne.
 ```
 
 ```hint
-Une image tirée par son digest garde ce nom-là : `docker images --digests localhost:28341/layers-l4-app` les montre toutes, et `docker rmi` accepte leur identifiant.
+`docker rmi` prend un nom ou un identifiant, et `-f` retire une image même si elle porte plusieurs noms.
 ```
 
 ```verify
@@ -361,7 +380,7 @@ echo "RÉUSSI : tout est propre. Vous savez publier une image et retrouver une v
 ```
 
 ````solution
-`docker images -q` ne donne que les identifiants des images de ce dépôt, et `-f` les supprime même si une image porte plusieurs noms :
+`docker images -q` ne donne que les identifiants des images de ce dépôt, `sort -u` retire les doublons, et `-f` les supprime même si une image porte plusieurs noms. Le `$(…)` place cette liste dans la commande `docker rmi`.
 
 ```bash
 docker rm -fv layers-l4-registry

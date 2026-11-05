@@ -175,11 +175,11 @@ EOF
 cd ~/layers-l8/reliable && docker compose up -d
 ```
 
-Vérifiez que la limite tient. Cette commande demande à Python de réserver 300 Mio. Elle doit échouer :
+Vérifiez que la limite tient. Cette commande demande à Python de remplir 300 Mio. Elle doit échouer :
 
 ```exec
 sleep 3
-cd ~/layers-l8/reliable && docker compose exec web python -c "x = bytearray(300 * 1024 * 1024); print('300 Mio obtenus')"; echo "code de sortie : $?"
+cd ~/layers-l8/reliable && docker compose exec web python -c "x = b'x' * (300 * 1024 * 1024); print('300 Mio obtenus')"; echo "code de sortie : $?"
 ```
 
 Le code `137` veut dire `SIGKILL`, comme dans « Lancer, configurer et observer un conteneur » : le système a tué le processus, et le message `300 Mio obtenus` ne s'affiche pas. La fiche du conteneur le confirme :
@@ -206,7 +206,7 @@ if [ "$(docker inspect $W --format '{{index .HostConfig.LogConfig.Config "max-si
   exit 1
 fi
 if [ "$(docker inspect $W --format '{{.State.OOMKilled}}')" != "true" ]; then
-  echo "Le dépassement n'a pas encore eu lieu dans ce conteneur. Relancez la commande qui réserve 300 Mio."
+  echo "Le dépassement n'a pas encore eu lieu dans ce conteneur. Relancez la commande qui remplit 300 Mio."
   exit 1
 fi
 echo "La limite de 128 Mio a été appliquée, et elle a tenu."

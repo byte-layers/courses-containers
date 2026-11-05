@@ -29,6 +29,8 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 # Tâche 1 : une base sur un volume
 
+## Ce qu'il faut faire
+
 ```setup
 mkdir -p ~/layers-l6
 ```
@@ -89,6 +91,8 @@ docker run -d --name layers-l6-pg -e POSTGRES_PASSWORD=secret -v layers-l6-data:
 
 # Tâche 2 : écrire une preuve
 
+## Ce qu'il faut faire
+
 Écrivez une donnée reconnaissable dans la base.
 
 **Critères :**
@@ -123,6 +127,8 @@ docker exec layers-l6-pg psql -U postgres -c "CREATE TABLE preuve (texte text); 
 ````
 
 # Tâche 3 : détruire le conteneur
+
+## Ce qu'il faut faire
 
 Prouvez que la donnée ne dépend pas de ce conteneur : remplacez-le par un conteneur neuf, sur le même volume.
 
@@ -186,6 +192,8 @@ until docker exec layers-l6-pg pg_isready -U postgres -h 127.0.0.1 -q; do sleep 
 
 # Tâche 4 : servir un dossier de votre machine
 
+## Ce qu'il faut faire
+
 Faites servir par nginx une page qui reste sur votre machine.
 
 **Critères :**
@@ -241,6 +249,8 @@ docker run -d --name layers-l6-web -p 28365:80 -v "$HOME/layers-l6/site:/usr/sha
 
 # Tâche 5 : sauvegarder le volume
 
+## Ce qu'il faut faire
+
 Sauvegardez le contenu du volume dans une archive sur votre machine.
 
 **Critères :**
@@ -289,6 +299,8 @@ docker start layers-l6-pg
 ````
 
 # Tâche 6 : restaurer ailleurs
+
+## Ce qu'il faut faire
 
 Une sauvegarde ne compte que si elle se restaure. Remontez-la dans un volume neuf, et faites-la lire par un second serveur.
 
@@ -346,6 +358,8 @@ until docker exec layers-l6-pg2 pg_isready -U postgres -h 127.0.0.1 -q; do sleep
 ````
 
 # Tâche 7 : ne rien laisser derrière soi
+
+## Ce qu'il faut faire
 
 Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l6-pg`, `layers-l6-pg2` et `layers-l6-web`, les volumes `layers-l6-data` et `layers-l6-restaure`, et le dossier `~/layers-l6`.
 

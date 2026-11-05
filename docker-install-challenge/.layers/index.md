@@ -6,7 +6,7 @@ tags:
   - docker
   - containers
 difficulty: beginner
-duration: 30
+duration: 20
 introTitle: "Le défi"
 requires: "0.4.0"
 options:
@@ -20,27 +20,28 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 ## Avant de commencer
 
-- **Ce qu'il faut savoir** : ce qu'enseigne le lab « Installer Docker et vérifier son poste ».
+> ⚠️ **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
+
+- **Ce qu'il faut savoir** : ce qu'enseigne le lab [Installer Docker et vérifier son poste](https://byte-layers.com/fr/labs/docker-install).
 - **Ce qu'il faut avoir** : Docker installé, `curl`, et le port **28301** libre. Sur un poste hébergé, tout est déjà installé.
-- **Un dossier de travail** : `~/layers-l0` est créé pour vous, et la dernière tâche le supprime.
-- **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
+- **Un dossier de travail** : `~/layers-l0`, où `~` désigne votre dossier personnel, est créé pour vous, et la dernière tâche le supprime. Vous y écrirez deux petits fichiers à la main, avec l'éditeur de votre choix. Dans le terminal, `nano ~/layers-l0/audit.txt` ouvre le premier ; `Ctrl-O` puis `Entrée` enregistre, et `Ctrl-X` quitte.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l0-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 
 # Tâche 1 : la fiche du poste
+
+## Noter les versions et l'architecture dans un fichier
 
 ```setup
 mkdir -p ~/layers-l0
 ```
 
-Dressez la fiche de ce poste dans le fichier `~/layers-l0/audit.txt`, avec une ligne par information, au format `nom=valeur`.
+Créez le fichier `~/layers-l0/audit.txt` avec votre éditeur, et notez-y la fiche de ce poste, avec une ligne par information, au format `nom=valeur`.
 
 **Critères :**
 
 - `client=` donne la version du client Docker ;
 - `moteur=` donne la version du moteur ;
-- `architecture=` donne l'architecture du moteur ;
-- `stockage=` donne le pilote de stockage du moteur ;
-- `compose=` donne la version de Docker Compose.
+- `architecture=` donne l'architecture du moteur.
 
 Le fichier doit donc ressembler à ceci, avec les vraies valeurs de votre poste :
 
@@ -48,20 +49,14 @@ Le fichier doit donc ressembler à ceci, avec les vraies valeurs de votre poste 
 client=29.0.0
 moteur=27.0.0
 architecture=arm64
-stockage=overlay2
-compose=2.39.1
 ```
 
 ```hint
-Deux commandes donnent presque tout : l'une parle des versions, l'autre décrit le moteur. Lisez leur réponse, puis écrivez le fichier avec l'éditeur de votre choix.
+Une commande du lab affiche les versions du client et du moteur. Lisez sa réponse, puis recopiez les valeurs dans le fichier.
 ```
 
 ```hint
-Le client et le moteur ont chacun leur partie dans `docker version`. Le pilote de stockage et l'architecture sont dans `docker info`. Pour Compose, `docker compose version`.
-```
-
-```hint
-Vous pouvez aussi remplir le fichier sans rien retaper : `docker version --format '{{.Client.Version}}'` n'affiche que la version du client, et `echo "client=$(…)" >> fichier` ajoute une ligne à un fichier.
+Le client et le moteur ont chacun leur partie dans `docker version`, avec une ligne `Version`. L'architecture est dans `docker info`, ou à la fin de la ligne `OS/Arch` de la partie du moteur.
 ```
 
 ```verify
@@ -83,8 +78,6 @@ check() { # nom, valeur écrite, attendu
 }
 check client "$(val client)" "$(docker version --format '{{.Client.Version}}')"
 check moteur "$(val moteur)" "$(docker version --format '{{.Server.Version}}')"
-check stockage "$(val stockage)" "$(docker info --format '{{.Driver}}')"
-check compose "$(val compose | sed 's/^v//')" "$(docker compose version --short | sed 's/^v//')"
 ARCH=$(val architecture)
 A1=$(docker version --format '{{.Server.Arch}}')
 A2=$(docker info --format '{{.Architecture}}')
@@ -100,18 +93,20 @@ echo "RÉUSSI : la fiche correspond à ce poste."
 ```
 
 ````solution
+Recopier les valeurs à la main suffit. Cette commande fait la même chose sans rien retaper : `--format` n'affiche que la valeur demandée, `$(…)` la place dans la phrase, et `>` envoie le tout dans le fichier.
+
 ```bash
 {
   echo "client=$(docker version --format '{{.Client.Version}}')"
   echo "moteur=$(docker version --format '{{.Server.Version}}')"
   echo "architecture=$(docker version --format '{{.Server.Arch}}')"
-  echo "stockage=$(docker info --format '{{.Driver}}')"
-  echo "compose=$(docker compose version --short)"
 } > ~/layers-l0/audit.txt
 ```
 ````
 
 # Tâche 2 : un conteneur témoin
+
+## Lancer un conteneur qui se termine sans erreur
 
 Prouvez que ce poste sait télécharger une image et lancer un conteneur qui se termine sans erreur.
 
@@ -119,7 +114,7 @@ Prouvez que ce poste sait télécharger une image et lancer un conteneur qui se 
 
 - un conteneur s'appelle exactement `layers-l0-probe` ;
 - il vient d'une image `alpine` ;
-- il s'est terminé, avec le code de sortie 0 ;
+- il s'est terminé sans erreur ;
 - il a écrit `LAYERS-L0-OK` sur sa sortie.
 
 ```hint
@@ -127,7 +122,7 @@ Un seul `docker run` suffit. Le conteneur doit s'arrêter de lui-même une fois 
 ```
 
 ```hint
-Reprenez la commande de la section « Télécharger et lancer » du lab, en changeant le nom et la phrase.
+Reprenez la commande de la section « Télécharger une image et lancer un conteneur » du lab, en changeant le nom et la phrase.
 ```
 
 ```verify
@@ -165,25 +160,26 @@ docker run --name layers-l0-probe alpine:3.22 echo LAYERS-L0-OK
 
 # Tâche 3 : un serveur joignable
 
-Prouvez que ce poste peut servir une page, et gardez cette page dans un fichier.
+## Lancer un serveur web et lire sa page
+
+Prouvez que ce poste peut servir une page : lancez nginx dans un conteneur, puis demandez-lui sa page avec `curl`.
 
 **Critères :**
 
 - un conteneur s'appelle exactement `layers-l0-audit-web`, il tourne, et il vient d'une image `nginx` ;
 - le port **28301** de la machine mène au port **80** du conteneur ;
-- le fichier `~/layers-l0/page.html` contient la page que ce serveur renvoie.
+- ce serveur répond à `curl http://localhost:28301`.
 
 ```hint
 Il vous faut `docker run` avec l'option qui rend la main et celle qui relie les ports. Le port de la machine vient en premier.
 ```
 
 ```hint
-Une fois le serveur lancé, `curl` affiche sa page. Le signe `>` envoie cette sortie dans un fichier.
+Vérifiez avec `docker ps` qu'il tourne, puis demandez-lui sa page avec `curl`. S'il ne répond pas, attendez une seconde et relancez.
 ```
 
 ```verify
 C=layers-l0-audit-web
-F="$HOME/layers-l0/page.html"
 if ! docker container inspect "$C" >/dev/null 2>&1; then
   echo "ÉCHEC : aucun conteneur ne s'appelle $C."
   exit 1
@@ -203,31 +199,31 @@ case " $MAPPED" in
   *) echo "ÉCHEC : le port 28301 de la machine ne mène pas au port 80 du conteneur (trouvé : ${MAPPED:-aucun port}). Recréez le conteneur."
      exit 1 ;;
 esac
-if ! curl -s --max-time 5 http://localhost:28301 | grep -q 'Welcome to nginx'; then
+ok=0
+for i in 1 2 3 4 5; do
+  if curl -s --max-time 5 http://localhost:28301 | grep -q 'Welcome to nginx'; then ok=1; break; fi
+  sleep 1
+done
+if [ "$ok" != 1 ]; then
   echo "ÉCHEC : le serveur ne répond pas sur le port 28301. Il démarre peut-être encore : réessayez."
   exit 1
 fi
-if [ ! -f "$F" ]; then
-  echo "ÉCHEC : le fichier ~/layers-l0/page.html n'existe pas."
-  exit 1
-fi
-if ! grep -q 'Welcome to nginx' "$F"; then
-  echo "ÉCHEC : ~/layers-l0/page.html ne contient pas la page du serveur. S'il est vide, le serveur démarrait encore : relancez curl."
-  exit 1
-fi
-echo "RÉUSSI : le serveur répond sur le port 28301, et sa page est dans le fichier."
+echo "RÉUSSI : le serveur répond sur le port 28301."
 ```
 
 ````solution
 ```bash
 docker run -d --name layers-l0-audit-web -p 28301:80 nginx:1.30-alpine
-curl -sS --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28301 > ~/layers-l0/page.html
+docker ps
+curl http://localhost:28301
 ```
 ````
 
 # Tâche 4 : reconnaître une panne
 
-Un collègue vous dira un jour que « Docker ne marche plus ». Gardez une trace de ce que répond le client quand aucun moteur ne l'écoute, sans rien arrêter sur votre poste.
+## Garder le message du client sans moteur
+
+Un collègue vous dira un jour que « Docker ne marche plus ». Faites parler le client à un moteur absent, sans rien arrêter sur votre poste, puis créez le fichier `~/layers-l0/panne.txt` avec votre éditeur et collez-y le message qu'il affiche.
 
 **Critères :**
 
@@ -239,7 +235,7 @@ Le lab a montré comment faire parler le client à un moteur qui n'existe pas, l
 ```
 
 ```hint
-Le message d'erreur n'est pas écrit sur la sortie normale : `> fichier` seul ne le capture pas. Il faut y ajouter `2>&1`, qui envoie les erreurs au même endroit.
+Lancez cette commande, copiez la ligne d'erreur qu'elle affiche, puis collez-la dans le fichier avec votre éditeur.
 ```
 
 ```verify
@@ -250,7 +246,7 @@ if [ ! -f "$F" ]; then
 fi
 if ! grep -q 'Cannot connect to the Docker daemon' "$F"; then
   echo "ÉCHEC : le fichier ne contient pas le message d'erreur du client."
-  echo "  Les erreurs ne vont pas sur la sortie normale : pensez à 2>&1."
+  echo "  Copiez la ligne qui commence par Cannot connect dans ce fichier."
   exit 1
 fi
 if ! grep -q 'tcp://localhost:1' "$F"; then
@@ -261,12 +257,16 @@ echo "RÉUSSI : vous saurez reconnaître un moteur qui ne répond pas."
 ```
 
 ````solution
+Copier la ligne à la main suffit. Cette commande fait la même chose : `>` envoie la sortie dans le fichier, et `2>&1` y ajoute les messages d'erreur, qui n'empruntent pas la sortie normale.
+
 ```bash
 DOCKER_HOST=tcp://localhost:1 docker version > ~/layers-l0/panne.txt 2>&1
 ```
 ````
 
 # Tâche 5 : ne rien laisser derrière soi
+
+## Supprimer les conteneurs et le dossier
 
 Supprimez ce que ce challenge a créé : les conteneurs `layers-l0-probe` et `layers-l0-audit-web`, et le dossier `~/layers-l0`.
 
@@ -277,7 +277,7 @@ Supprimez ce que ce challenge a créé : les conteneurs `layers-l0-probe` et `la
 ```
 
 ```hint
-Pour un dossier et tout ce qu'il contient : `rm -rf`, en vérifiant bien le chemin avant de valider.
+Pour un dossier et tout ce qu'il contient : `rm -r`, en vérifiant bien le chemin avant de valider, car rien ne vous sera demandé.
 ```
 
 ```verify
@@ -296,6 +296,6 @@ echo "RÉUSSI : tout est propre, et votre audit est terminé."
 ````solution
 ```bash
 docker rm -f layers-l0-probe layers-l0-audit-web
-rm -rf ~/layers-l0
+rm -r ~/layers-l0
 ```
 ````

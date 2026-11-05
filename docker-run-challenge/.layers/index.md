@@ -8,7 +8,7 @@ tags:
 difficulty: beginner
 duration: 45
 introTitle: "Le défi"
-requires: "0.3.0"
+requires: "0.4.0"
 options:
   allowManualProgress: false
   autoCompleteOnNext: unverifiable
@@ -23,16 +23,17 @@ Les utiliser ne coûte rien : seule la vérification compte.
 
 ## Avant de commencer
 
-- **Ce qu'il faut savoir** : ce qu'enseigne le cours « Lancer, configurer et observer un conteneur ».
-  Le lab « Héberger une page dans un conteneur » montre aussi comment publier un port.
-- **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, et le port 28080 libre.
-- **Un dossier de travail** : `~/layers-l1` est créé pour vous, et la dernière tâche le supprime. La vérification y garde aussi un fichier caché, `.web-id`, qui lui sert à reconnaître votre conteneur.
-- **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
-- **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l1-`.
-  Rien d'autre n'est inspecté ni supprimé sur votre machine.
+> ⚠️ **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
+
+- **Ce qu'il faut savoir** : ce qu'enseigne [Lancer, configurer et observer un conteneur](https://byte-layers.com/fr/skills/docker-run). Le lab [Héberger une page dans un conteneur](https://byte-layers.com/fr/labs/docker-first-web-page) en donne un exemple complet.
+- **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, `curl`, et le port **28080** libre.
+- **Un dossier de travail** : `~/layers-l1` est créé pour vous, et la dernière tâche le supprime.
+- **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l1-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : les tâches 2 et 3 reprennent le conteneur de la tâche 1. Faites-les dans l'ordre.
 
 # Tâche 1 : un serveur web en arrière-plan
+
+## Démarrer nginx avec un port publié et une limite de mémoire
 
 Démarrez un conteneur nginx qui tourne en arrière-plan et répond sur le port **28080** de votre machine.
 
@@ -49,7 +50,7 @@ Trois choses doivent être vraies en même temps : le conteneur rend la main à 
 ```
 
 ```hint
-On publie un port avec `-p <port-machine>:<port-conteneur>`. Le port de la machine vient en premier.
+On publie un port avec `-p <port-machine>:<port-conteneur>`, comme dans la section « Publier un port pour joindre un serveur » du cours.
 ```
 
 ```hint
@@ -108,8 +109,6 @@ if [ "$MEM" != "134217728" ]; then
   echo "  Une limite se pose à la création : supprimez le conteneur et recréez-le."
   exit 1
 fi
-mkdir -p "$HOME/layers-l1"
-docker container inspect "$C" --format '{{.Id}}' > "$HOME/layers-l1/.web-id"
 echo "RÉUSSI : $C utilise $IMG, avec 28080 vers 80."
 ```
 
@@ -121,12 +120,13 @@ docker run -d --name layers-l1-web -p 28080:80 --memory 128m nginx:1.30-alpine
 
 # Tâche 2 : lire sa configuration
 
+## Garder sa commande de démarrage et son image dans un fichier
+
 ```setup
 mkdir -p ~/layers-l1
 ```
 
-Retrouvez ce que `layers-l1-web` est configuré pour exécuter, sans ouvrir de shell dans le conteneur, et
-gardez une trace dans un fichier.
+Retrouvez ce que `layers-l1-web` est configuré pour exécuter, sans ouvrir de shell dans le conteneur. Gardez-en une trace dans le fichier `~/layers-l1/inspect.txt`, en y envoyant la réponse de Docker avec `>`, ou en y collant les valeurs avec votre éditeur.
 
 **Critères :**
 
@@ -143,7 +143,7 @@ Docker conserve la configuration d'un conteneur, et on peut la lire sans rien ex
 ```
 
 ```hint
-Rediriger toute la fiche JSON vers le fichier marche aussi : la vérification cherche les valeurs, peu importe la présentation.
+`>` remplace le contenu du fichier : mettez les deux champs dans le même `--format`, ou envoyez toute la fiche JSON dans le fichier. La vérification cherche les valeurs, peu importe la présentation.
 ```
 
 ```verify
@@ -190,73 +190,79 @@ docker inspect layers-l1-web --format '{{json .Config.Cmd}} {{.Image}}' > ~/laye
 ```
 ````
 
-# Tâche 3 : le cycle de vie
+# Tâche 3 : entrer, puis redémarrer
 
-Faites passer `layers-l1-web` par un arrêt et un redémarrage, et laissez-le **en pause**.
+## Laisser une trace, puis arrêter et relancer le conteneur
+
+Entrez dans `layers-l1-web` pour y laisser une trace, puis faites-lui passer un arrêt et un redémarrage. La trace doit y être encore.
 
 **Critères :**
 
-- `layers-l1-web` a été **arrêté puis redémarré** au moins une fois ;
-- il est maintenant **en pause** ;
-- c'est **le même conteneur** : le supprimer et le recréer ne convient pas.
+- le fichier `/tmp/passage.txt` du conteneur `layers-l1-web` contient le mot `layers` ;
+- `layers-l1-web` a été **arrêté** au moins une fois ;
+- il **tourne** de nouveau, et il répond sur le port **28080**.
 
 ```hint
-Trois verbes suffisent : deux pour le cycle arrêt et redémarrage, un pour figer le conteneur.
+Une commande ouvre un shell dans un conteneur qui tourne. Une fois dedans, une simple redirection crée le fichier, et `exit` vous fait sortir sans arrêter le conteneur.
 ```
 
 ```hint
-Docker note l'heure du dernier arrêt d'un conteneur. Un conteneur jamais arrêté n'a pas cette date : c'est ainsi que la vérification sait que le cycle a eu lieu.
+`docker exec -it layers-l1-web sh` ouvre le shell, et `echo layers > /tmp/passage.txt` y crée le fichier.
 ```
 
 ```hint
-Une pause fige les processus sans les terminer : le conteneur reste compté comme en cours d'exécution.
+Pour la suite, trois verbes conviennent : deux pour un arrêt suivi d'un démarrage, ou un seul qui enchaîne les deux. Aucun ne supprime la couche d'écriture.
 ```
 
 ```verify
 C=layers-l1-web
 if ! docker container inspect "$C" >/dev/null 2>&1; then
-  echo "ÉCHEC : le conteneur $C n'existe pas."
-  echo "  Il doit être celui de la tâche 1 : en recréer un n'est pas le même conteneur."
-  exit 1
-fi
-ID_REF=$(cat "$HOME/layers-l1/.web-id" 2>/dev/null)
-if [ -n "$ID_REF" ] && [ "$ID_REF" != "$(docker container inspect "$C" --format '{{.Id}}')" ]; then
-  echo "ÉCHEC : $C n'est plus le conteneur de la tâche 1 : il a été recréé."
-  echo "  Supprimez-le, refaites la tâche 1, puis conduisez ce conteneur-là."
+  echo "ÉCHEC : le conteneur $C n'existe pas. Faites d'abord la tâche 1."
   exit 1
 fi
 FIN=$(docker container inspect "$C" --format '{{.State.FinishedAt}}')
 case "$FIN" in
   0001-01-01*|"")
     echo "ÉCHEC : $C n'a jamais été arrêté."
-    echo "  Faites un arrêt puis un redémarrage avant la pause."
+    echo "  Faites un arrêt puis un démarrage, ou un redémarrage."
     exit 1 ;;
 esac
-STATUS=$(docker container inspect "$C" --format '{{.State.Status}}')
-PAUSED=$(docker container inspect "$C" --format '{{.State.Paused}}')
-if [ "$STATUS" = "exited" ] || [ "$STATUS" = "created" ]; then
-  echo "ÉCHEC : $C est dans l'état « $STATUS » : il a été arrêté, mais pas redémarré."
+if [ "$(docker container inspect "$C" --format '{{.State.Running}}')" != "true" ]; then
+  echo "ÉCHEC : $C a été arrêté, mais il ne tourne pas. Démarrez-le."
   exit 1
 fi
-if [ "$PAUSED" != "true" ]; then
-  echo "ÉCHEC : $C est dans l'état « $STATUS » et n'est pas en pause."
-  echo "  Le cycle est fait, il reste à figer ses processus."
+CONTENT=$(docker exec "$C" cat /tmp/passage.txt 2>/dev/null)
+case "$CONTENT" in
+  *layers*) : ;;
+  *) echo "ÉCHEC : /tmp/passage.txt est absent de $C, ou ne contient pas le mot layers."
+     exit 1 ;;
+esac
+ok=0
+for i in 1 2 3 4 5; do
+  if curl -s --max-time 5 http://localhost:28080 | grep -q 'nginx'; then ok=1; break; fi
+  sleep 1
+done
+if [ "$ok" != 1 ]; then
+  echo "ÉCHEC : $C ne répond pas sur le port 28080."
   exit 1
 fi
-echo "RÉUSSI : $C a été arrêté puis redémarré, et il est en pause."
+echo "RÉUSSI : $C a été arrêté, il tourne de nouveau, et le fichier est toujours là."
 ```
 
 ````solution
+Cette solution écrit le fichier sans ouvrir de shell : `docker exec -it layers-l1-web sh`, suivi de la redirection et de `exit`, revient au même.
+
 ```bash
-docker stop layers-l1-web
-docker start layers-l1-web
-docker pause layers-l1-web
+docker exec layers-l1-web sh -c 'echo layers > /tmp/passage.txt'
+docker restart layers-l1-web
 ```
 ````
 
 # Tâche 4 : un shell qui laisse une trace
 
-Ouvrez un shell dans un nouveau conteneur et créez-y un fichier.
+## Lancer un conteneur dans un shell et y créer un fichier
+
+Lancez un nouveau conteneur directement dans un shell, créez-y le fichier demandé avec une redirection, puis quittez le shell.
 
 **Critères :**
 
@@ -322,12 +328,13 @@ exit
 
 # Tâche 5 : capturer une sortie
 
+## Enregistrer les logs d'un conteneur dans un fichier
+
 ```setup
 mkdir -p ~/layers-l1
 ```
 
-Produisez un conteneur qui écrit une ligne reconnaissable sur sa sortie standard, et enregistrez cette sortie
-dans un fichier de votre machine.
+Lancez un conteneur qui écrit une ligne reconnaissable sur sa sortie standard, puis envoyez cette sortie, relue depuis Docker, dans un fichier de votre machine.
 
 **Critères :**
 
@@ -389,17 +396,19 @@ docker logs layers-l1-logger > ~/layers-l1/logs.txt
 
 # Tâche 6 : ne rien laisser derrière soi
 
+## Supprimer les conteneurs et le dossier
+
 Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l1-web`, `layers-l1-shell` et
 `layers-l1-logger`, et le dossier `~/layers-l1`.
 
 **Critères :** plus aucun de ces conteneurs, plus de dossier. Vos autres conteneurs ne sont pas concernés.
 
 ```hint
-`docker rm` refuse de supprimer un conteneur en cours d'exécution, et `layers-l1-web` est en pause. Une option force la suppression.
+`docker rm` refuse de supprimer un conteneur en cours d'exécution, et `layers-l1-web` tourne encore. Une option force la suppression.
 ```
 
 ```hint
-Pour un dossier et tout ce qu'il contient, y compris ses fichiers cachés : `rm -rf`, en vérifiant bien le chemin avant de valider.
+Pour un dossier et tout ce qu'il contient : `rm -r`, en vérifiant bien le chemin avant de valider.
 ```
 
 ```verify
@@ -418,6 +427,6 @@ echo "RÉUSSI : tout est propre. Vous savez faire vivre un conteneur."
 ````solution
 ```bash
 docker rm -f layers-l1-web layers-l1-shell layers-l1-logger
-rm -rf ~/layers-l1
+rm -r ~/layers-l1
 ```
 ````

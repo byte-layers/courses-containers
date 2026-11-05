@@ -52,7 +52,7 @@ Ce lab prend deux raccourcis, à ne pas reproduire en production. Les mots de pa
 
 ## Récupérer le code
 
-Ce code est sur GitHub, et vous en prenez la même version précise que dans le lab « Conteneuriser getting-started-app » : le commit `6b025fc5`, c'est-à-dire un état enregistré du code, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
+Ce code est sur GitHub, et vous en prenez la même version précise que dans le lab « Conteneuriser une application pas à pas » : le commit `6b025fc5`, c'est-à-dire un état enregistré du code, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
 
 ```exec
 mkdir -p ~/layers-l5/app
@@ -61,7 +61,7 @@ curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz 
 
 ## Écrire le Dockerfile
 
-Le dépôt ne contient pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser getting-started-app », redonné tel quel, car le sujet est le réseau. Copiez cette commande : elle crée le fichier `Dockerfile` à la racine du projet avec ces huit lignes. `<<'EOF'` recopie dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
+Le dépôt ne contient pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser une application pas à pas », redonné tel quel, car le sujet est le réseau. Copiez cette commande : elle crée le fichier `Dockerfile` à la racine du projet avec ces huit lignes. `<<'EOF'` recopie dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
 cat > ~/layers-l5/app/Dockerfile <<'EOF'

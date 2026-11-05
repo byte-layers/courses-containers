@@ -28,7 +28,7 @@ Ce lab ne vous donne pas le fichier complet. Vous le **construisez** en remplaç
 
 ## Récupérer l'application
 
-C'est la même application que dans le lab « Conteneuriser getting-started-app », à la même version, le commit `6b025fc5`, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
+C'est la même application que dans le lab « Conteneuriser une application pas à pas », à la même version, le commit `6b025fc5`, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
 
 ```exec
 mkdir -p ~/layers-l7/todo
@@ -40,7 +40,7 @@ Vous devez voir `package.json` et `src`, le code de l'application.
 
 ## Le Dockerfile
 
-Le dépôt ne contient pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser getting-started-app », redonné tel quel, car le sujet est Compose. Copiez cette commande : elle crée le fichier `Dockerfile` à la racine du projet avec ces huit lignes. `<<'EOF'` recopie dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
+Le dépôt ne contient pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser une application pas à pas », redonné tel quel, car le sujet est Compose. Copiez cette commande : elle crée le fichier `Dockerfile` à la racine du projet avec ces huit lignes. `<<'EOF'` recopie dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
 cat > ~/layers-l7/todo/Dockerfile <<'EOF'

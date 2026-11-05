@@ -14,20 +14,24 @@ options:
   autoCompleteOnNext: unverifiable
 ---
 
-Ce challenge prouve que vous savez écrire le Dockerfile d'une application que vous n'avez jamais vue. Il n'y a **aucun fichier à recopier** : une petite application vous est fournie avec sa documentation, et chaque tâche donne des critères qu'un bouton vérifie sur l'état réel de Docker. Toute écriture qui produit le bon résultat est acceptée.
+On vous confie une petite application jamais vue, avec sa documentation : à vous d'écrire son Dockerfile, de la faire répondre, de lui retirer les droits d'administrateur et d'écarter ses fichiers sensibles. Il n'y a **aucun fichier à recopier** : chaque tâche donne des critères qu'un bouton vérifie sur l'état réel de Docker. Toute écriture qui produit le bon résultat est acceptée.
 
 Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution** reste en dernier recours. Les utiliser ne coûte rien : seule la vérification compte.
 
 ## Avant de commencer
 
-- **Ce qu'il faut savoir** : ce qu'enseignent le cours « Écrire le Dockerfile d'une application » et le lab « Conteneuriser getting-started-app ».
-- **Ce qu'il faut avoir** : Docker, `curl`, un éditeur de texte, et les ports 28322 et 28323 libres. La vérification se sert du second pour un essai rapide.
-- **Votre dossier de travail** : `~/layers-l2/quotes` est créé pour vous, avec l'application dedans. Vous n'avez pas besoin de savoir programmer en Python : la documentation dit tout ce qu'il faut.
-- **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
+> ⚠️ **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
+
+- **Niveau** : ce challenge suppose ce qu'enseignent le cours [Écrire le Dockerfile d'une application](https://byte-layers.com/fr/skills/docker-dockerfile) et le lab [Conteneuriser une application pas à pas](https://byte-layers.com/fr/labs/docker-containerize-app).
+- **Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, un éditeur de texte, et les ports 28322 et 28323 libres. La vérification se sert du second pour un essai rapide.
+- **Votre dossier de travail** : `~/layers-l2/quotes` est créé pour vous, avec l'application dedans. Programmer n'est pas nécessaire : la documentation dit tout ce qu'il faut.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l2-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
-- **L'ordre compte** : chaque tâche reprend le Dockerfile de la précédente. Reconstruisez toujours sous le même tag, `layers-l2-quotes:1.0`, et recréez le conteneur. Un tag se déplace vers la nouvelle image. Selon votre moteur, l'ancienne disparaît, ou elle reste sans nom, et `docker images` l'affiche alors `<none>`.
+- **L'ordre compte** : chaque tâche reprend le Dockerfile de la précédente.
+- **Le tag reste le même** : reconstruisez toujours sous `layers-l2-quotes:1.0`, puis recréez le conteneur. ⚖️ C'est un raccourci, pour que la vérification sache où regarder. Dans un vrai projet, chaque version aurait son propre tag.
 
 # Tâche 1 : une image qui démarre
+
+## Écrire le Dockerfile et construire l'image
 
 ```setup
 mkdir -p ~/layers-l2/quotes/quotes ~/layers-l2/quotes/data ~/layers-l2/quotes/tests
@@ -99,7 +103,7 @@ echo 'API_KEY=valeur-fictive-du-poste-de-dev' > ~/layers-l2/quotes/.env.local
 echo 'def test_rien(): pass' > ~/layers-l2/quotes/tests/test_quotes.py
 ```
 
-Lisez `~/layers-l2/quotes/README.md`, puis écrivez `~/layers-l2/quotes/Dockerfile` et construisez l'image.
+Lisez `~/layers-l2/quotes/README.md`, par exemple avec `cat`. Créez ensuite le fichier `~/layers-l2/quotes/Dockerfile` avec votre éditeur, puis construisez l'image avec `docker build`.
 
 **Critères :**
 
@@ -163,7 +167,9 @@ docker build -t layers-l2-quotes:1.0 ~/layers-l2/quotes
 
 # Tâche 2 : un service qui répond
 
-Lancez le service en arrière-plan, et faites en sorte qu'il réponde depuis votre machine.
+## Lancer le conteneur et le faire répondre
+
+Lancez le service en arrière-plan avec `docker run`, et faites en sorte qu'il réponde depuis votre machine. S'il ne répond pas, modifiez le Dockerfile avec votre éditeur, reconstruisez l'image et recréez le conteneur.
 
 **Critères :**
 
@@ -245,7 +251,9 @@ docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 
 # Tâche 3 : sans les droits d'administrateur
 
-Faites tourner le service avec un utilisateur ordinaire, sans lui faire perdre sa capacité à écrire son journal.
+## Changer d'utilisateur dans le Dockerfile
+
+Faites tourner le service avec un utilisateur ordinaire, sans lui faire perdre sa capacité à écrire `var/hits.log`. Modifiez le Dockerfile avec votre éditeur, reconstruisez l'image et recréez le conteneur.
 
 **Critères :**
 
@@ -312,7 +320,9 @@ docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 
 # Tâche 4 : un contexte propre
 
-Le dossier du projet contient un fichier de secrets de développement et des tests. Ils n'ont rien à faire dans une image de production.
+## Écarter les fichiers sensibles du contexte de build
+
+Le dossier du projet contient un fichier de secrets de développement et des tests. Ils n'ont rien à faire dans une image de production. Créez à la racine du projet, avec votre éditeur, le fichier qui liste ce que Docker doit laisser de côté, reconstruisez l'image et recréez le conteneur.
 
 **Critères :**
 
@@ -385,9 +395,11 @@ docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 
 # Tâche 5 : ne rien laisser derrière soi
 
-Supprimez tout ce que ce challenge a créé.
+## Retirer le conteneur, l'image et le dossier
 
-**Critères :** plus de conteneur `layers-l2-quotes`, plus d'image `layers-l2-quotes:1.0`, plus de dossier `~/layers-l2/quotes`. Vos autres images et vos autres conteneurs ne sont pas concernés. La vérification ne regarde pas les anciennes versions restées sans nom, s'il y en a : elles sont sans danger, et `docker image rm <identifiant>` supprime celles que vous reconnaissez.
+Supprimez tout ce que ce challenge a créé, avec `docker rm`, `docker image rm` et `rm -rf`.
+
+**Critères :** plus de conteneur `layers-l2-quotes`, plus d'image `layers-l2-quotes:1.0`, plus de dossier `~/layers-l2/quotes`. Vos autres images et vos autres conteneurs ne sont pas concernés. Comme vous avez reconstruit plusieurs fois sous le même tag, `docker images` peut montrer d'anciennes versions restées sans nom, marquées `<none>`. La vérification ne les regarde pas : elles sont sans danger, et `docker image rm <identifiant>` supprime celles que vous reconnaissez.
 
 ```hint
 Le conteneur d'abord, l'image ensuite, le dossier enfin : `docker rm -f`, `docker image rm`, `rm -rf`.

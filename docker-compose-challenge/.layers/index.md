@@ -47,6 +47,8 @@ Lisez ces fichiers à ce moment-là : ils disent ce qu'attend chaque service.
 
 # Tâche 1 : trois services, une seule porte
 
+## Ce qu'il faut faire
+
 ```setup
 mkdir -p ~/layers-l7/notes/api ~/layers-l7/notes/front
 cat > ~/layers-l7/notes/api/app.py <<'EOF'
@@ -86,7 +88,7 @@ server {
 EOF
 ```
 
-Écrivez `~/layers-l7/notes/compose.yaml` et démarrez l'application.
+Créez le fichier `~/layers-l7/notes/compose.yaml` avec votre éditeur : il décrit les trois services selon les critères ci-dessous. Démarrez ensuite l'application avec Compose, depuis ce dossier.
 
 **Critères :**
 
@@ -175,6 +177,8 @@ sleep 2
 
 # Tâche 2 : un message réglable
 
+## Ce qu'il faut faire
+
 Le message d'accueil doit pouvoir changer sans toucher à `compose.yaml`.
 
 **Critères :**
@@ -248,6 +252,8 @@ cd ~/layers-l7/notes && docker compose up -d
 ````
 
 # Tâche 3 : un compteur qui dure
+
+## Ce qu'il faut faire
 
 Le compteur doit survivre à la suppression des conteneurs.
 
@@ -331,6 +337,8 @@ sleep 1
 
 # Tâche 4 : le prouver
 
+## Ce qu'il faut faire
+
 Supprimez tous les conteneurs du projet et recréez-les, sans perdre le compteur.
 
 **Critères :**
@@ -374,6 +382,8 @@ cd ~/layers-l7/notes && docker compose down && docker compose up -d
 ````
 
 # Tâche 5 : séparer les réseaux
+
+## Ce qu'il faut faire
 
 `front` n'a aucune raison de joindre Redis : il ne parle qu'à `api`. Séparez les réseaux pour que cela devienne impossible.
 
@@ -475,6 +485,8 @@ sleep 2
 ````
 
 # Tâche 6 : ne rien laisser derrière soi
+
+## Ce qu'il faut faire
 
 Supprimez tout ce que ce challenge a créé : les conteneurs, les réseaux, le volume, l'image construite et le dossier `~/layers-l7/notes`.
 

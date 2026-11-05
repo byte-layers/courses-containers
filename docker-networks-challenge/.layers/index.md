@@ -45,6 +45,8 @@ Voici l'architecture demandée : `api` est le seul conteneur à voir les deux r�
 
 # Tâche 1 : deux réseaux
 
+## Ce qu'il faut faire
+
 Créez les deux réseaux de l'architecture.
 
 **Critères :**
@@ -80,6 +82,8 @@ docker network create layers-l5-back
 ````
 
 # Tâche 2 : un cache sans port publié
+
+## Ce qu'il faut faire
 
 Lancez un serveur Redis, un serveur de données en mémoire, que seul le réseau `back` peut joindre.
 
@@ -139,6 +143,8 @@ docker run -d --name layers-l5-cache --network layers-l5-back --network-alias ca
 
 # Tâche 3 : une API côté back
 
+## Ce qu'il faut faire
+
 ```setup
 mkdir -p ~/layers-l5
 ```
@@ -193,6 +199,8 @@ docker run -d --name layers-l5-api --network layers-l5-back python:3.13-alpine p
 
 # Tâche 4 : brancher l'API sans la recréer
 
+## Ce qu'il faut faire
+
 L'API doit maintenant être joignable depuis le réseau `front`. Elle tourne et il ne faut pas l'interrompre : branchez-la sans la recréer.
 
 **Critères :**
@@ -239,6 +247,8 @@ docker network connect layers-l5-front layers-l5-api
 ````
 
 # Tâche 5 : le serveur web, joignable depuis votre machine seulement
+
+## Ce qu'il faut faire
 
 Lancez le serveur web qui fait face à l'hôte. Il joint l'API, mais il ne doit pas pouvoir joindre le cache.
 
@@ -308,6 +318,8 @@ docker run -d --name layers-l5-web --network layers-l5-front -p 127.0.0.1:28356:
 ````
 
 # Tâche 6 : ne rien laisser derrière soi
+
+## Ce qu'il faut faire
 
 Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l5-web`, `layers-l5-api` et `layers-l5-cache`, les réseaux `layers-l5-front` et `layers-l5-back`, et le dossier `~/layers-l5`.
 

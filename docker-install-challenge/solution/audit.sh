@@ -7,7 +7,5 @@ mkdir -p ~/layers-l0
   echo "client=$(docker version --format '{{.Client.Version}}')"
   echo "moteur=$(docker version --format '{{.Server.Version}}')"
   echo "architecture=$(docker version --format '{{.Server.Arch}}')"
-  echo "stockage=$(docker info --format '{{.Driver}}')"
-  echo "compose=$(docker compose version --short)"
 } > ~/layers-l0/audit.txt
 cat ~/layers-l0/audit.txt

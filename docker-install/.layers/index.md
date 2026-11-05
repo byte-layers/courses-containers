@@ -1,6 +1,6 @@
 ---
 title: "Installer Docker et vérifier son poste"
-description: "Pas à pas : installer Docker selon votre système, puis vérifier que le client, le moteur, Compose et le réseau répondent."
+description: "Choisir un mode d'installation, comprendre ce qu'on installe, puis vérifier que le client et le moteur répondent et qu'un conteneur tourne."
 tags:
   - lab
   - docker
@@ -14,61 +14,109 @@ options:
   autoCompleteOnNext: unverifiable
 ---
 
-Vous allez mettre Docker en place sur votre poste, puis vérifier une à une les pièces dont tout le parcours aura besoin. À la fin, vous saurez que votre poste est prêt, et vous saurez lire ce qu'il répond quand il ne l'est pas.
+Vous allez mettre Docker en place sur votre poste, comprendre ce que vous avez installé, puis vérifier que tout répond. À la fin, votre poste est prêt, et vous savez lire ses messages d'erreur.
 
-**Niveau** : débutant. Il suffit de savoir ouvrir un terminal et d'y lancer une commande. Ce lab ne suppose aucune connaissance de Docker : chaque commande est expliquée quand elle arrive. Si vous ne savez pas encore à quoi servent les conteneurs, lisez d'abord « Pourquoi les conteneurs ».
+**Niveau** : débutant. Il suffit de savoir ouvrir un terminal et d'y lancer une commande. Chaque commande est expliquée quand elle arrive.
 
-**Ce qu'il faut** : un poste sur lequel vous avez le droit d'installer un logiciel, ou un poste hébergé fourni par votre formateur. Il faut aussi `curl`, une commande qui demande une page web depuis le terminal, et le port **28300** libre. Un **port** est le numéro auquel un service répond sur une machine.
+**Prérequis** : savoir ce qu'est un conteneur, ce que dit [Pourquoi les conteneurs](https://byte-layers.com/fr/bits/containers-why).
 
-**Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
+**Ce qu'il faut** : un poste sur lequel vous avez le droit d'installer un logiciel, ou un poste hébergé fourni par votre formateur, c'est-à-dire un VS Code ouvert dans votre navigateur. Il faut aussi `curl`, une commande qui demande une page web depuis le terminal, et le port **28300** libre. Un **port** est le numéro auquel un service répond sur une machine.
 
-# Installer Docker
+# Choisir un mode d'installation
 
-## Choisir selon votre système
+## Trois modes d'installation, selon ce que vous voulez
 
-L'installation dépend de votre système, et elle ne se fait qu'une fois. Ce cours ne peut donc pas la vérifier à votre place : il vous envoie vers la page officielle, toujours à jour, et les vérifications commencent à l'étape suivante. Trouvez votre cas dans ce tableau.
+La première question n'est pas votre système, mais la façon d'installer. Docker s'installe de trois façons, et votre système dit seulement lesquelles vous sont ouvertes. Sur un poste hébergé, il n'y a rien à choisir : Docker y est déjà installé et démarré.
 
-| Votre poste | Ce qu'il faut installer | La page à suivre |
-|---|---|---|
-| **Poste hébergé** (un VS Code dans le navigateur, fourni par votre formateur) | rien : Docker y est déjà installé et démarré | passez à l'étape suivante |
-| **macOS** | Docker Desktop, en choisissant la version pour votre processeur : Apple Silicon ou Intel | [Installer sur Mac](https://docs.docker.com/desktop/setup/install/mac-install/) |
-| **Windows** | WSL 2, le Linux intégré à Windows, puis Docker Desktop | [Installer sur Windows](https://docs.docker.com/desktop/setup/install/windows-install/) |
-| **Linux** | Docker Engine, avec les paquets de votre distribution | [Installer Docker Engine](https://docs.docker.com/engine/install/), puis [les étapes après l'installation](https://docs.docker.com/engine/install/linux-postinstall/) |
+| Mode | Ce que vous obtenez | Systèmes | Ce qui peut bloquer |
+|---|---|---|---|
+| **Installateur** : Docker Desktop | une application clé en main, avec une interface graphique | macOS, Windows, Linux | sa licence : payant dans une grande entreprise |
+| **Dépôts et gestionnaire de paquets** : Docker Engine | le moteur et ses outils, en ligne de commande | Linux | les droits d'administrateur |
+| **Binaires** : les programmes seuls | des fichiers à copier, sans mise à jour automatique | surtout Linux | tout est à faire à la main |
 
-Les conteneurs de ce parcours ont besoin d'un noyau Linux, la partie du système qui gère les programmes et la mémoire. C'est pourquoi macOS et Windows passent par Docker Desktop, qui démarre pour vous une petite machine virtuelle Linux, un ordinateur simulé par un logiciel. Linux, lui, n'a besoin que du moteur.
+Si vous hésitez, prenez Docker Desktop sur macOS ou sous Windows, si sa licence vous le permet, et Docker Engine sous Linux. Les binaires ne servent presque jamais. La [page d'installation officielle](https://docs.docker.com/get-started/get-docker/) est le point de départ, et les sections suivantes disent quoi y chercher.
 
-## Sur macOS et Windows
+## L'installateur : Docker Desktop, clé en main et sous licence
 
-Une fois Docker Desktop installé, ouvrez-le comme n'importe quelle application et attendez qu'il indique que le moteur tourne. Il doit rester ouvert pendant que vous travaillez : quand il est fermé, le moteur est arrêté.
+Docker Desktop s'installe comme n'importe quelle application : vous téléchargez un installateur, vous le lancez, et tout est là. C'est le plus simple, et c'est la seule façon d'avoir le moteur de Docker sur macOS ou sous Windows sans tout monter soi-même. Les conteneurs ont besoin d'un noyau Linux, et Docker Desktop démarre pour cela une petite machine virtuelle.
 
-Sous Windows, les commandes de ce parcours sont écrites pour un terminal de type Linux, ce que PowerShell n'est pas : travaillez dans le terminal de WSL, qui s'ouvre avec la commande `wsl`.
+Il existe aussi [pour Linux](https://docs.docker.com/desktop/setup/install/linux/), en paquets pour Ubuntu, Debian, Fedora et RHEL. Il y tourne également dans une machine virtuelle, et ses conteneurs sont séparés de ceux d'un Docker Engine installé sur la même machine.
 
-Docker Desktop est gratuit pour un usage personnel, pour l'éducation et pour les petites entreprises. Dans une grande entreprise, il demande un abonnement : les conditions exactes sont sur la [page de la licence](https://docs.docker.com/subscription/desktop-license/).
+**C'est un produit commercial, soumis à licence.** Au moment où ce cours est écrit, il est gratuit pour un usage personnel, pour l'éducation, pour les projets open source non commerciaux et pour les entreprises de moins de 250 salariés et de moins de 10 millions de dollars de chiffre d'affaires annuel. Au-delà, un usage professionnel demande un abonnement payant. Avant de l'installer sur un poste de travail, vérifiez la [page de la licence](https://docs.docker.com/subscription/desktop-license/) et posez la question à votre entreprise. Il existe d'autres outils si cela vous bloque, comme Podman Desktop, mais ce parcours ne les couvre pas.
 
-## Sous Linux
+Une fois Docker Desktop installé ([macOS](https://docs.docker.com/desktop/setup/install/mac-install/), [Windows](https://docs.docker.com/desktop/setup/install/windows-install/)), ouvrez-le et attendez qu'il indique que le moteur tourne. Il doit rester ouvert pendant que vous travaillez : quand il est fermé, le moteur est arrêté.
 
-La page de votre distribution vous fait ajouter le dépôt de paquets de Docker, c'est-à-dire la source où votre système va chercher ses logiciels, puis installer le moteur. Deux remarques vous éviteront des surprises :
+Sous Windows, les commandes de ce parcours sont écrites pour un terminal de type Linux, ce que PowerShell n'est pas : travaillez dans le terminal de WSL, le Linux intégré à Windows, qui s'ouvre avec la commande `wsl`. Si `wsl` ne trouve aucune distribution, [installez-en une](https://learn.microsoft.com/windows/wsl/install) avec `wsl --install` dans PowerShell, puis redémarrez. Si `docker` y est introuvable, activez votre distribution dans Docker Desktop, sous **Settings > Resources > WSL Integration**.
 
-- Le paquet `docker.io` de certaines distributions n'est pas celui de Docker, et peut être ancien. Suivez plutôt la page officielle.
-- Après l'installation, seul l'administrateur peut utiliser Docker. Les étapes après l'installation expliquent comment ajouter votre utilisateur au groupe `docker`. Ce groupe donne des droits équivalents à ceux de l'administrateur : réservez-le à votre propre poste.
+## Les dépôts et le gestionnaire de paquets : Docker Engine sous Linux
 
-Quand l'installation est terminée, ou si vous êtes sur un poste hébergé, confirmez pour passer aux vérifications.
+Sous Linux, on installe le plus souvent **Docker Engine**, open source, avec le gestionnaire de paquets du système. La [page de votre distribution](https://docs.docker.com/engine/install/) vous fait d'abord ajouter le dépôt de Docker, c'est-à-dire la source où votre système ira chercher ces paquets, puis les installer. Sur [Debian](https://docs.docker.com/engine/install/debian/), l'installation elle-même tient dans cette commande :
+
+```bash
+sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Ne la lancez pas seule : elle échoue tant que le dépôt n'est pas ajouté, et c'est la page officielle qui vous y conduit. Cette commande montre ce qu'est vraiment Docker : plusieurs composants, et non un seul programme. `ce` veut dire *Community Edition*. Voici à quoi sert chacun.
+
+| Paquet | Ce qu'il apporte |
+|---|---|
+| `docker-ce` | le moteur, c'est-à-dire le daemon `dockerd`, qui tourne en tâche de fond |
+| `docker-ce-cli` | le client, c'est-à-dire la CLI : la commande `docker` que vous tapez |
+| `containerd.io` | containerd et runc, sur lesquels le moteur s'appuie pour faire vivre les conteneurs |
+| `docker-buildx-plugin` | l'outil qui construit les images |
+| `docker-compose-plugin` | Compose, qui décrit dans un fichier une application de plusieurs conteneurs ; un prochain cours s'en sert |
+
+`apt` y ajoute quelques paquets système dont ils dépendent, comme `iptables`. Deux remarques vous éviteront des surprises :
+
+- Le paquet `docker.io` de certaines distributions n'est pas fourni par Docker, et la page officielle demande de le retirer avant d'installer les siens.
+- Après l'installation, seul l'administrateur peut utiliser Docker. Les [étapes après l'installation](https://docs.docker.com/engine/install/linux-postinstall/) expliquent comment ajouter votre utilisateur au groupe `docker`. Ce groupe donne des droits équivalents à ceux de l'administrateur : réservez-le à votre propre poste.
+
+## Les binaires : pour des tests, pas en production
+
+Docker publie aussi [ses programmes seuls](https://docs.docker.com/engine/install/binaries/), à copier à la main. Sa documentation réserve ce mode aux tests et le déconseille en production, parce qu'il n'apporte aucune mise à jour de sécurité automatique. Retenez qu'il existe, et préférez les paquets dès que vous le pouvez.
+
+## Installer Docker sur votre poste
+
+C'est à vous : suivez la page officielle du mode que vous avez choisi. L'installation dépend de votre poste et ne se fait qu'une fois, ce cours ne peut donc pas la vérifier à votre place. Les vérifications commencent à l'étape suivante.
 
 ```ack
 Docker est installé, ou je suis sur un poste hébergé
 ```
 
-# Le client et le moteur
+# Les deux composants principaux : le client et le moteur
 
-## Deux programmes, pas un
+## Le client, ou CLI, parle au moteur, ou daemon
 
-Docker se compose de deux programmes. Le **client** est la commande `docker` que vous tapez. Le **moteur**, aussi appelé serveur ou démon, tourne en tâche de fond : c'est lui qui crée et fait vivre les conteneurs. Le client ne fait que lui transmettre vos demandes. Demandez sa version à chacun :
+Quel que soit votre mode d'installation, vous retrouvez deux composants principaux. Le **client**, qu'on appelle aussi la **CLI** (*command line interface*), est la commande `docker` que vous tapez. Le **moteur**, qu'on appelle aussi le **daemon**, un programme qui tourne en tâche de fond, s'appelle `dockerd` : c'est lui qui crée et fait vivre les conteneurs. Le client ne fait que lui transmettre vos demandes.
+
+```
+vous  ──►  docker (le client, la CLI)  ──►  dockerd (le moteur, le daemon)  ──►  vos conteneurs
+```
+
+`docker version` demande sa version à chacun, et le montre donc bien :
 
 ```exec
 docker version
 ```
 
-La réponse a deux parties, `Client` et `Server`, et vous devez voir les deux. Elles n'ont pas forcément le même numéro : sur un poste hébergé, par exemple, le client est plus récent que le moteur, et ce n'est pas un problème, car un client sait parler à un moteur plus ancien.
+La réponse a deux parties, `Client` et `Server`, et vous devez voir les deux. Voici ce qu'elle donne sur un Mac, raccourcie aux lignes qui comptent. Dans la partie `Server`, vous retrouvez aussi `containerd` et `runc`, sur lesquels le moteur s'appuie.
+
+```text
+Client:
+ Version:           28.3.2
+ OS/Arch:           darwin/arm64
+
+Server: Docker Desktop 4.44.1 (201842)
+ Engine:
+  Version:          28.3.2
+  OS/Arch:          linux/arm64
+ containerd:
+  Version:          1.7.27
+ runc:
+  Version:          1.2.5
+```
+
+Les deux numéros ne sont pas forcément égaux : sur un poste hébergé, par exemple, le client est plus récent que le moteur, et ce n'est pas un problème, car un client sait parler à un moteur plus ancien.
 
 Si la réponse se réduit à la partie `Client` et à une erreur, ou à une erreur seule, ce tableau dit ce qu'elle veut dire.
 
@@ -90,15 +138,24 @@ fi
 echo "Le client $(docker version --format '{{.Client.Version}}') parle au moteur $(docker version --format '{{.Server.Version}}')."
 ```
 
-## Le client sans moteur
+## Le client sans moteur : reconnaître le message d'erreur
 
-Pour bien voir que ce sont deux programmes, faites parler le client à un moteur qui n'existe pas. La variable `DOCKER_HOST` indique au client à quelle adresse trouver le moteur. La placer devant la commande ne la change que pour cette commande, et le port 1 n'héberge aucun moteur. `2>&1` envoie aussi les messages d'erreur vers la sortie normale, le signe `|` passe cette sortie à la commande suivante, et `tail -n 2` n'en garde que les 2 dernières lignes :
+Pour bien voir que ce sont deux programmes, faites parler le client à un moteur qui n'existe pas. La variable `DOCKER_HOST` indique au client à quelle adresse trouver le moteur. La placer devant la commande ne la change que pour cette commande, et le port 1 n'héberge aucun moteur.
 
 ```exec
-DOCKER_HOST=tcp://localhost:1 docker version 2>&1 | tail -n 2
+DOCKER_HOST=tcp://localhost:1 docker version
 ```
 
-Vous devez lire `Cannot connect to the Docker daemon at tcp://localhost:1`, précédé de la dernière ligne de la partie `Client`. Le client a donc répondu, seul le moteur manque. Quand vous verrez cette erreur plus tard, vous saurez où chercher.
+La partie `Client` s'affiche normalement, puis le moteur manque à l'appel :
+
+```text
+Client:
+ Version:           28.3.2
+ ...
+Cannot connect to the Docker daemon at tcp://localhost:1. Is the docker daemon running?
+```
+
+Vous reconnaissez le mot *daemon*. Quand vous verrez cette erreur plus tard, vous saurez que le client va bien et qu'il faut regarder du côté du moteur.
 
 Sur un poste hébergé, `DOCKER_HOST` est déjà réglée pour vous, et c'est elle qui relie votre terminal à son moteur. Ne la modifiez pas pour de bon.
 
@@ -106,52 +163,38 @@ Sur un poste hébergé, `DOCKER_HOST` est déjà réglée pour vous, et c'est el
 Je sais distinguer le client du moteur
 ```
 
-## Ce que le moteur dit de lui-même
+## La fiche du moteur : système et architecture
 
-`docker info` donne la fiche complète du moteur. Elle est longue : l'option `--format` n'en garde que ce que vous demandez, ici son système, son architecture, son nombre de processeurs et sa façon de stocker les images.
+`docker info` donne la fiche complète du moteur. Elle est longue, et deux lignes vous intéressent ici :
 
 ```exec
-docker info --format 'Système : {{.OperatingSystem}}
-Architecture : {{.Architecture}}
-Processeurs : {{.NCPU}}
-Stockage : {{.Driver}}'
+docker info
 ```
 
-Le système est celui du moteur, pas forcément le vôtre : sur un Mac, vous lirez `Docker Desktop`, car le moteur tourne dans sa machine virtuelle. L'**architecture** est la famille du processeur : `aarch64` ou `arm64` sur un Mac récent, `x86_64` ou `amd64` sur la plupart des PC. Une image doit exister pour votre architecture, et toutes celles de ce parcours existent pour les deux. Le **stockage**, appelé pilote de stockage, ne demande rien de votre part : `overlay2` ou `overlayfs` sont les réponses habituelles.
+Cherchez `Operating System` et `Architecture`. Voici ces lignes sur un Mac :
+
+```text
+ Operating System: Docker Desktop
+ Architecture: aarch64
+```
+
+Le système est celui du moteur, pas forcément le vôtre : sur un Mac, vous lisez `Docker Desktop`, car le moteur tourne dans sa machine virtuelle. L'**architecture** est la famille du processeur : `aarch64` ou `arm64` sur un Mac récent, `x86_64` ou `amd64` sur la plupart des PC. Une image doit exister pour votre architecture, et toutes celles de ce parcours existent pour les deux.
 
 ```verify
 if ! docker info >/dev/null 2>&1; then
   echo "docker info ne répond pas. Le moteur est-il démarré ?"
   exit 1
 fi
-echo "Le moteur tourne sur $(docker info --format '{{.Architecture}}'), avec le stockage $(docker info --format '{{.Driver}}')."
+echo "Le moteur tourne sur l'architecture $(docker info --format '{{.Architecture}}')."
 ```
 
-# Compose
+# Lancer un premier conteneur
 
-## Vérifier Compose
+## Télécharger une image et lancer un conteneur
 
-Compose est l'outil qui décrit une application de plusieurs conteneurs dans un fichier. Vous ne vous en servirez que plus tard dans ce parcours, mais autant savoir dès maintenant qu'il est là. Il est livré avec Docker Desktop, et s'installe avec le paquet `docker-compose-plugin` sous Linux. Demandez-lui sa version :
+> ⚠️ **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP, et une salle entière partage souvent la même. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
-```exec
-docker compose version
-```
-
-Vous devez lire `Docker Compose version` suivi d'un numéro. Si Docker répond `'compose' is not a docker command`, installez le paquet sous Linux, et notez que l'ancienne commande `docker-compose`, avec un tiret, n'est pas celle qu'utilise ce parcours.
-
-```verify
-if ! docker compose version >/dev/null 2>&1; then
-  echo "docker compose ne répond pas. Sous Linux, installez le paquet docker-compose-plugin."
-  exit 1
-fi
-echo "$(docker compose version)"
-```
-
-# Un premier conteneur
-
-## Télécharger et lancer
-
-Le moteur répond, il reste à lui faire faire quelque chose. Cette commande vérifie d'un coup que le moteur sait télécharger une image et lancer un conteneur.
+Le moteur répond, il reste à lui faire faire quelque chose. Cette commande vérifie d'un coup qu'il sait télécharger une image et lancer un conteneur.
 
 ```exec
 docker run --name layers-l0-hello alpine:3.22 echo "Docker fonctionne"
@@ -164,9 +207,14 @@ docker run --name layers-l0-hello alpine:3.22 echo "Docker fonctionne"
 | `alpine:3.22` | l'image, ici Alpine, un Linux minimal, dans sa version `3.22` |
 | `echo "Docker fonctionne"` | la commande que le conteneur exécute, puis il s'arrête |
 
-Au premier lancement, Docker télécharge l'image depuis Docker Hub, puis vous lisez `Docker fonctionne`. Au lancement suivant, l'image sera déjà là. Si ce téléchargement échoue, c'est le réseau de votre poste ou la limite de Docker Hub qu'il faut regarder, pas votre installation.
+Au premier lancement, Docker télécharge l'image depuis Docker Hub, puis vous lisez la phrase. Voici la fin de la réponse :
 
-Ne vous souciez pas du détail de `docker run` : un prochain cours l'explique. Ce qui compte ici, c'est que votre poste sait le faire.
+```text
+Status: Downloaded newer image for alpine:3.22
+Docker fonctionne
+```
+
+Si vous relancez la même commande, Docker répond `Conflict` : le nom est déjà pris par le conteneur que vous venez de créer. Pour recommencer, supprimez-le d'abord avec `docker rm layers-l0-hello`. Si le téléchargement échoue, c'est le réseau de votre poste ou la limite de Docker Hub qu'il faut regarder, pas votre installation.
 
 ```verify
 if ! docker container inspect layers-l0-hello >/dev/null 2>&1; then
@@ -184,21 +232,33 @@ fi
 echo "Votre poste sait télécharger une image et lancer un conteneur."
 ```
 
-## Joindre un serveur
+## Lancer un serveur web et lire sa page
 
-Reste une dernière pièce : le réseau. Beaucoup de cours de ce parcours lancent un serveur dans un conteneur et vont le lire depuis le terminal. Démarrez nginx, un serveur web. `-d` le fait tourner en arrière-plan pour vous rendre la main, et `-p 28300:80` relie le port 28300 de votre machine au port 80 du conteneur :
+Reste une dernière pièce : le réseau. Beaucoup de cours de ce parcours lancent un serveur dans un conteneur et vont le lire depuis le terminal. Démarrez nginx, un serveur web. `-d` le fait tourner en arrière-plan pour vous rendre la main, et `-p 28300:80` relie le port 28300 de votre machine au port 80 du conteneur. Le tag `1.30-alpine` désigne nginx en version 1.30, construit sur Alpine :
 
 ```exec
 docker run -d --name layers-l0-web -p 28300:80 nginx:1.30-alpine
 ```
 
-La longue suite de chiffres et de lettres qui s'affiche est l'identifiant du conteneur. Demandez-lui maintenant sa page. `curl` la télécharge, `-sS` masque sa barre de progression en gardant les erreurs, et `--retry` patiente le temps que le serveur démarre. `grep` ne garde que la ligne du titre, parmi celles que `|` lui passe :
+La longue suite de chiffres et de lettres qui s'affiche est l'identifiant du conteneur. `docker ps` liste les conteneurs qui tournent, ce qui vous dit s'il a bien démarré :
 
 ```exec
-curl -sS --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28300 | grep '<h1>'
+docker ps
 ```
 
-Vous devez lire `<h1>Welcome to nginx!</h1>`. Une ligne qui commence par `curl:` à côté de ce titre, comme `curl: (56) Recv failure`, n'a rien de grave : le serveur n'était pas encore prêt, et `curl` a réessayé. Pour voir la page dans un navigateur, ouvrez `http://localhost:28300` sur votre poste. Sur un poste hébergé, utilisez plutôt l'onglet **PORTS** de VS Code, qui donne le lien de ce port.
+Dans la ligne `layers-l0-web`, la colonne `STATUS` commence par `Up`, et la colonne `PORTS` montre le lien entre les deux ports. Le conteneur tourne, vous pouvez donc lui demander sa page. `localhost` désigne votre propre machine :
+
+```exec
+curl http://localhost:28300
+```
+
+`curl` affiche le code de la page, un peu moins de trente lignes. Vous y trouvez ce titre :
+
+```text
+<h1>Welcome to nginx!</h1>
+```
+
+Si `curl` répond par une erreur, le serveur n'a sans doute pas fini de démarrer : attendez une seconde et relancez. Pour voir la page dans un navigateur, ouvrez `http://localhost:28300` sur votre poste. Sur un poste hébergé, utilisez plutôt l'onglet **PORTS** de VS Code, qui donne le lien de ce port.
 
 Si le conteneur ne démarre pas et que Docker indique `port is already allocated`, un autre programme occupe ce port. Fermez-le, supprimez le conteneur avec `docker rm -f layers-l0-web`, puis relancez la commande.
 
@@ -211,30 +271,27 @@ if [ "$(docker container inspect layers-l0-web --format '{{.State.Running}}' 2>/
   echo "Le conteneur layers-l0-web ne tourne pas. Pour repartir de zéro : docker rm -f layers-l0-web, puis relancez la commande."
   exit 1
 fi
-if ! curl -s --max-time 5 http://localhost:28300 | grep -q 'Welcome to nginx'; then
+ok=0
+for i in 1 2 3 4 5; do
+  if curl -s --max-time 5 http://localhost:28300 | grep -q 'Welcome to nginx'; then ok=1; break; fi
+  sleep 1
+done
+if [ "$ok" != 1 ]; then
   echo "Le serveur ne répond pas sur le port 28300. Regardez ses ports avec : docker ps"
   exit 1
 fi
 echo "Le serveur répond sur le port 28300."
 ```
 
-# Nettoyer
+# Nettoyer et récapituler
 
-## Ne rien laisser
+## Supprimer les deux conteneurs
 
-Votre poste est vérifié, et ces deux conteneurs ne servent plus. `docker rm -f` les supprime, même celui qui tourne encore :
+Votre poste est vérifié, et ces deux conteneurs ne servent plus. `docker rm -f` les supprime, même celui qui tourne encore. Les images, elles, restent sur votre machine pour servir à nouveau.
 
 ```exec
 docker rm -f layers-l0-hello layers-l0-web
 ```
-
-Les images, elles, restent sur votre machine pour servir à nouveau. `docker system df` montre la place que Docker occupe sur le disque, ligne par ligne :
-
-```exec
-docker system df
-```
-
-Vous lisez une ligne pour les images, une pour les conteneurs, une pour les volumes et une pour le cache de construction, avec leur taille respective.
 
 ```verify
 left=$(docker ps -a --format '{{.Names}}' | grep -E '^layers-l0-(hello|web)$')
@@ -247,10 +304,11 @@ echo "C'est propre, et votre poste est prêt."
 
 ## Récap
 
-- Docker est un client, la commande `docker`, qui parle à un moteur qui tourne en tâche de fond.
+- Docker s'installe de trois façons : Docker Desktop, soumis à licence ; les paquets de Docker Engine sous Linux ; les binaires, en dernier recours.
+- Docker se compose de plusieurs paquets, dont deux principaux : le client (la CLI, `docker`) parle au moteur (le daemon, `dockerd`).
 - `docker version` montre les deux, et son message d'erreur dit lequel manque.
 - Un poste prêt sait télécharger une image, lancer un conteneur et servir une page sur un port.
 
-> 📖 [Installer Docker](https://docs.docker.com/get-started/get-docker/) · [`docker version`](https://docs.docker.com/reference/cli/docker/version/) · [`docker info`](https://docs.docker.com/reference/cli/docker/system/info/) · [`docker compose version`](https://docs.docker.com/reference/cli/docker/compose/version/)
+> 📖 [Installer Docker](https://docs.docker.com/get-started/get-docker/) · [Licence de Docker Desktop](https://docs.docker.com/subscription/desktop-license/) · [Installer Docker Engine](https://docs.docker.com/engine/install/) · [`docker version`](https://docs.docker.com/reference/cli/docker/version/) · [`docker info`](https://docs.docker.com/reference/cli/docker/system/info/)
 
-Pour vous tester sans guide, faites le challenge « Auditer une installation Docker ».
+Pour vous tester sans guide, faites le challenge [Auditer une installation Docker](https://byte-layers.com/fr/challenges/docker-install-challenge).

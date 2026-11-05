@@ -30,6 +30,8 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 # Tâche 1 : un swarm
 
+## Ce qu'il faut faire
+
 ```setup
 mkdir -p ~/layers-l9
 [ -f ~/layers-l9/.etat-initial ] || docker info --format '{{.Swarm.LocalNodeState}}' > ~/layers-l9/.etat-initial
@@ -74,6 +76,8 @@ docker swarm init
 ````
 
 # Tâche 2 : un service répliqué
+
+## Ce qu'il faut faire
 
 Construisez deux versions d'une image, et lancez la première en service. Chaque version répond sur le port 8000 avec un texte qui donne son numéro.
 
@@ -162,6 +166,8 @@ docker service create --name layers-l9-front --replicas 2 -p 28394:8000 layers-l
 
 # Tâche 3 : monter en charge et mettre à jour
 
+## Ce qu'il faut faire
+
 Passez le service à 3 répliques, puis mettez-le à jour vers la seconde version, progressivement.
 
 **Critères :**
@@ -245,6 +251,8 @@ docker service update --update-parallelism 1 --update-delay 2s --image layers-l9
 
 # Tâche 4 : restaurer
 
+## Ce qu'il faut faire
+
 La version 2 pose problème : revenez à la version précédente, sans redonner sa description à Swarm.
 
 **Critères :**
@@ -305,6 +313,8 @@ docker service rollback layers-l9-front
 ````
 
 # Tâche 5 : résister à une image cassée
+
+## Ce qu'il faut faire
 
 Prouvez que le service se protège seul quand une mauvaise image arrive.
 
@@ -375,6 +385,8 @@ docker service update --update-failure-action rollback --image layers-l9-svc:cas
 ````
 
 # Tâche 6 : ne rien laisser derrière soi
+
+## Ce qu'il faut faire
 
 Supprimez tout ce que ce challenge a créé : le service `layers-l9-front`, le swarm, les images `layers-l9-svc` et le dossier `~/layers-l9`.
 

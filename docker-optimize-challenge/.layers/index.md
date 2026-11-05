@@ -29,6 +29,8 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 # Tâche 1 : mesurer avant d'optimiser
 
+## Ce qu'il faut faire
+
 ```setup
 mkdir -p ~/layers-l3/slow/docs
 cat > ~/layers-l3/slow/go.mod <<'EOF'
@@ -123,6 +125,8 @@ docker image inspect layers-l3-slow:before --format '{{.Size}}' > ~/layers-l3/sl
 
 # Tâche 2 : ne plus tout refaire
 
+## Ce qu'il faut faire
+
 Aujourd'hui, modifier une seule ligne de `main.go` retélécharge toutes les dépendances. Modifiez le Dockerfile pour que ce ne soit plus le cas.
 
 **Critères :**
@@ -185,6 +189,8 @@ EOF
 
 # Tâche 3 : alléger le contexte
 
+## Ce qu'il faut faire
+
 Le dossier contient `fixtures.bin`, un fichier de 20 Mo, et un dossier `docs`. Le service n'a besoin d'aucun des deux, alors qu'ils sont envoyés à Docker à chaque build, et que leur moindre changement fait sauter le cache de `COPY . .`.
 
 **Critères :**
@@ -235,6 +241,8 @@ EOF
 ````
 
 # Tâche 4 : ne livrer que le résultat
+
+## Ce qu'il faut faire
 
 L'image contient encore le compilateur et votre code source, alors que le service n'a besoin que de son binaire. Réduisez-la, sans perdre ce que vous avez gagné à la tâche 2.
 
@@ -346,6 +354,8 @@ docker run -d --name layers-l3-slow -p 28332:8080 layers-l3-slow:after
 ````
 
 # Tâche 5 : ne rien laisser derrière soi
+
+## Ce qu'il faut faire
 
 Supprimez tout ce que ce challenge a créé.
 

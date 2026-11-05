@@ -1,31 +1,44 @@
 ---
 title: "Publier ailleurs, et nettoyer"
-description: "Ce qui change sur Docker Hub, puis le ménage"
+description: "Les registres possibles, ce qui change sur Docker Hub, puis le ménage"
 ---
 
-Vous avez fait tous les gestes de la publication sur votre registre. Avec un registre public ou celui de votre entreprise, ces gestes restent les mêmes, et seuls deux points changent.
+Vous avez fait tous les gestes de la publication sur votre registre. Ces gestes restent les mêmes partout : `tag`, `push`, `pull`. Il reste à savoir où publier pour de vrai, et ce qui change alors.
 
-## Sur un registre public
+## Les registres où l'on publie, et ce qui peut bloquer
 
-Ces commandes ne sont pas à lancer : ce cours ne publie rien en dehors de votre machine. Elles montrent seulement à quoi ressemblerait une publication sur Docker Hub, pour un compte nommé `votre-compte`.
+Votre registre local vous a servi à apprendre. En situation réelle, le choix se fait d'après qui doit lire l'image et où vit votre code, et ce tableau donne les quatre familles que vous croiserez.
+
+| Famille | Exemples | Quand on la choisit | Ce qui peut bloquer |
+|---|---|---|---|
+| Registre public | Docker Hub | pour partager largement. C'est le registre par défaut de Docker | un compte est nécessaire pour publier, et les [limites d'usage](https://docs.docker.com/docker-hub/usage/) et le nombre de dépôts privés dépendent du plan |
+| Registre de votre hébergeur de code | [GitHub](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry), [GitLab](https://docs.gitlab.com/user/packages/container_registry/) | pour garder les images à côté du code et de son pipeline | un compte, et les quotas du plan |
+| Registre d'un fournisseur cloud | Amazon ECR, Google Artifact Registry, Azure Container Registry | quand les serveurs tournent déjà chez ce fournisseur | un compte payant, et le stockage est facturé |
+| Registre d'entreprise, installé chez vous | [Harbor](https://goharbor.io), Nexus, Artifactory | quand les images doivent rester dans l'entreprise | il faut l'installer, le sécuriser et le maintenir |
+
+```ack
+Je connais les familles de registres et ce qui peut les bloquer
+```
+
+## Ce qui change sur un registre qui exige un compte
+
+Deux points changent par rapport à ce que vous venez de faire. Le premier est l'**identification** : `docker login` demande votre compte, et Docker garde ensuite le droit d'écrire. Sans elle, le `push` échoue avec un message comme `denied: requested access to the resource is denied`.
+
+Le second est le **nom** : sur Docker Hub, un dépôt appartient à un compte, d'où `votre-compte/` devant le nom, et il n'y a pas de registre à écrire, puisque Docker Hub est le registre par défaut. Pour tout autre registre, on écrit son adresse, comme vous l'avez fait pour le vôtre.
+
+## ✅ Bonus : publier pour de vrai sur Docker Hub
+
+Ce bonus est facultatif, et rien ne le vérifie : il faut un compte Docker Hub, et votre image sera publique. Une image publique est lisible par tout le monde : n'y laissez jamais de secret, ce qui ne risque rien avec celle-ci. Si vous voulez essayer, remplacez `votre-compte` par le nom de votre compte :
 
 ```bash
 docker login
-docker tag layers-l4-hello:1.0 votre-compte/layers-l4-hello:1.0
+docker tag localhost:28340/layers-l4-hello:1.0 votre-compte/layers-l4-hello:1.0
 docker push votre-compte/layers-l4-hello:1.0
 ```
 
-La première différence est l'**identification** : `docker login` demande votre compte, et Docker garde ensuite le droit d'écrire. Sans elle, le `push` échoue avec un message comme `denied: requested access to the resource is denied`.
+Votre image apparaît alors sur votre page Docker Hub, d'où vous pourrez la supprimer. Retirez aussi ce nom de votre machine avec `docker rmi votre-compte/layers-l4-hello:1.0`, et fermez la session avec `docker logout`.
 
-La seconde est le **nom** : sur Docker Hub, un dépôt appartient à un compte, d'où `votre-compte/` devant le nom, et il n'y a pas de registre à écrire, puisque Docker Hub est le registre par défaut. Pour un registre d'entreprise, on écrirait son adresse, comme vous l'avez fait pour le vôtre.
-
-Une image publique est lisible par tout le monde : n'y laissez jamais de secret. Et si vous ne voulez pas de cette exposition, Docker Hub propose aussi des dépôts privés.
-
-```ack
-J'ai compris ce qui change sur un registre public
-```
-
-## Nettoyer
+## Supprimer le registre, vos images et le dossier
 
 Il ne reste qu'à tout ranger. Supprimez d'abord le registre. Il garde ses images dans un **volume**, un espace de stockage que Docker crée pour lui ; un prochain cours, « Garder ses données », détaille cette notion. L'option `-v` supprime ce volume avec le conteneur, sans quoi il resterait sur votre disque :
 
@@ -33,7 +46,7 @@ Il ne reste qu'à tout ranger. Supprimez d'abord le registre. Il garde ses image
 docker rm -fv layers-l4-registry
 ```
 
-Retirez ensuite vos images, le tag et le digest noté, puis supprimez votre dossier de travail :
+Retirez ensuite vos images, celle du tag et celle du digest noté, puis supprimez votre dossier de travail. Les images `alpine:3.22`, `registry:3` et `nginx:1.30-alpine` restent sur votre machine, car d'autres cours s'en servent. `rm -rf` efface sans demander confirmation, et il faut donc vérifier le chemin.
 
 ```exec
 docker rmi localhost:28340/layers-l4-hello:1.0 "$(cat ~/layers-l4/digest-v1.txt)"
@@ -61,11 +74,12 @@ echo "C'est propre."
 
 ## Récap
 
+- Un registre se choisit d'après qui doit lire l'image et où vit le code, et il peut exiger un compte, un plan payant ou de l'entretien.
 - `docker login` donne le droit d'écrire sur un registre qui l'exige.
 - Sur Docker Hub, un dépôt s'écrit `compte/nom` ; ailleurs, le nom commence par l'adresse du registre.
 - Les gestes sont les mêmes partout : `tag`, `push`, `pull`.
 
-Pour vous tester sans guide, faites maintenant le challenge « Publier une image et la retrouver par son digest ».
+Pour vous tester sans guide, faites maintenant le challenge [Publier une image et la retrouver par son digest](https://byte-layers.com/fr/challenges/docker-publish-challenge).
 
 ## Questions
 
@@ -76,9 +90,9 @@ showNotice: false
 questions:
   - prompt: "Pour publier sur Docker Hub avec le compte `marie`, quel nom faut-il donner à l'image ?"
     answers:
-      - "`app:1.0`"
       - "`marie/app:1.0`"
+      - "`app:1.0`"
       - "`hub.docker.com/app:1.0`"
-    correct: 2
+    correct: 1
     explanation: "Un dépôt de Docker Hub appartient à un compte. Le registre, lui, n'a pas besoin d'être écrit : c'est celui par défaut."
 ```

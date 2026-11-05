@@ -50,14 +50,14 @@ Les mots de passe restent en clair dans les commandes, un raccourci que traite u
 
 ## Récupérer le code et le Dockerfile
 
-Ce code est sur GitHub, et vous en prenez la même version précise que dans le lab « Conteneuriser getting-started-app » : le commit `6b025fc5`, c'est-à-dire un état enregistré du code, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
+Ce code est sur GitHub, et vous en prenez la même version précise que dans le lab « Conteneuriser une application pas à pas » : le commit `6b025fc5`, c'est-à-dire un état enregistré du code, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
 
 ```exec
 mkdir -p ~/layers-l6/app
 curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/layers-l6/app
 ```
 
-Le dépôt n'a pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser getting-started-app », redonné tel quel, car le sujet est le stockage. Il copie le projet dans `/app`, donc le code dans `/app/src`, installe les dépendances dans `/app/node_modules`, passe à l'utilisateur `node`, qui n'est pas administrateur, et lance `node src/index.js`. Retenez cette organisation, car elle servira pour le bind mount :
+Le dépôt n'a pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser une application pas à pas », redonné tel quel, car le sujet est le stockage. Il copie le projet dans `/app`, donc le code dans `/app/src`, installe les dépendances dans `/app/node_modules`, passe à l'utilisateur `node`, qui n'est pas administrateur, et lance `node src/index.js`. Retenez cette organisation, car elle servira pour le bind mount :
 
 ```exec
 cat > ~/layers-l6/app/Dockerfile <<'EOF'
