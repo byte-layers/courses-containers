@@ -1,5 +1,5 @@
 ---
-title: "Livrer une application Java blindée : Dockerfile, Compose et infra"
+title: "Livrer une application Java sécurisée (hardened) : Dockerfile, Compose et infra"
 description: "Cas pratique de synthèse sur une vraie application Spring Boot, PetClinic : un Dockerfile durci jusqu'au multi-stage et à distroless, un fichier Compose sécurisé avec sa base, puis le routage, les logs et les métriques."
 tags:
   - lab
