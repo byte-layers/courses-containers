@@ -22,7 +22,7 @@ Vous complétez vous-même les `# TODO`. Le bouton de vérification contrôle le
 
 **Niveau** : intermédiaire. Vous savez écrire un `Dockerfile` avec `FROM`, `COPY`, `RUN`, `USER`, `EXPOSE` et `HEALTHCHECK`, comme dans « Écrire le Dockerfile d'une application ». Vous savez lancer un projet Compose avec des réseaux, des volumes, un `healthcheck` et un `depends_on`, et vous avez déjà placé des applications derrière Traefik avec des labels, comme dans « Deux applications derrière nginx, puis Traefik ». Vous n'avez besoin de connaître ni Java ni Maven : chaque commande propre à Java est expliquée. Ce qui est nouveau est guidé pas à pas, en particulier le **multi-stage** et l'**observabilité** (les journaux et les métriques).
 
-**Ce qu'il faut** : Docker et Compose qui répondent, un terminal bash ou zsh (sous Windows, celui de WSL), `curl`, un éditeur de texte, les ports **28400** à **28409** libres, environ 1 Go de mémoire pour l'application et 3 Go d'espace disque pour la partie A. Tout ce que vous créez porte le préfixe `layers-l10-`, et vos fichiers vivent dans `~/layers-l10/prod`.
+**Ce qu'il faut** : Docker et Compose qui répondent, un terminal bash ou zsh (sous Windows, celui de WSL), `curl`, `openssl` et `sha256sum`, un éditeur de texte, les ports **28400** à **28409** libres, environ 1,5 Go de mémoire, la consommation mesurée de l'ensemble des conteneurs de la partie C, et 5 Go d'espace disque pour les images et les caches. Tout ce que vous créez porte le préfixe `layers-l10-`, et vos fichiers vivent dans `~/layers-l10/prod`.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -33,8 +33,8 @@ Le cas pratique avance comme un vrai projet : d'abord l'image, puis l'applicatio
 | Partie | Ce que vous construisez | Ce qui est nouveau |
 |---|---|---|
 | A. Le `Dockerfile` | une image partie d'un `Dockerfile` naïf, durcie, construite en multi-stage, puis distroless | le multi-stage, l'image distroless |
-| B. Le fichier Compose | PetClinic et PostgreSQL, avec secrets, healthchecks, limites, journaux communs et un profil de développement | les ancres YAML `x-`, les profils |
-| C. L'infra | Traefik, puis une pile de journaux et de métriques, assemblés avec `include`, et une vue d'ensemble pour finir | Loki, Prometheus, Grafana |
+| B. Le fichier Compose | PetClinic et PostgreSQL, avec secrets, healthchecks, limites, journaux communs et un profil de développement | les secrets, les ancres YAML `x-`, les profils |
+| C. L'infra | Traefik, puis une pile de journaux et de métriques, assemblés avec `include`, et une vue d'ensemble pour finir | `include`, Loki, Alloy, Prometheus, Grafana, l'agent JMX exporter, Portainer |
 
 ## Les chapitres facultatifs : les scans
 
@@ -42,7 +42,7 @@ Certains chapitres portent un titre qui commence par « Facultatif ». Ils scann
 
 > 🔍 **Pourquoi facultatifs ?** Un scanner télécharge son image, ses règles et, pour les images, des bases de vulnérabilités. Pour une application Java, cela représente environ 3 Go. Sur un serveur de formation partagé par plusieurs postes, ce volume multiplié par le nombre de stagiaires remplit vite le disque.
 
-## Le dossier de travail
+## Organiser le dossier de travail comme un serveur
 
 Sur un serveur qui héberge des applications Docker, on range souvent chaque projet Compose dans son dossier, sous une racine commune comme `/srv/docker`. Ce cas pratique suit la même organisation, avec `~/layers-l10/prod` pour racine. Voici où vous arriverez à la fin des trois parties :
 

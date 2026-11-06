@@ -1,0 +1,132 @@
+name: layers-l10-petclinic
+
+# Les journaux : un seul réglage, réutilisé par tous les services
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# Le durcissement commun : fusionné dans chaque service avec <<
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  logging: *default-logging
+
+services:
+  app:
+    <<: *hardening
+    build: .
+    image: layers-l10-petclinic:1.0.0
+    command: ["--spring.config.additional-location=file:/run/secrets/petclinic-db.properties"]
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres
+      POSTGRES_URL: jdbc:postgresql://db:5432/petclinic
+      POSTGRES_USER: petclinic
+    secrets:
+      - source: petclinic_db_properties
+        target: petclinic-db.properties
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:28400:8080"
+    healthcheck:
+      test: ["CMD", "/usr/bin/java", "-Xmx16m", "-XX:+UseSerialGC", "-XX:TieredStopAtLevel=1", "-cp", "/app/hc", "HealthCheck"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 90s
+      start_interval: 3s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 768M
+          pids: 200
+        reservations:
+          memory: 512M
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    networks:
+      - backend
+      - frontend
+
+  db:
+    <<: *hardening
+    image: postgres:18.6-alpine3.24
+    user: postgres
+    environment:
+      POSTGRES_DB: petclinic
+      POSTGRES_USER: petclinic
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - db_data:/var/lib/postgresql
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "petclinic", "-d", "petclinic"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+      start_interval: 2s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+          pids: 100
+    networks:
+      - backend
+
+  adminer:
+    <<: *hardening
+    image: adminer:5.5.1
+    profiles: [dev]
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://localhost:8080/') === false ? 1 : 0);"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    tmpfs:
+      - /tmp
+    ports:
+      - "127.0.0.1:28401:8080"
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 64M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - backend
+      - frontend
+
+networks:
+  backend:
+    name: layers-l10-petclinic-backend
+    internal: true
+  frontend:
+    name: layers-l10-petclinic-frontend
+
+volumes:
+  db_data:
+    name: layers-l10-petclinic-db-data
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  petclinic_db_properties:
+    file: ./secrets/petclinic-db.properties

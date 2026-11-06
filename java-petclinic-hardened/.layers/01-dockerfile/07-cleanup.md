@@ -7,7 +7,7 @@ Vous avez construit quatre images pour les comparer, et vous n'en garderez qu'un
 
 ## Supprimer les images intermédiaires
 
-La partie B utilisera l'image `4-distroless`, et les trois autres n'ont plus d'utilité. Sur un poste partagé, il vaut mieux libérer cet espace dès maintenant :
+La partie B reconstruira l'image `4-distroless` depuis le même `Dockerfile`, sous un nouveau nom, et le cache rendra cette construction presque instantanée. Les trois autres images n'ont plus d'utilité. Sur un poste partagé, il vaut mieux libérer cet espace dès maintenant :
 
 ```exec
 docker rm -f layers-l10-petclinic

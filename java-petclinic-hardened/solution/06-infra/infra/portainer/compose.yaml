@@ -1,0 +1,54 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  portainer:
+    image: portainer/portainer-ce:2.45.3
+    # Seulement avec le profil dev : une interface d'administration n'a pas sa place partout
+    profiles: [dev]
+    command:
+      - -H
+      - unix:///var/run/docker.sock
+      - --admin-password-file
+      - /run/secrets/portainer_admin_password
+    secrets:
+      - portainer_admin_password
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - portainer_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=PathPrefix(`/portainer`)
+      - traefik.http.routers.portainer.entrypoints=web
+      - traefik.http.routers.portainer.middlewares=portainer-strip
+      - traefik.http.middlewares.portainer-strip.stripprefix.prefixes=/portainer
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging: *default-logging
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    name: layers-l10-proxy
+
+volumes:
+  portainer_data:
+    name: layers-l10-portainer-data
+
+secrets:
+  portainer_admin_password:
+    file: ./secrets/portainer_admin_password.txt

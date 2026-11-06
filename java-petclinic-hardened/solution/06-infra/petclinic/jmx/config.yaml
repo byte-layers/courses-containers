@@ -1,0 +1,3 @@
+# Republier tous les MBeans de la JVM, en plus des métriques JVM de base
+rules:
+  - pattern: ".*"

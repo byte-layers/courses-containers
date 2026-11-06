@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # Traefik publie ses métriques sur son port d'administration
+  - job_name: traefik
+    static_configs:
+      - targets: ["traefik:8080"]
+
+  # PetClinic, par l'agent JMX exporter
+  - job_name: petclinic
+    static_configs:
+      - targets: ["petclinic:9404"]
+        # un label de plus, qu'attend le dashboard JVM importé dans Grafana
+        labels:
+          application: petclinic

@@ -1,0 +1,7 @@
+name: layers-l10-infra
+
+# Le fichier parent : il ne décrit aucun service, il assemble ceux de l'infra
+include:
+  - traefik/compose.yaml
+  - observability/compose.yaml
+  - portainer/compose.yaml

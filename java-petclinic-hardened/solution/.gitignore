@@ -1,0 +1,5 @@
+# Les secrets ne se versionnent jamais : seuls les fichiers .example le sont
+**/secrets/*
+!**/secrets/*.example
+# L'agent JMX exporter se télécharge, avec son empreinte vérifiée
+*.jar
