@@ -71,3 +71,7 @@ layers:
       - { slug: orchestrator-why, role: read-first }
       - { slug: docker-swarm }
       - { slug: docker-swarm-challenge, role: proof }
+  - title: "Livrer"
+    summary: "Un cas complet, d'une image durcie à une infra observée"
+    contents:
+      - { slug: java-petclinic-hardened }
