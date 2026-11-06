@@ -1,0 +1,4 @@
+# Le contexte de build ne contient que ce que le stage build copie
+*
+!pom.xml
+!src

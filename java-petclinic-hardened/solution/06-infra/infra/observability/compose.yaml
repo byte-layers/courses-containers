@@ -1,0 +1,129 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  restart: unless-stopped
+  logging: *default-logging
+
+services:
+  loki:
+    <<: *hardening
+    image: grafana/loki:3.7.9
+    command: ["-config.file=/etc/loki/config.yaml"]
+    volumes:
+      - ./loki/config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    networks:
+      - monitoring
+
+  alloy:
+    <<: *hardening
+    image: grafana/alloy:v1.21.3
+    command: ["run", "--storage.path=/alloy-data", "/etc/alloy/config.alloy"]
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/alloy-data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+    depends_on:
+      - loki
+    networks:
+      - monitoring
+
+  prometheus:
+    <<: *hardening
+    image: prom/prometheus:v3.16.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=2d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    networks:
+      - monitoring
+      - proxy
+
+  grafana:
+    <<: *hardening
+    image: grafana/grafana:13.2.5
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_SERVER_ROOT_URL: http://localhost:28402/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    secrets:
+      - grafana_admin_password
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/grafana/api/health"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 60s
+      start_interval: 3s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.rule=PathPrefix(`/grafana`)
+      - traefik.http.routers.grafana.entrypoints=web
+      - traefik.http.services.grafana.loadbalancer.server.port=3000
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    depends_on:
+      - loki
+      - prometheus
+    networks:
+      - monitoring
+      - proxy
+
+networks:
+  monitoring:
+    name: layers-l10-monitoring
+    internal: true
+  proxy:
+    name: layers-l10-proxy
+
+volumes:
+  loki_data:
+    name: layers-l10-loki-data
+  alloy_data:
+    name: layers-l10-alloy-data
+  prometheus_data:
+    name: layers-l10-prometheus-data
+  grafana_data:
+    name: layers-l10-grafana-data
+
+secrets:
+  grafana_admin_password:
+    file: ./secrets/grafana_admin_password.txt
