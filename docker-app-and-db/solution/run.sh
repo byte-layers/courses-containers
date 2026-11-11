@@ -2,7 +2,7 @@
 # Rejoue le lab de bout en bout et s'arrête à la première erreur. À lancer depuis le dossier solution/.
 set -euo pipefail
 
-WORK="$HOME/layers-l5"
+WORK="$HOME/byte-layers/docker/l5"
 URL=http://localhost:28355
 cleanup() {
   docker rm -f -v layers-l5-todo layers-l5-db >/dev/null 2>&1 || true

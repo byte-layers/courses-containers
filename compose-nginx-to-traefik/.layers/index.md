@@ -20,7 +20,7 @@ Dans ce cas pratique, vous déployez deux applications conteneurisées, chacune 
 
 **Niveau** : vous savez écrire un fichier Compose avec des services, des volumes et des réseaux, comme dans « Décrire une application avec Compose », et vous savez qu'un conteneur en joint un autre par son nom, comme dans « Relier des conteneurs et publier un port ». Vous savez lire un `Dockerfile`, comme dans « Écrire le Dockerfile d'une application ». Vous n'avez besoin de connaître ni nginx, ni Traefik, ni Node.js : ce qu'il en faut est expliqué ici.
 
-**Ce qu'il faut** : Docker et Compose qui répondent, un terminal bash ou zsh (sous Windows, celui de WSL), `curl`, un éditeur de texte, les ports **28386** à **28389** libres et environ 1 Go de mémoire pour les conteneurs, dont près de la moitié pour MySQL. Tout ce que vous créez porte le préfixe `layers-l8-web` ou `layers-l8-public`, et vos fichiers vivent dans `~/layers-l8/web`.
+**Ce qu'il faut** : Docker et Compose qui répondent, un terminal bash ou zsh (sous Windows, celui de WSL), `curl`, un éditeur de texte, les ports **28386** à **28389** libres et environ 1 Go de mémoire pour les conteneurs, dont près de la moitié pour MySQL. Tout ce que vous créez porte le préfixe `layers-l8-web` ou `layers-l8-public`, et vos fichiers vivent dans `~/byte-layers/docker/l8/web`.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -65,7 +65,7 @@ Vous interrogerez ces ports avec `curl` dans le terminal, et avec le navigateur,
 Vous allez créer un dossier par projet Compose, comme on le ferait sur un serveur :
 
 ```exec
-mkdir -p ~/layers-l8/web/app1 ~/layers-l8/web/app2 ~/layers-l8/web/nginx/conf.d ~/layers-l8/web/traefik
+mkdir -p ~/byte-layers/docker/l8/web/app1 ~/byte-layers/docker/l8/web/app2 ~/byte-layers/docker/l8/web/nginx/conf.d ~/byte-layers/docker/l8/web/traefik
 ```
 
 Vous éditerez plusieurs fichiers de ce dossier. S'il n'apparaît pas dans votre éditeur, ouvrez chaque fichier par le menu **File > Open File**, en saisissant son chemin.
@@ -83,7 +83,7 @@ J'ai compris le plan, et le dossier est prêt
 Le premier, `package.json`, liste les bibliothèques dont elle a besoin :
 
 ```exec
-cat > ~/layers-l8/web/app1/package.json <<'EOF'
+cat > ~/byte-layers/docker/l8/web/app1/package.json <<'EOF'
 {
   "name": "app1",
   "version": "1.0.0",
@@ -99,7 +99,7 @@ EOF
 Le second, `index.js`, est le programme. Lisez trois choses : il lit sa connexion dans quatre variables d'environnement, il tente de se connecter **une seule fois** au démarrage, et sa page d'accueil interroge vraiment la base. La page `/about` servira à voir quel chemin l'application reçoit derrière un proxy.
 
 ```exec
-cat > ~/layers-l8/web/app1/index.js <<'EOF'
+cat > ~/byte-layers/docker/l8/web/app1/index.js <<'EOF'
 const express = require('express');
 const mysql = require('mysql2');
 
@@ -145,7 +145,7 @@ EOF
 Le troisième est le `Dockerfile`, qui construit l'image. `USER node` fait tourner le programme sans les droits de root, avec un utilisateur déjà prévu dans l'image `node` :
 
 ```exec
-cat > ~/layers-l8/web/app1/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/web/app1/Dockerfile <<'EOF'
 FROM node:22-alpine
 WORKDIR /app
 COPY package.json ./
@@ -161,12 +161,12 @@ EOF
 
 ```verify
 for F in package.json index.js Dockerfile; do
-  if [ ! -s "$HOME/layers-l8/web/app1/$F" ]; then
-    echo "Le fichier ~/layers-l8/web/app1/$F manque. Relancez le bloc qui le crée."
+  if [ ! -s "$HOME/byte-layers/docker/l8/web/app1/$F" ]; then
+    echo "Le fichier ~/byte-layers/docker/l8/web/app1/$F manque. Relancez le bloc qui le crée."
     exit 1
   fi
 done
-if ! grep -q 'SELECT VERSION' "$HOME/layers-l8/web/app1/index.js"; then
+if ! grep -q 'SELECT VERSION' "$HOME/byte-layers/docker/l8/web/app1/index.js"; then
   echo "index.js n'a pas le contenu attendu. Relancez le bloc qui le crée."
   exit 1
 fi
@@ -198,7 +198,7 @@ L'application attend quatre variables d'environnement. Leurs valeurs doivent cor
 Créez le fichier de départ, puis complétez ses blancs dans votre éditeur **avant** de le lancer. La clé `name` donne son nom au projet, et ce nom préfixe ceux des conteneurs, des réseaux et des volumes :
 
 ```exec
-cat > ~/layers-l8/web/app1/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/web/app1/compose.yaml <<'EOF'
 name: layers-l8-web-app1
 services:
   app1:
@@ -230,18 +230,18 @@ EOF
 Une fois le fichier complété, construisez et lancez le projet. `--build` demande de reconstruire l'image. Le premier lancement prend une minute, le temps de télécharger les images et les bibliothèques :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose up -d --build
+cd ~/byte-layers/docker/l8/web/app1 && docker compose up -d --build
 ```
 
 Ne cherchez pas encore à ouvrir la page, et regardez d'abord l'état des deux conteneurs. `-a` affiche aussi ceux qui sont arrêtés :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose ps -a
+cd ~/byte-layers/docker/l8/web/app1 && docker compose ps -a
 ```
 
 Dans la colonne `STATUS`, vous devez voir MySQL en marche (`Up`), et `app1` arrêté (`Exited (1)`). C'est le résultat attendu à ce stade, et la section suivante l'explique. Vérifiez votre fichier, puis passez à la suite.
 
-Si `app1` tourne, c'est que MySQL était déjà prêt, par exemple parce que vous aviez déjà lancé le projet. Pour reproduire ce démarrage à vide, lancez depuis `~/layers-l8/web/app1` la commande `docker compose down -v`, qui supprime aussi le volume de la base, puis la commande `up` ci-dessus.
+Si `app1` tourne, c'est que MySQL était déjà prêt, par exemple parce que vous aviez déjà lancé le projet. Pour reproduire ce démarrage à vide, lancez depuis `~/byte-layers/docker/l8/web/app1` la commande `docker compose down -v`, qui supprime aussi le volume de la base, puis la commande `up` ci-dessus.
 
 ```hint
 `environment:` se place à la même indentation que `networks:`, avec une ligne par variable, décalée de deux espaces : `DB_HOST: mysql`. Pour le port : `ports:`, puis la ligne `- "28386:3000"`.
@@ -255,7 +255,7 @@ Le service `mysql` utilise la même écriture que `app1` : `networks:`, puis `- 
 A=layers-l8-web-app1-app1-1
 M=layers-l8-web-app1-mysql-1
 if ! docker inspect $A >/dev/null 2>&1 || ! docker inspect $M >/dev/null 2>&1; then
-  echo "Les conteneurs du projet n'existent pas. Complétez ~/layers-l8/web/app1/compose.yaml, puis lancez docker compose up -d --build depuis ce dossier."
+  echo "Les conteneurs du projet n'existent pas. Complétez ~/byte-layers/docker/l8/web/app1/compose.yaml, puis lancez docker compose up -d --build depuis ce dossier."
   exit 1
 fi
 ENV=$(docker inspect $A --format '{{range .Config.Env}}{{println .}}{{end}}')
@@ -276,7 +276,7 @@ for C in $A $M; do
   esac
 done
 if [ "$(docker inspect $M --format '{{.State.Running}}')" != "true" ]; then
-  echo "MySQL ne tourne pas. Lisez : docker compose logs mysql, depuis ~/layers-l8/web/app1."
+  echo "MySQL ne tourne pas. Lisez : docker compose logs mysql, depuis ~/byte-layers/docker/l8/web/app1."
   exit 1
 fi
 echo "Le fichier Compose est correct, et les deux services partagent le réseau app1_net."
@@ -284,7 +284,7 @@ echo "Le fichier Compose est correct, et les deux services partagent le réseau 
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app1
+cd ~/byte-layers/docker/l8/web/app1
 docker compose down -v 2>/dev/null
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app1
@@ -326,7 +326,7 @@ docker compose up -d --build
 Votre fichier est juste, et `app1` s'arrête quand même. Pas d'inquiétude, c'est un problème classique. Ses journaux, que `docker compose logs` affiche, disent ce qui s'est passé :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose logs app1
+cd ~/byte-layers/docker/l8/web/app1 && docker compose logs app1
 ```
 
 - **Symptôme** : le message `Connexion à MySQL impossible : connect ECONNREFUSED`, suivi de l'arrêt du conteneur.
@@ -360,10 +360,10 @@ Dans `app1`, `depends_on` dit d'attendre : sa forme longue précise la condition
         condition: service_healthy
 ```
 
-Ouvrez `~/layers-l8/web/app1/compose.yaml` et ajoutez ces deux blocs tels qu'ils sont indentés ci-dessus : le `healthcheck` dans le service `mysql`, et le `depends_on` dans le service `app1`. Relancez ensuite le projet. `up -d` ne recrée que ce qui a changé, et il attend maintenant que MySQL soit prêt :
+Ouvrez `~/byte-layers/docker/l8/web/app1/compose.yaml` et ajoutez ces deux blocs tels qu'ils sont indentés ci-dessus : le `healthcheck` dans le service `mysql`, et le `depends_on` dans le service `app1`. Relancez ensuite le projet. `up -d` ne recrée que ce qui a changé, et il attend maintenant que MySQL soit prêt :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app1 && docker compose up -d
 ```
 
 Contrôlez que l'application répond, après lui avoir laissé deux secondes pour démarrer. `curl` interroge directement le port :
@@ -379,7 +379,7 @@ Vous devez lire une ligne comme celle-ci, et elle prouve que l'application a ré
 App 1 : connectée à MySQL 8.4.13
 ```
 
-⚖️ `depends_on` ne couvre que le démarrage, et cette application de démonstration garde une seule connexion. Si MySQL redémarre plus tard, `app1` reste en marche, mais sa page répond `500` avec le message `Can't add new command when connection is in closed state`. Une clé `restart` n'y changerait rien, puisque le conteneur ne s'arrête pas. Si cela vous arrive pendant le lab, lancez `docker compose restart app1` depuis `~/layers-l8/web/app1`. Dans un vrai projet, l'application utilise un groupe de connexions, un *pool* (`mysql.createPool`), qui se reconnecte seul.
+⚖️ `depends_on` ne couvre que le démarrage, et cette application de démonstration garde une seule connexion. Si MySQL redémarre plus tard, `app1` reste en marche, mais sa page répond `500` avec le message `Can't add new command when connection is in closed state`. Une clé `restart` n'y changerait rien, puisque le conteneur ne s'arrête pas. Si cela vous arrive pendant le lab, lancez `docker compose restart app1` depuis `~/byte-layers/docker/l8/web/app1`. Dans un vrai projet, l'application utilise un groupe de connexions, un *pool* (`mysql.createPool`), qui se reconnecte seul.
 
 ```hint
 Le `healthcheck` se place sous `mysql:`, à la même indentation que `image:`. Le `depends_on` se place sous `app1:`, à la même indentation que `build:`.
@@ -397,12 +397,12 @@ if [ "$HEALTH" != "healthy" ]; then
   echo "MySQL n'est pas encore en bonne santé (état : $HEALTH). Attendez quelques secondes, puis vérifiez à nouveau."
   exit 1
 fi
-if ! (cd "$HOME/layers-l8/web/app1" && docker compose config 2>/dev/null) | grep -q 'condition: service_healthy'; then
+if ! (cd "$HOME/byte-layers/docker/l8/web/app1" && docker compose config 2>/dev/null) | grep -q 'condition: service_healthy'; then
   echo "app1 n'attend pas MySQL : il manque le depends_on avec condition: service_healthy."
   exit 1
 fi
 if [ "$(docker inspect $A --format '{{.State.Running}}')" != "true" ]; then
-  echo "app1 ne tourne pas. Lisez : docker compose logs app1, depuis ~/layers-l8/web/app1."
+  echo "app1 ne tourne pas. Lisez : docker compose logs app1, depuis ~/byte-layers/docker/l8/web/app1."
   exit 1
 fi
 if ! curl -s --max-time 5 http://localhost:28386/ | grep -q 'connectée à MySQL'; then
@@ -414,7 +414,7 @@ echo "app1 attend sa base, et lit vraiment MySQL."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app1
+cd ~/byte-layers/docker/l8/web/app1
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app1
 services:
@@ -469,7 +469,7 @@ Vous avez été guidé pas à pas pour `app1`. La seconde application est plus s
 
 `app2` utilise l'image `traefik/whoami`. C'est un tout petit serveur web qui répond en affichant la demande qu'il a reçue : le chemin et les en-têtes, ces lignes de texte qui accompagnent une demande HTTP. Il est idéal pour voir ce qu'un reverse proxy transmet à une application.
 
-**Objectif.** Créez le fichier `~/layers-l8/web/app2/compose.yaml`. Pour pouvoir l'ouvrir dans l'éditeur, créez-le d'abord vide, avec `touch ~/layers-l8/web/app2/compose.yaml`. Il doit avoir les caractéristiques suivantes :
+**Objectif.** Créez le fichier `~/byte-layers/docker/l8/web/app2/compose.yaml`. Pour pouvoir l'ouvrir dans l'éditeur, créez-le d'abord vide, avec `touch ~/byte-layers/docker/l8/web/app2/compose.yaml`. Il doit avoir les caractéristiques suivantes :
 
 | Élément | Valeur |
 |---|---|
@@ -482,7 +482,7 @@ Vous avez été guidé pas à pas pour `app1`. La seconde application est plus s
 Lancez-le, puis interrogez-le sur le chemin `/test`, un chemin inventé puisque ce serveur répond à tous :
 
 ```exec
-cd ~/layers-l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
 sleep 1
 curl http://localhost:28389/test
 ```
@@ -503,7 +503,7 @@ Partez du fichier de `app1`, sans `build`, `environment`, `depends_on` ni `volum
 ```verify
 A=layers-l8-web-app2-app2-1
 if [ "$(docker inspect $A --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "$A ne tourne pas. Écrivez ~/layers-l8/web/app2/compose.yaml, puis lancez docker compose up -d depuis ce dossier."
+  echo "$A ne tourne pas. Écrivez ~/byte-layers/docker/l8/web/app2/compose.yaml, puis lancez docker compose up -d depuis ce dossier."
   exit 1
 fi
 case "$(docker inspect $A --format '{{.Config.Image}}')" in
@@ -523,7 +523,7 @@ echo "app2 répond, sur son propre réseau."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app2
+cd ~/byte-layers/docker/l8/web/app2
 docker compose down 2>/dev/null
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app2
@@ -569,8 +569,8 @@ Voici le bloc à ajouter à la section `networks:` du bas de chacun des deux fic
 Appliquez ces changements dans les deux projets :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose up -d
-cd ~/layers-l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
 ```
 
 Vérifiez qui est sur le réseau public. `--format` n'affiche ici que les noms des conteneurs branchés :
@@ -595,7 +595,7 @@ fi
 for N in app1 app2; do
   A=layers-l8-web-$N-$N-1
   if [ "$(docker inspect $A --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-    echo "$A ne tourne pas. Lisez : docker compose logs, depuis ~/layers-l8/web/$N."
+    echo "$A ne tourne pas. Lisez : docker compose logs, depuis ~/byte-layers/docker/l8/web/$N."
     exit 1
   fi
   case " $(docker inspect $A --format '{{range $n, $x := .NetworkSettings.Networks}}{{$n}} {{end}}')" in
@@ -620,7 +620,7 @@ echo "Les deux applications sont sur le réseau public, et ne publient plus aucu
 ````solution
 ```bash
 docker network create layers-l8-public 2>/dev/null
-cd ~/layers-l8/web/app1
+cd ~/byte-layers/docker/l8/web/app1
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app1
 services:
@@ -663,7 +663,7 @@ networks:
     external: true
 EOF
 docker compose up -d
-cd ~/layers-l8/web/app2
+cd ~/byte-layers/docker/l8/web/app2
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app2
 services:
@@ -715,7 +715,7 @@ Un proxy change aussi ce que voit l'application : chaque demande semble maintena
 L'image nginx lit tous les fichiers `.conf` du dossier `/etc/nginx/conf.d`, et le vôtre y remplacera sa page d'accueil par défaut. Créez ce fichier, puis complétez son blanc dans votre éditeur. La ligne `absolute_redirect off` évite un piège : quand nginx redirige `/app1` vers `/app1/`, il écrirait sinon une adresse complète, sans le port ni le domaine que vous utilisez :
 
 ```exec
-cat > ~/layers-l8/web/nginx/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/web/nginx/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -744,7 +744,7 @@ Le bloc `/app2/` reprend celui de `/app1/`, avec `proxy_pass http://app2:80/;` e
 La configuration est écrite, et il reste à lancer nginx dans son propre projet Compose. Créez ce fichier, puis complétez ses blancs :
 
 ```exec
-cat > ~/layers-l8/web/nginx/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/web/nginx/compose.yaml <<'EOF'
 name: layers-l8-web-nginx
 services:
   nginx:
@@ -765,7 +765,7 @@ On monte le **dossier** `conf.d` et non le fichier seul : beaucoup d'éditeurs r
 Lancez nginx. Les applications doivent déjà tourner, ce qui est le cas :
 
 ```exec
-cd ~/layers-l8/web/nginx && docker compose up -d
+cd ~/byte-layers/docker/l8/web/nginx && docker compose up -d
 ```
 
 Interrogez les deux applications à travers la même porte :
@@ -789,12 +789,12 @@ X-Forwarded-Proto: http
 X-Real-Ip: 172.19.0.1
 ```
 
-Si vous corrigez la configuration ensuite, nginx ne la relit pas tout seul. Lancez `docker compose exec nginx nginx -s reload` depuis `~/layers-l8/web/nginx`, ou `docker compose up -d` si nginx s'est arrêté. Dans ses journaux, la ligne `can not modify /etc/nginx/conf.d/default.conf` est normale : elle vient de la lecture seule, et ne signale aucune panne.
+Si vous corrigez la configuration ensuite, nginx ne la relit pas tout seul. Lancez `docker compose exec nginx nginx -s reload` depuis `~/byte-layers/docker/l8/web/nginx`, ou `docker compose up -d` si nginx s'est arrêté. Dans ses journaux, la ligne `can not modify /etc/nginx/conf.d/default.conf` est normale : elle vient de la lecture seule, et ne signale aucune panne.
 
 Le plan promettait que le proxy joindrait les applications, mais pas la base. Vérifiez-le depuis nginx, avec `getent hosts`, qui cherche l'adresse d'un nom :
 
 ```exec
-cd ~/layers-l8/web/nginx
+cd ~/byte-layers/docker/l8/web/nginx
 docker compose exec nginx getent hosts app1
 docker compose exec nginx getent hosts mysql
 ```
@@ -810,7 +810,7 @@ Dans le fichier Compose : `ports:` puis `- "28387:80"`, et `volumes:` puis `- ./
 ```verify
 P=layers-l8-web-nginx-nginx-1
 if [ "$(docker inspect $P --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "nginx ne tourne pas. Complétez ~/layers-l8/web/nginx/compose.yaml et conf.d/default.conf, puis lancez docker compose up -d. En cas d'erreur, lisez : docker compose logs nginx"
+  echo "nginx ne tourne pas. Complétez ~/byte-layers/docker/l8/web/nginx/compose.yaml et conf.d/default.conf, puis lancez docker compose up -d. En cas d'erreur, lisez : docker compose logs nginx"
   exit 1
 fi
 RW=$(docker inspect $P --format '{{range .Mounts}}{{if eq .Destination "/etc/nginx/conf.d"}}{{.Type}} {{.RW}}{{end}}{{end}}')
@@ -840,7 +840,7 @@ echo "Une seule porte d'entrée, et chaque chemin mène à la bonne application.
 
 ````solution
 ```bash
-cat > ~/layers-l8/web/nginx/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/web/nginx/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -862,7 +862,7 @@ server {
     }
 }
 EOF
-cd ~/layers-l8/web/nginx
+cd ~/byte-layers/docker/l8/web/nginx
 docker compose down 2>/dev/null
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-nginx
@@ -892,8 +892,8 @@ sleep 1
 Tout marche, tant que tout est allumé. Essayez ce qui arrive quand le proxy redémarre alors qu'une application n'est pas encore revenue, par exemple après une mise à jour. Supprimez `app2`, relancez nginx, et regardez ses journaux. `--tail 1` n'affiche que la dernière ligne :
 
 ```exec
-cd ~/layers-l8/web/app2 && docker compose down
-cd ~/layers-l8/web/nginx
+cd ~/byte-layers/docker/l8/web/app2 && docker compose down
+cd ~/byte-layers/docker/l8/web/nginx
 docker compose restart
 sleep 2
 docker compose logs nginx --tail 1
@@ -916,8 +916,8 @@ Le code `000`, et l'erreur de `curl` qui l'accompagne, veulent dire que personne
 Remettez tout en marche avant de continuer, `app2` d'abord :
 
 ```exec
-cd ~/layers-l8/web/app2 && docker compose up -d
-cd ~/layers-l8/web/nginx && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/nginx && docker compose up -d
 ```
 
 ```verify
@@ -926,7 +926,7 @@ if ! curl -s --max-time 5 http://localhost:28387/app2/test | grep -q '^GET /test
   exit 1
 fi
 if ! curl -s --max-time 5 http://localhost:28387/app1/ | grep -q 'connectée à MySQL'; then
-  echo "/app1/ ne répond pas. Lisez : docker compose logs nginx, depuis ~/layers-l8/web/nginx."
+  echo "/app1/ ne répond pas. Lisez : docker compose logs nginx, depuis ~/byte-layers/docker/l8/web/nginx."
   exit 1
 fi
 echo "Tout est revenu."
@@ -934,8 +934,8 @@ echo "Tout est revenu."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app2 && docker compose up -d
-cd ~/layers-l8/web/nginx && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/nginx && docker compose up -d
 sleep 2
 ```
 ````
@@ -968,7 +968,7 @@ Bind for 0.0.0.0:28387 failed: port is already allocated
 Arrêtez donc nginx. `down` supprime son conteneur, mais pas le réseau public, déclaré `external` : c'est pour cela qu'il a été créé à part. Les applications continuent de tourner.
 
 ```exec
-cd ~/layers-l8/web/nginx && docker compose down
+cd ~/byte-layers/docker/l8/web/nginx && docker compose down
 ```
 
 Le fichier de Traefik tient en peu de lignes. Sa configuration passe par des options, données sous `command`, et que ce tableau décompose :
@@ -988,7 +988,7 @@ Le fichier de Traefik tient en peu de lignes. Sa configuration passe par des opt
 Créez le fichier, puis complétez ses blancs :
 
 ```exec
-cat > ~/layers-l8/web/traefik/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/web/traefik/compose.yaml <<'EOF'
 name: layers-l8-web-traefik
 services:
   traefik:
@@ -1013,7 +1013,7 @@ EOF
 Lancez Traefik, puis demandez-lui la liste de ses routes, par l'API de son tableau de bord. La réponse est au format JSON, sur une seule longue ligne :
 
 ```exec
-cd ~/layers-l8/web/traefik && docker compose up -d
+cd ~/byte-layers/docker/l8/web/traefik && docker compose up -d
 sleep 3
 curl http://localhost:28388/api/http/routers
 ```
@@ -1026,12 +1026,12 @@ Les deux options manquantes sont dans le tableau, à écrire comme les autres, p
 
 ```verify
 if docker ps --format '{{.Names}}' | grep -q '^layers-l8-web-nginx-'; then
-  echo "nginx tourne encore. Lancez docker compose down depuis ~/layers-l8/web/nginx."
+  echo "nginx tourne encore. Lancez docker compose down depuis ~/byte-layers/docker/l8/web/nginx."
   exit 1
 fi
 T=layers-l8-web-traefik-traefik-1
 if [ "$(docker inspect $T --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "Traefik ne tourne pas. Complétez ~/layers-l8/web/traefik/compose.yaml, puis lancez docker compose up -d. En cas d'erreur, lisez : docker compose logs traefik"
+  echo "Traefik ne tourne pas. Complétez ~/byte-layers/docker/l8/web/traefik/compose.yaml, puis lancez docker compose up -d. En cas d'erreur, lisez : docker compose logs traefik"
   exit 1
 fi
 ARGS=$(docker inspect $T --format '{{json .Args}}')
@@ -1056,8 +1056,8 @@ echo "Traefik écoute, et n'expose encore rien."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/nginx && docker compose down
-cd ~/layers-l8/web/traefik
+cd ~/byte-layers/docker/l8/web/nginx && docker compose down
+cd ~/byte-layers/docker/l8/web/traefik
 docker compose down 2>/dev/null
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-traefik
@@ -1099,7 +1099,7 @@ Traefik attend des instructions, et c'est à l'application de les donner. Une cl
 
 Ce dernier label n'a rien d'accessoire. Votre conteneur est sur deux réseaux, et Traefik ne sait pas lequel il partage avec lui. Sans ce label, il en choisit un au hasard, à chaque création du conteneur. Lors de la préparation de ce lab, sur 8 recréations de `app1` sans ce label, il a pris 2 fois le réseau privé, et la route répond alors `504 Gateway Timeout`, après 30 secondes d'attente. Une panne aléatoire de ce genre est difficile à diagnostiquer : il vaut donc mieux toujours le préciser.
 
-Ajoutez ce bloc au service `app2`, dans `~/layers-l8/web/app2/compose.yaml`, en complétant les blancs à partir du tableau :
+Ajoutez ce bloc au service `app2`, dans `~/byte-layers/docker/l8/web/app2/compose.yaml`, en complétant les blancs à partir du tableau :
 
 ```yaml
     labels:
@@ -1112,7 +1112,7 @@ Ajoutez ce bloc au service `app2`, dans `~/layers-l8/web/app2/compose.yaml`, en 
 Appliquez le changement, puis interrogez `app2`. Vous ne touchez pas au proxy, et il suffit de quelques secondes pour qu'il voie le nouveau label :
 
 ```exec
-cd ~/layers-l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
 sleep 3
 curl http://localhost:28387/app2/test
 ```
@@ -1153,7 +1153,7 @@ echo "app2 a sa route, sans que Traefik ait été modifié."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app2
+cd ~/byte-layers/docker/l8/web/app2
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app2
 services:
@@ -1183,7 +1183,7 @@ sleep 3
 Faites maintenant la même chose pour `app1`, seul : ajoutez au service `app1` les mêmes labels, avec le router `app1`, la règle sur `/app1`, le service `app1` et son port 3000. Appliquez, puis interrogez l'application :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app1 && docker compose up -d
 sleep 3
 curl http://localhost:28387/app1/
 ```
@@ -1208,8 +1208,8 @@ Un middleware se déclare d'un côté, puis s'attache à un router de l'autre. A
 **Pour `app2`, à vous d'écrire ces deux labels**, avec le préfixe `/app2` et le nom `app2-strip`. Appliquez les changements :
 
 ```exec
-cd ~/layers-l8/web/app1 && docker compose up -d
-cd ~/layers-l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
 ```
 
 Attendez quelques secondes, le temps que Traefik voie les changements, puis interrogez les deux applications à nouveau :
@@ -1257,7 +1257,7 @@ echo "Traefik sert les deux applications, sans préfixe, et rien d'autre."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app1
+cd ~/byte-layers/docker/l8/web/app1
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app1
 services:
@@ -1307,7 +1307,7 @@ networks:
     external: true
 EOF
 docker compose up -d
-cd ~/layers-l8/web/app2
+cd ~/byte-layers/docker/l8/web/app2
 cat > compose.yaml <<'EOF'
 name: layers-l8-web-app2
 services:
@@ -1341,8 +1341,8 @@ sleep 4
 Vous aviez fait tomber nginx en supprimant `app2`. Rejouez la même panne avec Traefik : supprimez `app2`, redémarrez le proxy, et interrogez les deux applications. La commande `curl` est celle de la panne de nginx :
 
 ```exec
-cd ~/layers-l8/web/app2 && docker compose down
-cd ~/layers-l8/web/traefik && docker compose restart
+cd ~/byte-layers/docker/l8/web/app2 && docker compose down
+cd ~/byte-layers/docker/l8/web/traefik && docker compose restart
 sleep 3
 curl -s -o /dev/null -w 'app1 : %{http_code}\n' http://localhost:28387/app1/
 curl -s -o /dev/null -w 'app2 : %{http_code}\n' http://localhost:28387/app2/
@@ -1358,7 +1358,7 @@ app2 : 404
 Rallumez `app2`, sans toucher au proxy. Traefik la retrouve tout seul :
 
 ```exec
-cd ~/layers-l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
 sleep 3
 curl -s -o /dev/null -w 'app2 : %{http_code}\n' http://localhost:28387/app2/
 ```
@@ -1367,7 +1367,7 @@ Vous devez lire `app2 : 200`. Rouvrez aussi le tableau de bord, à l'adresse `ht
 
 ```verify
 if [ "$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://localhost:28387/app2/)" != "200" ]; then
-  echo "app2 ne répond pas : relancez-la avec docker compose up -d, depuis ~/layers-l8/web/app2, puis attendez quelques secondes."
+  echo "app2 ne répond pas : relancez-la avec docker compose up -d, depuis ~/byte-layers/docker/l8/web/app2, puis attendez quelques secondes."
   exit 1
 fi
 if [ "$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' http://localhost:28387/app1/)" != "200" ]; then
@@ -1379,7 +1379,7 @@ echo "La panne d'une application ne touche plus l'autre."
 
 ````solution
 ```bash
-cd ~/layers-l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
 sleep 3
 ```
 ````
@@ -1409,7 +1409,7 @@ case " $(docker inspect layers-l8-web-app1-mysql-1 --format '{{range $n, $x := .
   *" layers-l8-public "*) fail "MySQL ne doit pas être sur le réseau public." ;;
 esac
 [ "$(docker inspect layers-l8-web-app1-mysql-1 --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}')" = "healthy" ] || fail "MySQL n'est pas en bonne santé : vérifiez son healthcheck."
-(cd "$HOME/layers-l8/web/app1" && docker compose config 2>/dev/null) | grep -q 'condition: service_healthy' || fail "app1 n'attend pas MySQL : il manque le depends_on avec condition: service_healthy."
+(cd "$HOME/byte-layers/docker/l8/web/app1" && docker compose config 2>/dev/null) | grep -q 'condition: service_healthy' || fail "app1 n'attend pas MySQL : il manque le depends_on avec condition: service_healthy."
 case " $(docker inspect layers-l8-web-app2-app2-1 --format '{{range $n, $x := .NetworkSettings.Networks}}{{$n}} {{end}}')" in
   *"_app2_net "*) : ;;
   *) fail "app2 n'est plus sur son réseau privé app2_net." ;;
@@ -1423,10 +1423,10 @@ echo "L'architecture est complète : deux applications, une seule porte."
 Ce contrôle ne demande rien de nouveau : si un élément manque, reprenez la section qui le construit. Ces commandes relancent les trois projets, dans l'ordre, et arrêtent nginx :
 
 ```bash
-cd ~/layers-l8/web/nginx && docker compose down
-cd ~/layers-l8/web/app1 && docker compose up -d
-cd ~/layers-l8/web/app2 && docker compose up -d
-cd ~/layers-l8/web/traefik && docker compose up -d
+cd ~/byte-layers/docker/l8/web/nginx && docker compose down
+cd ~/byte-layers/docker/l8/web/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/web/traefik && docker compose up -d
 sleep 4
 ```
 ````
@@ -1462,7 +1462,7 @@ Ces bonus sont indépendants, et vous pouvez les faire dans l'ordre que vous vou
 
 Les mots de passe de `app1` sont écrits dans son fichier Compose, qui finira dans un dépôt Git. La clé `env_file` les déplace dans un fichier à part, que l'on ne versionne pas.
 
-1. Créez `~/layers-l8/web/app1/.env` avec les variables `DB_*` et `MYSQL_*`, en gardant les mêmes valeurs.
+1. Créez `~/byte-layers/docker/l8/web/app1/.env` avec les variables `DB_*` et `MYSQL_*`, en gardant les mêmes valeurs.
 2. Remplacez les deux blocs `environment:` par `env_file: .env`.
 3. Dans un vrai dépôt, ajoutez `.env` au `.gitignore`, et versionnez un `.env.example` sans vrais mots de passe.
 
@@ -1506,7 +1506,7 @@ Pour un vrai déploiement, il faut un nom DNS par application.
 
 Vous lancez pour l'instant trois projets, un par dossier. Plutôt que d'écrire un script, sachez que Compose sait charger plusieurs fichiers depuis un fichier parent, avec la clé `include`.
 
-Créez `~/layers-l8/web/compose.yaml` :
+Créez `~/byte-layers/docker/l8/web/compose.yaml` :
 
 ```yaml
 name: layers-l8-web
@@ -1516,7 +1516,7 @@ include:
   - traefik/compose.yaml
 ```
 
-Arrêtez d'abord les trois projets, chacun depuis son dossier, avec `docker compose down`, car ce fichier crée un seul projet, `layers-l8-web`, qui les remplace. Lancez-le ensuite depuis `~/layers-l8/web`, avec `docker compose up -d`.
+Arrêtez d'abord les trois projets, chacun depuis son dossier, avec `docker compose down`, car ce fichier crée un seul projet, `layers-l8-web`, qui les remplace. Lancez-le ensuite depuis `~/byte-layers/docker/l8/web`, avec `docker compose up -d`.
 
 ⚖️ Le nom du projet entre dans le nom du volume : la base repart donc d'un volume neuf, `layers-l8-web_db_data`, et ne retrouve pas ses anciennes données. Vous gagnez une commande unique, mais vous perdez la possibilité de mettre à jour une application sans passer par le fichier parent, ce qui est un vrai choix d'organisation.
 
@@ -1526,7 +1526,7 @@ Arrêtez d'abord les trois projets, chacun depuis son dossier, avec `docker comp
 
 ## Supprimer ce que le lab a créé
 
-Supprimez tout ce que ce lab a créé : les conteneurs, y compris ceux des bonus, les volumes, l'image construite, le réseau public et le dossier `~/layers-l8/web`.
+Supprimez tout ce que ce lab a créé : les conteneurs, y compris ceux des bonus, les volumes, l'image construite, le réseau public et le dossier `~/byte-layers/docker/l8/web`.
 
 Vous écrivez vous-même ces commandes, à partir de ces indications. L'ordre compte : les projets partent d'abord, chacun depuis son dossier, car Docker refuse de supprimer un réseau encore utilisé. `docker compose down -v` supprime aussi les volumes du projet, et donc les données de MySQL. L'image `layers-l8-web-app1` porte un nom choisi par vous, et `docker rmi` la supprime à part. `docker network rm` supprime le réseau public. Enfin, `cd ~` vous fait sortir du dossier avant de l'effacer.
 
@@ -1553,24 +1553,24 @@ if docker image inspect layers-l8-web-app1 >/dev/null 2>&1; then
   echo "L'image layers-l8-web-app1 existe encore. Supprimez-la avec docker rmi."
   exit 1
 fi
-if [ -e "$HOME/layers-l8/web" ]; then
-  echo "Le dossier ~/layers-l8/web existe encore."
+if [ -e "$HOME/byte-layers/docker/l8/web" ]; then
+  echo "Le dossier ~/byte-layers/docker/l8/web existe encore."
   exit 1
 fi
 echo "C'est propre."
 ```
 
 ````solution
-Si vous avez fait le bonus `include`, lancez d'abord `docker compose down -v` depuis `~/layers-l8/web`. Viennent ensuite les commandes du cas pratique :
+Si vous avez fait le bonus `include`, lancez d'abord `docker compose down -v` depuis `~/byte-layers/docker/l8/web`. Viennent ensuite les commandes du cas pratique :
 
 ```bash
-cd ~/layers-l8/web/app1 && docker compose down -v
-cd ~/layers-l8/web/app2 && docker compose down -v
-cd ~/layers-l8/web/nginx && docker compose down -v
-cd ~/layers-l8/web/traefik && docker compose down -v
+cd ~/byte-layers/docker/l8/web/app1 && docker compose down -v
+cd ~/byte-layers/docker/l8/web/app2 && docker compose down -v
+cd ~/byte-layers/docker/l8/web/nginx && docker compose down -v
+cd ~/byte-layers/docker/l8/web/traefik && docker compose down -v
 docker network rm layers-l8-public
 docker rmi layers-l8-web-app1
-cd ~ && rm -rf ~/layers-l8/web
+cd ~ && rm -rf ~/byte-layers/docker/l8/web
 ```
 ````
 

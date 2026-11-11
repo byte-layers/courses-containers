@@ -22,7 +22,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 - **Ce qu'il faut savoir** : ce qu'enseignent « Un secret ne va pas dans l'image », le cours « Fiabiliser une application Compose » et le lab « Plusieurs applications derrière un reverse proxy ».
 - **Ce qu'il faut avoir** : Docker et Compose qui répondent, `curl`, un éditeur de texte et le port 28385 libre.
-- **Votre dossier de travail** : `~/layers-l8/prod` est préparé pour vous à l'ouverture de la tâche 1. La vérification y garde aussi un fichier caché, `.prod-id`, qui lui sert à reconnaître votre conteneur.
+- **Votre dossier de travail** : `~/byte-layers/docker/l8/prod` est préparé pour vous à l'ouverture de la tâche 1. La vérification y garde aussi un fichier caché, `.prod-id`, qui lui sert à reconnaître votre conteneur.
 - **Les noms comptent** : le projet s'appelle exactement `layers-l8-prod`, et ses services `proxy`, `api` et `cache`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : chaque tâche enrichit le fichier de la précédente. Faites-les dans l'ordre.
 - **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
@@ -35,7 +35,7 @@ Elle compte des visites. Voici ce que vous allez mettre en place :
 votre machine ──► proxy (nginx, port 80) ──► api (Python, port 8000) ──► cache (Redis, port 6379)
 ```
 
-Le dossier `~/layers-l8/prod` reçoit les fichiers suivants à l'ouverture de la tâche 1. Lisez-les alors : ils disent ce qu'attend chaque service.
+Le dossier `~/byte-layers/docker/l8/prod` reçoit les fichiers suivants à l'ouverture de la tâche 1. Lisez-les alors : ils disent ce qu'attend chaque service.
 
 | Fichier | Ce qu'il contient |
 |---|---|
@@ -47,8 +47,8 @@ Le dossier `~/layers-l8/prod` reçoit les fichiers suivants à l'ouverture de la
 ## Ce qu'il faut faire
 
 ```setup
-mkdir -p ~/layers-l8/prod/api ~/layers-l8/prod/proxy
-cat > ~/layers-l8/prod/api/app.py <<'EOF'
+mkdir -p ~/byte-layers/docker/l8/prod/api ~/byte-layers/docker/l8/prod/proxy
+cat > ~/byte-layers/docker/l8/prod/api/app.py <<'EOF'
 import os, socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -80,7 +80,7 @@ class Handler(BaseHTTPRequestHandler):
 
 HTTPServer(("", 8000), Handler).serve_forever()
 EOF
-cat > ~/layers-l8/prod/api/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/prod/api/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app.py .
@@ -88,11 +88,11 @@ CMD ["python", "-u", "app.py"]
 EOF
 ```
 
-Écrivez `~/layers-l8/prod/compose.yaml` pour les services `api` et `cache`, et protégez Redis par un mot de passe.
+Écrivez `~/byte-layers/docker/l8/prod/compose.yaml` pour les services `api` et `cache`, et protégez Redis par un mot de passe.
 
 **Critères :**
 
-- le mot de passe est dans `~/layers-l8/prod/secrets/redis_password.txt`, et ce chemin est écarté de Git par un `.gitignore` ;
+- le mot de passe est dans `~/byte-layers/docker/l8/prod/secrets/redis_password.txt`, et ce chemin est écarté de Git par un `.gitignore` ;
 - `api` et `cache` tournent : `api` construit depuis `api/Dockerfile`, `cache` depuis `redis:8-alpine` ;
 - Redis refuse une commande sans mot de passe, et accepte celui du fichier ;
 - `api` compte bien les visites ;
@@ -113,7 +113,7 @@ Pour tester `api` sans port publié : `docker compose exec api python -c "import
 ```
 
 ```verify
-P=layers-l8-prod; D=~/layers-l8/prod
+P=layers-l8-prod; D=~/byte-layers/docker/l8/prod
 cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=$1" | head -1; }
 A=$(cid api); R=$(cid cache)
 if [ -z "$A" ] || [ -z "$R" ]; then
@@ -176,12 +176,12 @@ echo "RÉUSSI : Redis exige son mot de passe, et ce secret n'existe qu'en fichie
 
 ````solution
 ```bash
-cd ~/layers-l8/prod
+cd ~/byte-layers/docker/l8/prod
 mkdir -p secrets && chmod 700 secrets
 printf 'un-mot-de-passe-de-demo' > secrets/redis_password.txt
 printf 'secrets/\n' > .gitignore
 printf 'secrets/\n' > api/.dockerignore
-cat > ~/layers-l8/prod/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/prod/compose.yaml <<'EOF'
 name: layers-l8-prod
 services:
   api:
@@ -207,7 +207,7 @@ secrets:
   redis_password:
     file: ./secrets/redis_password.txt
 EOF
-cd ~/layers-l8/prod && docker compose up -d --build
+cd ~/byte-layers/docker/l8/prod && docker compose up -d --build
 sleep 3
 ```
 ````
@@ -220,7 +220,7 @@ Ajoutez un service `proxy` devant l'application.
 
 **Critères :**
 
-- `proxy` utilise `nginx:1.30-alpine`, et lit sa configuration dans un dossier `~/layers-l8/prod/proxy` que vous remplissez ;
+- `proxy` utilise `nginx:1.30-alpine`, et lit sa configuration dans un dossier `~/byte-layers/docker/l8/prod/proxy` que vous remplissez ;
 - le port **28385** de la machine mène à son port **80**, et c'est le seul port publié ;
 - `http://localhost:28385/` répond avec un message de votre choix, sans appeler `api` ;
 - `http://localhost:28385/api/` renvoie le compteur de `api`, qui reçoit l'adresse sans le préfixe ;
@@ -236,7 +236,7 @@ Les trois lignes clés d'un bloc `location` : un `set` qui met l'adresse dans un
 ```
 
 ```verify
-P=layers-l8-prod; D=~/layers-l8/prod
+P=layers-l8-prod; D=~/byte-layers/docker/l8/prod
 cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=$1" | head -1; }
 X=$(cid proxy)
 if [ -z "$X" ]; then
@@ -271,8 +271,8 @@ if [ "$(curl -s --max-time 5 http://localhost:28385/api/health)" != "ok" ]; then
   echo "ÉCHEC : http://localhost:28385/api/health ne répond pas ok : api reçoit encore le préfixe /api. Il manque le rewrite."
   exit 1
 fi
-if ! docker inspect "$X" --format '{{range .Mounts}}{{.Source}} {{.Destination}}{{println}}{{end}}' | grep -Eq '/layers-l8/prod/proxy[^ ]* /etc/nginx/conf\.d'; then
-  echo "ÉCHEC : proxy ne lit pas sa configuration dans ~/layers-l8/prod/proxy, monté sur /etc/nginx/conf.d."
+if ! docker inspect "$X" --format '{{range .Mounts}}{{.Source}} {{.Destination}}{{println}}{{end}}' | grep -Eq '/byte-layers/docker/l8/prod/proxy[^ ]* /etc/nginx/conf\.d'; then
+  echo "ÉCHEC : proxy ne lit pas sa configuration dans ~/byte-layers/docker/l8/prod/proxy, monté sur /etc/nginx/conf.d."
   exit 1
 fi
 CONF=$(docker exec "$X" nginx -T 2>/dev/null)
@@ -293,8 +293,8 @@ echo "RÉUSSI : une seule porte, et le proxy ne dépend plus de l'ordre de déma
 
 ````solution
 ```bash
-cd ~/layers-l8/prod && docker compose down
-cat > ~/layers-l8/prod/proxy/default.conf <<'EOF'
+cd ~/byte-layers/docker/l8/prod && docker compose down
+cat > ~/byte-layers/docker/l8/prod/proxy/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -314,7 +314,7 @@ server {
     }
 }
 EOF
-cat > ~/layers-l8/prod/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/prod/compose.yaml <<'EOF'
 name: layers-l8-prod
 services:
   proxy:
@@ -356,7 +356,7 @@ secrets:
   redis_password:
     file: ./secrets/redis_password.txt
 EOF
-cd ~/layers-l8/prod && docker compose up -d --build
+cd ~/byte-layers/docker/l8/prod && docker compose up -d --build
 sleep 3
 ```
 ````
@@ -383,7 +383,7 @@ Si vous utilisez `--wait` avec `docker compose up -d`, la commande attend que to
 ```
 
 ```verify
-P=layers-l8-prod; D=~/layers-l8/prod
+P=layers-l8-prod; D=~/byte-layers/docker/l8/prod
 cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=$1" | head -1; }
 for S in proxy api cache; do
   C=$(cid $S)
@@ -414,7 +414,7 @@ echo "RÉUSSI : les trois services sont healthy, et ils repartiront tout seuls."
 
 ````solution
 ```bash
-cat > ~/layers-l8/prod/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/prod/compose.yaml <<'EOF'
 name: layers-l8-prod
 services:
   proxy:
@@ -479,7 +479,7 @@ secrets:
   redis_password:
     file: ./secrets/redis_password.txt
 EOF
-cd ~/layers-l8/prod && docker compose up -d --wait --wait-timeout 45
+cd ~/byte-layers/docker/l8/prod && docker compose up -d --wait --wait-timeout 45
 ```
 ````
 
@@ -507,7 +507,7 @@ Si Redis affiche `Permission denied` après `cap_drop`, il lui faut `user: redis
 ```
 
 ```verify
-P=layers-l8-prod; D=~/layers-l8/prod
+P=layers-l8-prod; D=~/byte-layers/docker/l8/prod
 cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=$1" | head -1; }
 A=$(cid api); R=$(cid cache); X=$(cid proxy)
 if [ -z "$A" ] || [ -z "$R" ] || [ -z "$X" ]; then
@@ -568,7 +568,7 @@ echo "RÉUSSI : sans root, en lecture seule, avec des limites, et tout répond."
 Le fichier final se trouve aussi dans le dossier `solution/` de ce contenu.
 
 ```bash
-cat > ~/layers-l8/prod/api/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/prod/api/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app.py .
@@ -576,7 +576,7 @@ RUN adduser -D -u 10001 appuser
 USER appuser
 CMD ["python", "-u", "app.py"]
 EOF
-cat > ~/layers-l8/prod/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/prod/compose.yaml <<'EOF'
 name: layers-l8-prod
 services:
   proxy:
@@ -692,8 +692,8 @@ secrets:
   redis_password:
     file: ./secrets/redis_password.txt
 EOF
-cd ~/layers-l8/prod && docker compose down
-cd ~/layers-l8/prod && docker compose up -d --build --wait --wait-timeout 45
+cd ~/byte-layers/docker/l8/prod && docker compose down
+cd ~/byte-layers/docker/l8/prod && docker compose up -d --build --wait --wait-timeout 45
 ```
 ````
 
@@ -716,7 +716,7 @@ Une seule commande `curl` provoque la panne. Le proxy répond alors `502 Bad Gat
 ```
 
 ```verify
-P=layers-l8-prod; D=~/layers-l8/prod
+P=layers-l8-prod; D=~/byte-layers/docker/l8/prod
 cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=$1" | head -1; }
 A=$(cid api); R=$(cid cache)
 if [ -z "$A" ]; then
@@ -767,7 +767,7 @@ Parmi les options de la commande qui supprime les conteneurs, l'une supprime aus
 ```
 
 ```verify
-P=layers-l8-prod; D=~/layers-l8/prod
+P=layers-l8-prod; D=~/byte-layers/docker/l8/prod
 cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=$1" | head -1; }
 R=$(cid cache)
 if [ -z "$R" ]; then
@@ -804,7 +804,7 @@ echo "RÉUSSI : de nouveaux conteneurs, et le compteur est intact."
 
 ````solution
 ```bash
-cd ~/layers-l8/prod && docker compose down && docker compose up -d --wait --wait-timeout 45
+cd ~/byte-layers/docker/l8/prod && docker compose down && docker compose up -d --wait --wait-timeout 45
 ```
 ````
 
@@ -812,7 +812,7 @@ cd ~/layers-l8/prod && docker compose down && docker compose up -d --wait --wait
 
 ## Ce qu'il faut faire
 
-Supprimez tout ce que ce challenge a créé : les conteneurs, les réseaux, le volume, l'image construite et le dossier `~/layers-l8/prod`, secret compris.
+Supprimez tout ce que ce challenge a créé : les conteneurs, les réseaux, le volume, l'image construite et le dossier `~/byte-layers/docker/l8/prod`, secret compris.
 
 **Critères :** il ne doit plus rester aucun objet du projet `layers-l8-prod` dans Docker, ni le dossier. Vos autres conteneurs ne sont pas concernés.
 
@@ -839,8 +839,8 @@ if docker image inspect "$P-api" >/dev/null 2>&1; then
   echo "ÉCHEC : l'image construite existe encore. Il faut l'option --rmi local."
   exit 1
 fi
-if [ -e "$HOME/layers-l8/prod" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l8/prod existe encore."
+if [ -e "$HOME/byte-layers/docker/l8/prod" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l8/prod existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Votre stack était prête pour la production."
@@ -848,7 +848,7 @@ echo "RÉUSSI : tout est propre. Votre stack était prête pour la production."
 
 ````solution
 ```bash
-cd ~/layers-l8/prod && docker compose down -v --rmi local
-cd ~ && rm -rf ~/layers-l8/prod
+cd ~/byte-layers/docker/l8/prod && docker compose down -v --rmi local
+cd ~ && rm -rf ~/byte-layers/docker/l8/prod
 ```
 ````

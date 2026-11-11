@@ -59,7 +59,7 @@ Le stage `build` copie le JAR produit sous un nom fixe, `/src/petclinic.jar`. Le
 Créez le fichier de départ, puis complétez ses blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/Dockerfile <<'EOF'
 # ---- Stage 1 : construire le JAR, avec Maven et un JDK ----
 # TODO : partir de l'image Maven utilisée pour simuler la CI, et nommer ce stage build
 WORKDIR /src
@@ -101,7 +101,7 @@ EOF
 Le contexte de build change lui aussi. Le stage `build` a besoin de `pom.xml` et de `src/`, et plus du tout du JAR de `target/`, qu'il produit lui-même. Remplacez la liste blanche du `.dockerignore` :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/.dockerignore <<'EOF'
 # Le contexte de build ne contient que ce que le stage build copie
 *
 !pom.xml
@@ -109,17 +109,17 @@ cat > ~/layers-l10/prod/petclinic/.dockerignore <<'EOF'
 EOF
 ```
 
-Construisez l'image avec le tag `3-multistage`. Ce premier passage prend une à deux minutes, car le stage `build` télécharge les dépendances dans sa propre couche : il ne connaît pas le dossier `~/layers-l10/m2` du chapitre sur le JAR de la CI. La ligne `transferring context` affiche cette fois environ 1 Mo, le code source seul :
+Construisez l'image avec le tag `3-multistage`. Ce premier passage prend une à deux minutes, car le stage `build` télécharge les dépendances dans sa propre couche : il ne connaît pas le dossier `~/byte-layers/docker/l10/m2` du chapitre sur le JAR de la CI. La ligne `transferring context` affiche cette fois environ 1 Mo, le code source seul :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker build -t layers-l10-petclinic:3-multistage .
+cd ~/byte-layers/docker/l10/prod/petclinic && docker build -t layers-l10-petclinic:3-multistage .
 ```
 
 > 📖 [Les builds multi-stage](https://docs.docker.com/build/building/multi-stage/) · [Le cache de construction](https://docs.docker.com/build/cache/) · [`dependency:go-offline`](https://maven.apache.org/plugins/maven-dependency-plugin/go-offline-mojo.html)
 
 ```verify
 I=layers-l10-petclinic:3-multistage
-F="$HOME/layers-l10/prod/petclinic/Dockerfile"
+F="$HOME/byte-layers/docker/l10/prod/petclinic/Dockerfile"
 if ! docker image inspect $I >/dev/null 2>&1; then
   echo "L'image $I n'existe pas. Complétez le Dockerfile, puis lancez docker build -t $I ."
   exit 1
@@ -159,7 +159,7 @@ Dans le stage `runtime`, la copie s'écrit `COPY --from=build /src/petclinic.jar
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > Dockerfile <<'EOF'
 # ---- Stage 1 : construire le JAR, avec Maven et un JDK ----
 FROM maven:3.9.16-eclipse-temurin-21-noble AS build
@@ -210,14 +210,14 @@ Le gain se mesure quand le code change. 🧪 Cette expérience modifie un texte 
 Changez d'abord le message d'accueil, défini dans le fichier de traductions de PetClinic. `sed -i` remplace le texte directement dans le fichier :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && sed -i 's/^welcome=Welcome$/welcome=Bienvenue à la clinique/' src/main/resources/messages/messages.properties
+cd ~/byte-layers/docker/l10/prod/petclinic && sed -i 's/^welcome=Welcome$/welcome=Bienvenue à la clinique/' src/main/resources/messages/messages.properties
 grep '^welcome=' src/main/resources/messages/messages.properties
 ```
 
 Le `grep` doit afficher `welcome=Bienvenue à la clinique`. Reconstruisez ensuite l'image. L'option `--progress=plain` affiche chaque étape en clair, avec sa durée, et `grep` ne garde que les lignes utiles :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker build --progress=plain -t layers-l10-petclinic:3-multistage . 2>&1 | grep -E 'build [0-9]/6|CACHED|DONE [0-9]+\.[0-9]s'
+cd ~/byte-layers/docker/l10/prod/petclinic && docker build --progress=plain -t layers-l10-petclinic:3-multistage . 2>&1 | grep -E 'build [0-9]/6|CACHED|DONE [0-9]+\.[0-9]s'
 ```
 
 Observez les étapes `[build 3/6] COPY pom.xml ./` et `[build 4/6] RUN mvn -B -q dependency:go-offline`. Chacune est suivie de `CACHED` : les dépendances viennent du cache. Seules la copie de `src/` et la compilation se refont, en une vingtaine de secondes, alors que l'image naïve aurait tout retéléchargé.
@@ -251,7 +251,7 @@ echo "Le nouveau message est en ligne."
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 sed -i 's/^welcome=Welcome$/welcome=Bienvenue à la clinique/' src/main/resources/messages/messages.properties
 docker build -t layers-l10-petclinic:3-multistage .
 docker rm -f layers-l10-petclinic 2>/dev/null

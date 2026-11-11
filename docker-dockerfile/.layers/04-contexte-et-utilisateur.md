@@ -23,8 +23,8 @@ Jusqu'ici, vous copiez les fichiers un par un. Dès qu'un projet grandit, on éc
 C'est pratique, et cela demande une précaution. Pour la voir, ajoutez au projet un fichier sensible, comme un projet réel en contient souvent, avec un mot de passe fictif, en même temps que ce changement. Un fichier `.env` sert à ranger ce genre de valeur :
 
 ```exec
-echo 'DB_PASSWORD=pas-dans-l-image' > ~/layers-l2/web/.env
-cat > ~/layers-l2/web/Dockerfile <<'EOF'
+echo 'DB_PASSWORD=pas-dans-l-image' > ~/byte-layers/docker/l2/web/.env
+cat > ~/byte-layers/docker/l2/web/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY . .
@@ -38,7 +38,7 @@ EOF
 Construisez, puis lisez le contenu du dossier `/app` dans l'image. Ce qui suit le nom de l'image remplace son `CMD`, et `ls -A` liste aussi les fichiers dont le nom commence par un point :
 
 ```exec
-docker build -t layers-l2-web:1.3 ~/layers-l2/web
+docker build -t layers-l2-web:1.3 ~/byte-layers/docker/l2/web
 docker run --rm layers-l2-web:1.3 ls -A
 ```
 
@@ -62,7 +62,7 @@ docker run --rm layers-l2-web:1.3 cat .env
 Le fichier `.dockerignore`, placé à la racine du contexte, liste ce que Docker doit ignorer : ces fichiers n'entrent même pas dans le contexte, et `COPY . .` ne peut plus les voir. Il s'écrit avec un motif par ligne, et `*.log` désigne par exemple tous les fichiers finissant par `.log`. Créez-le à la racine du projet. Cette liste nomme aussi `Dockerfile` et `.dockerignore` : `docker build` les lit quand même, mais ils n'atteignent plus `COPY`.
 
 ```exec
-cat > ~/layers-l2/web/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l2/web/.dockerignore <<'EOF'
 .env
 Dockerfile
 .dockerignore
@@ -73,7 +73,7 @@ EOF
 Reconstruisez sous le tag `1.4` et relisez le dossier :
 
 ```exec
-docker build -t layers-l2-web:1.4 ~/layers-l2/web
+docker build -t layers-l2-web:1.4 ~/byte-layers/docker/l2/web
 docker run --rm layers-l2-web:1.4 ls -A
 ```
 
@@ -91,7 +91,7 @@ if [ -z "$LS" ]; then
   exit 1
 fi
 if printf '%s\n' "$LS" | grep -qx '.env'; then
-  echo "Le fichier .env est encore dans l'image. Vérifiez ~/layers-l2/web/.dockerignore, puis reconstruisez."
+  echo "Le fichier .env est encore dans l'image. Vérifiez ~/byte-layers/docker/l2/web/.dockerignore, puis reconstruisez."
   exit 1
 fi
 if ! printf '%s\n' "$LS" | grep -qx 'app.py'; then
@@ -123,7 +123,7 @@ Vous lisez `root`. Si l'application a une faille, l'attaquant dispose de ces dro
 `USER` vient après l'installation, car `pip install` et `adduser` ont besoin des droits d'administrateur. Faites la modification dans votre éditeur, ou laissez cette commande réécrire le fichier :
 
 ```exec
-cat > ~/layers-l2/web/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/web/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY . .
@@ -139,7 +139,7 @@ EOF
 Reconstruisez, vérifiez l'utilisateur, puis lancez le service et regardez son état :
 
 ```exec
-docker build -t layers-l2-web:1.5 ~/layers-l2/web
+docker build -t layers-l2-web:1.5 ~/byte-layers/docker/l2/web
 docker run --rm layers-l2-web:1.5 id -un
 docker run -d --name layers-l2-web -p 28320:5000 layers-l2-web:1.5
 docker ps
@@ -172,12 +172,12 @@ echo "L'application répond sans être administrateur."
 
 ## Supprimer ce que ce cours a créé
 
-Tout ce cours vit sous le préfixe `layers-l2-` et dans `~/layers-l2/`. `docker image rm` supprime des images, et il refuse celles qu'un conteneur utilise encore : supprimez donc le conteneur en premier. Vos dossiers partent ensuite avec `rm -rf`. Le dossier `~/layers-l2`, alors vide, peut rester, car les autres contenus de cette partie s'en servent.
+Tout ce cours vit sous le préfixe `layers-l2-` et dans `~/byte-layers/docker/l2/`. `docker image rm` supprime des images, et il refuse celles qu'un conteneur utilise encore : supprimez donc le conteneur en premier. Vos dossiers partent ensuite avec `rm -rf`. Le dossier `~/byte-layers/docker/l2`, alors vide, peut rester, car les autres contenus de cette partie s'en servent.
 
 ```exec
 docker rm -f layers-l2-web
 docker image rm layers-l2-hello:1.0 layers-l2-hello:base-nue layers-l2-web:1.0 layers-l2-web:1.1 layers-l2-web:1.2 layers-l2-web:1.3 layers-l2-web:1.4 layers-l2-web:1.5
-rm -rf ~/layers-l2/hello ~/layers-l2/web
+rm -rf ~/byte-layers/docker/l2/hello ~/byte-layers/docker/l2/web
 ```
 
 ```verify
@@ -190,8 +190,8 @@ if docker container inspect layers-l2-web >/dev/null 2>&1; then
   echo "Le conteneur layers-l2-web existe encore."
   exit 1
 fi
-if [ -e "$HOME/layers-l2/web" ] || [ -e "$HOME/layers-l2/hello" ]; then
-  echo "Un dossier de ce cours existe encore dans ~/layers-l2."
+if [ -e "$HOME/byte-layers/docker/l2/web" ] || [ -e "$HOME/byte-layers/docker/l2/hello" ]; then
+  echo "Un dossier de ce cours existe encore dans ~/byte-layers/docker/l2."
   exit 1
 fi
 echo "C'est propre."

@@ -16,4 +16,4 @@ Vous construisez le fichier en quatre chapitres, et chacun ajoute une couche :
 
 Un chapitre facultatif scanne enfin le fichier Compose avec KICS. Comptez environ une heure pour cette partie.
 
-Vous travaillez toujours dans `~/layers-l10/prod/petclinic`, avec le `Dockerfile` distroless de la partie A.
+Vous travaillez toujours dans `~/byte-layers/docker/l10/prod/petclinic`, avec le `Dockerfile` distroless de la partie A.

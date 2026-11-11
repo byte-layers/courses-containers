@@ -24,7 +24,7 @@ Il faut `curl`, et les ports 28382 et 28383 de votre machine doivent être libre
 
 ## Comment ça se passe
 
-Cinq étapes à suivre dans l'ordre, environ 2 h 30 en tout. Vous partez d'une petite application, un compteur de visites et sa base Redis, et vous lui ajoutez une protection à chaque étape, en provoquant à chaque fois la panne qu'elle évite. Vos fichiers vivent dans `~/layers-l8/reliable`, et tout ce que Docker crée commence par `layers-l8-`. La dernière étape supprime le tout.
+Cinq étapes à suivre dans l'ordre, environ 2 h 30 en tout. Vous partez d'une petite application, un compteur de visites et sa base Redis, et vous lui ajoutez une protection à chaque étape, en provoquant à chaque fois la panne qu'elle évite. Vos fichiers vivent dans `~/byte-layers/docker/l8/reliable`, et tout ce que Docker crée commence par `layers-l8-`. La dernière étape supprime le tout.
 
 Pour pratiquer ensuite : le lab « Plusieurs applications derrière un reverse proxy ». Pour vous tester sans guide : le challenge « Une stack prête pour la production ».
 

@@ -27,7 +27,7 @@ Les utiliser ne coûte rien : seule la vérification compte.
 
 - **Ce qu'il faut savoir** : ce qu'enseigne [Lancer, configurer et observer un conteneur](https://byte-layers.com/fr/skills/docker-run). Le lab [Héberger une page dans un conteneur](https://byte-layers.com/fr/labs/docker-first-web-page) en donne un exemple complet.
 - **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, `curl`, et le port **28080** libre.
-- **Un dossier de travail** : `~/layers-l1` est créé pour vous, et la dernière tâche le supprime.
+- **Un dossier de travail** : `~/byte-layers/docker/l1` est créé pour vous, et la dernière tâche le supprime.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l1-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : les tâches 2 et 3 reprennent le conteneur de la tâche 1. Faites-les dans l'ordre.
 
@@ -123,14 +123,14 @@ docker run -d --name layers-l1-web -p 28080:80 --memory 128m nginx:1.30-alpine
 ## Garder sa commande de démarrage et son image dans un fichier
 
 ```setup
-mkdir -p ~/layers-l1
+mkdir -p ~/byte-layers/docker/l1
 ```
 
-Retrouvez ce que `layers-l1-web` est configuré pour exécuter, sans ouvrir de shell dans le conteneur. Gardez-en une trace dans le fichier `~/layers-l1/inspect.txt`, en y envoyant la réponse de Docker avec `>`, ou en y collant les valeurs avec votre éditeur.
+Retrouvez ce que `layers-l1-web` est configuré pour exécuter, sans ouvrir de shell dans le conteneur. Gardez-en une trace dans le fichier `~/byte-layers/docker/l1/inspect.txt`, en y envoyant la réponse de Docker avec `>`, ou en y collant les valeurs avec votre éditeur.
 
 **Critères :**
 
-- le fichier `~/layers-l1/inspect.txt` existe ;
+- le fichier `~/byte-layers/docker/l1/inspect.txt` existe ;
 - il contient la **commande de démarrage** du conteneur, son champ `.Config.Cmd` ;
 - il contient l'**identifiant de son image**, qui commence par `sha256:`.
 
@@ -148,7 +148,7 @@ Docker conserve la configuration d'un conteneur, et on peut la lire sans rien ex
 
 ```verify
 C=layers-l1-web
-REPORT="$HOME/layers-l1/inspect.txt"
+REPORT="$HOME/byte-layers/docker/l1/inspect.txt"
 if ! docker container inspect "$C" >/dev/null 2>&1; then
   echo "ÉCHEC : le conteneur $C n'existe pas. Faites d'abord la tâche 1."
   exit 1
@@ -186,7 +186,7 @@ echo "RÉUSSI : le fichier contient la commande de démarrage et l'identifiant d
 
 ````solution
 ```bash
-docker inspect layers-l1-web --format '{{json .Config.Cmd}} {{.Image}}' > ~/layers-l1/inspect.txt
+docker inspect layers-l1-web --format '{{json .Config.Cmd}} {{.Image}}' > ~/byte-layers/docker/l1/inspect.txt
 ```
 ````
 
@@ -331,7 +331,7 @@ exit
 ## Enregistrer les logs d'un conteneur dans un fichier
 
 ```setup
-mkdir -p ~/layers-l1
+mkdir -p ~/byte-layers/docker/l1
 ```
 
 Lancez un conteneur qui écrit une ligne reconnaissable sur sa sortie standard, puis envoyez cette sortie, relue depuis Docker, dans un fichier de votre machine.
@@ -340,7 +340,7 @@ Lancez un conteneur qui écrit une ligne reconnaissable sur sa sortie standard, 
 
 - un conteneur s'appelle exactement `layers-l1-logger` ;
 - sa sortie, telle que Docker l'a enregistrée, contient `LAYERS-LOG-OK` ;
-- le fichier `~/layers-l1/logs.txt` contient cette même ligne.
+- le fichier `~/byte-layers/docker/l1/logs.txt` contient cette même ligne.
 
 Lisez cette sortie depuis Docker plutôt que de la retaper : c'est le geste qui compte. La vérification ne peut pas faire la différence, elle vous fait confiance.
 
@@ -358,7 +358,7 @@ La sous-commande qui relit cette sortie porte le nom de ce qu'elle lit. Redirige
 
 ```verify
 C=layers-l1-logger
-REPORT="$HOME/layers-l1/logs.txt"
+REPORT="$HOME/byte-layers/docker/l1/logs.txt"
 NEEDLE=LAYERS-LOG-OK
 if ! docker container inspect "$C" >/dev/null 2>&1; then
   echo "ÉCHEC : aucun conteneur ne s'appelle $C."
@@ -390,7 +390,7 @@ echo "RÉUSSI : $C a écrit $NEEDLE, et sa sortie est dans $REPORT."
 ````solution
 ```bash
 docker run --name layers-l1-logger alpine:3.22 echo LAYERS-LOG-OK
-docker logs layers-l1-logger > ~/layers-l1/logs.txt
+docker logs layers-l1-logger > ~/byte-layers/docker/l1/logs.txt
 ```
 ````
 
@@ -399,7 +399,7 @@ docker logs layers-l1-logger > ~/layers-l1/logs.txt
 ## Supprimer les conteneurs et le dossier
 
 Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l1-web`, `layers-l1-shell` et
-`layers-l1-logger`, et le dossier `~/layers-l1`.
+`layers-l1-logger`, et le dossier `~/byte-layers/docker/l1`.
 
 **Critères :** plus aucun de ces conteneurs, plus de dossier. Vos autres conteneurs ne sont pas concernés.
 
@@ -417,8 +417,8 @@ if [ -n "$left" ]; then
   echo "ÉCHEC : il reste : $(echo "$left" | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l1" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l1 existe encore."
+if [ -e "$HOME/byte-layers/docker/l1" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l1 existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez faire vivre un conteneur."
@@ -427,6 +427,6 @@ echo "RÉUSSI : tout est propre. Vous savez faire vivre un conteneur."
 ````solution
 ```bash
 docker rm -f layers-l1-web layers-l1-shell layers-l1-logger
-rm -r ~/layers-l1
+rm -r ~/byte-layers/docker/l1
 ```
 ````

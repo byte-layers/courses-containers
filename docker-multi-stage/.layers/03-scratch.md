@@ -10,7 +10,7 @@ Votre image contient encore un système Alpine, dont le binaire ne se sert presq
 `scratch` ne contient aucune bibliothèque système, et le binaire doit donc les embarquer. En Go, cela passe par `CGO_ENABLED=0`, une variable qui interdit au compilateur d'utiliser des bibliothèques externes. Écrite devant la commande, elle ne vaut que pour celle-ci :
 
 ```exec
-cat > ~/layers-l3/multi/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/multi/Dockerfile <<'EOF'
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY . .
@@ -20,7 +20,7 @@ FROM scratch
 COPY --from=build /hello /hello
 CMD ["/hello"]
 EOF
-docker build -t layers-l3-multi:scratch ~/layers-l3/multi
+docker build -t layers-l3-multi:scratch ~/byte-layers/docker/l3/multi
 docker images layers-l3-multi
 ```
 
@@ -67,9 +67,9 @@ Docker répond `executable file not found`, car le conteneur n'a ni `sh`, ni `ls
 Il y a une conséquence directe sur le Dockerfile : la forme shell de `CMD` a besoin de `/bin/sh`. Essayez sur un Dockerfile à part, écrit dans un fichier que `-f` désigne :
 
 ```exec
-printf 'FROM scratch\nCOPY hello.txt /\nCMD cat /hello.txt\n' > ~/layers-l3/multi/Dockerfile.shell
-echo salut > ~/layers-l3/multi/hello.txt
-docker build -q -f ~/layers-l3/multi/Dockerfile.shell -t layers-l3-multi:shell ~/layers-l3/multi
+printf 'FROM scratch\nCOPY hello.txt /\nCMD cat /hello.txt\n' > ~/byte-layers/docker/l3/multi/Dockerfile.shell
+echo salut > ~/byte-layers/docker/l3/multi/hello.txt
+docker build -q -f ~/byte-layers/docker/l3/multi/Dockerfile.shell -t layers-l3-multi:shell ~/byte-layers/docker/l3/multi
 docker run --rm layers-l3-multi:shell
 ```
 
@@ -80,7 +80,7 @@ Supprimez ces essais, ainsi que le conteneur :
 ```exec
 docker rm -f layers-l3-multi
 docker image rm layers-l3-multi:shell
-rm ~/layers-l3/multi/Dockerfile.shell ~/layers-l3/multi/hello.txt
+rm ~/byte-layers/docker/l3/multi/Dockerfile.shell ~/byte-layers/docker/l3/multi/hello.txt
 ```
 
 ## Quelle image finale choisir ?

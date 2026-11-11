@@ -10,7 +10,7 @@ Taper les options de chaque service n'est pas tenable au-delà d'un service, et 
 Ce fichier décrit une application de deux services : votre image en 3 répliques, et un Redis, une base de données en mémoire. Il se place à côté du Dockerfile :
 
 ```exec
-cat > ~/layers-l9/app/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l9/app/compose.yaml <<'EOF'
 services:
   web:
     build: .
@@ -42,7 +42,7 @@ Vous retrouvez le format de Compose, avec une nouveauté : la section `deploy`. 
 `docker stack deploy` lit le fichier et crée tout ce qu'il décrit. `-c` désigne le fichier, le dernier mot est le nom de la stack, et `--detach=false` attend que les services soient prêts avant de vous rendre la main :
 
 ```exec
-docker stack deploy -c ~/layers-l9/app/compose.yaml --detach=false layers-l9-demo
+docker stack deploy -c ~/byte-layers/docker/l9/app/compose.yaml --detach=false layers-l9-demo
 ```
 
 La première ligne dit `Ignoring unsupported options: build`, et c'est normal. Swarm ne construit pas d'image, comme vous l'avez vu à l'étape précédente : il ne tient compte que de `image`. Le champ `build` reste utile dans le même fichier : `docker compose build` s'en sert pour construire l'image sur votre poste, avant que vous ne la publiiez. L'avertissement `could not be accessed on a registry` peut aussi revenir, pour la raison vue à l'étape précédente.
@@ -100,8 +100,8 @@ echo "Le service web joint le service cache par son nom."
 Avec une stack, on ne lance plus `docker service update` : **le fichier reste la référence**. On le modifie, et on relance la même commande. Swarm compare, et ne touche qu'à ce qui a changé. `sed -i.bak` remplace le texte directement dans le fichier, et garde une copie en `.bak` :
 
 ```exec
-sed -i.bak 's/layers-l9-app:1/layers-l9-app:2/' ~/layers-l9/app/compose.yaml
-docker stack deploy -c ~/layers-l9/app/compose.yaml --detach=false layers-l9-demo
+sed -i.bak 's/layers-l9-app:1/layers-l9-app:2/' ~/byte-layers/docker/l9/app/compose.yaml
+docker stack deploy -c ~/byte-layers/docker/l9/app/compose.yaml --detach=false layers-l9-demo
 ```
 
 La commande affiche `Updating service` pour les deux services, car elle les présente tous à Swarm, et elle dure près d'une minute, le temps de remplacer les 3 tâches de `web`. Regardez les services, puis demandez la page :

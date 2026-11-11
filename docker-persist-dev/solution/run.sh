@@ -2,7 +2,7 @@
 # Rejoue le lab de bout en bout et s'arrête à la première erreur. À lancer depuis le dossier solution/.
 set -euo pipefail
 
-WORK="$HOME/layers-l6"
+WORK="$HOME/byte-layers/docker/l6"
 APP="$WORK/app"
 cleanup() {
   docker rm -f layers-l6-todo layers-l6-dev layers-l6-db >/dev/null 2>&1 || true

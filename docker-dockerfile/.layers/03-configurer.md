@@ -19,7 +19,7 @@ Votre image fonctionne, mais rien n'indique sur quel port elle écoute ni commen
 Faites-le dans votre éditeur, ou laissez cette commande réécrire le fichier :
 
 ```exec
-cat > ~/layers-l2/web/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/web/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY requirements.txt .
@@ -34,7 +34,7 @@ EOF
 Reconstruisez sous le tag `1.2`, lancez un conteneur sans aucune option de réglage, et regardez son état :
 
 ```exec
-docker build -t layers-l2-web:1.2 ~/layers-l2/web
+docker build -t layers-l2-web:1.2 ~/byte-layers/docker/l2/web
 docker run -d --name layers-l2-web -p 28320:5000 layers-l2-web:1.2
 docker ps
 ```

@@ -10,7 +10,7 @@ Une application peut avoir une faille. La question devient alors : si quelqu'un 
 Par défaut, un conteneur tourne en administrateur, `root`, et peut écrire partout dans son système de fichiers. Vérifiez sur `web` : `id` dit qui vous êtes, et `touch` crée un fichier vide.
 
 ```exec
-cd ~/layers-l8/reliable && docker compose exec web sh -c 'id; touch /app/fichier-pirate; ls /app'
+cd ~/byte-layers/docker/l8/reliable && docker compose exec web sh -c 'id; touch /app/fichier-pirate; ls /app'
 ```
 
 Vous lisez `uid=0(root)`, et le fichier a bien été créé à côté du code.
@@ -35,7 +35,7 @@ Ce tableau liste les réglages qui réduisent cela, l'exception `tmpfs` et le ca
 Le meilleur endroit pour ne pas être `root`, c'est l'image : l'utilisateur y existe vraiment, et la protection vaut partout où l'image tourne. La clé `user:` de Compose force un utilisateur au démarrage, sans le créer, ce qui dépanne quand vous ne pouvez pas reconstruire l'image. Créez cet utilisateur après avoir copié le code. `adduser -D` le crée sans mot de passe, et `-u` fixe son numéro :
 
 ```exec
-cat > ~/layers-l8/reliable/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app.py .
@@ -50,7 +50,7 @@ EOF
 Appliquez les autres réglages aux deux services. Le fichier commence à être long, mais il ne contient rien d'autre que ce qui a déjà été expliqué :
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -122,7 +122,7 @@ EOF
 Reconstruisez et démarrez. `--wait` demande à `up` d'attendre que les services soient `healthy`, et `--wait-timeout` limite cette attente à 20 secondes. Attendez-vous à une erreur :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose up -d --build --wait --wait-timeout 20
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d --build --wait --wait-timeout 20
 ```
 
 ## La panne de Redis
@@ -130,8 +130,8 @@ cd ~/layers-l8/reliable && docker compose up -d --build --wait --wait-timeout 20
 Vous lisez un échec, `container layers-l8-reliable-cache-1 is unhealthy` : `cache` n'atteint jamais l'état `healthy`. Regardez ce qu'il en dit, et son état. `grep -m 1` s'arrête à la première ligne trouvée. Pas d'inquiétude, voici le symptôme, la cause et le correctif.
 
 ```exec
-cd ~/layers-l8/reliable && docker compose logs cache | grep -m 1 'Permission denied'
-cd ~/layers-l8/reliable && docker compose ps -a --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/reliable && docker compose logs cache | grep -m 1 'Permission denied'
+cd ~/byte-layers/docker/l8/reliable && docker compose ps -a --format '{{.Service}} : {{.Status}}'
 ```
 
 - **Symptôme** : `cache` redémarre en boucle, son état affiche `Restarting` ou quelques secondes de `Up`, et ses logs disent `Opening the temp file for AOF rewrite in rewriteAppendOnlyFile(): Permission denied`. L'AOF est le journal où Redis note chaque écriture, l'option `--appendonly`.
@@ -141,16 +141,16 @@ cd ~/layers-l8/reliable && docker compose ps -a --format '{{.Service}} : {{.Stat
 Ajoutez donc `user: redis` au service. Redis y gagne aussi un `tmpfs` sur `/tmp`, pour ses fichiers temporaires. Comme à l'étape précédente, `awk` insère ces lignes après celle de l'image ; vous pouvez le faire dans votre éditeur. L'essai raté a pu laisser le volume dans un état bancal, et il ne contient que des visites de test : `down -v` le supprime avec le reste.
 
 ```exec
-cd ~/layers-l8/reliable && awk '{print} /^    image: redis/{print "    user: redis"; print "    tmpfs:"; print "      - /tmp"}' compose.yaml > compose.new && mv compose.new compose.yaml
-cd ~/layers-l8/reliable && docker compose down -v
-cd ~/layers-l8/reliable && docker compose up -d --wait --wait-timeout 30
+cd ~/byte-layers/docker/l8/reliable && awk '{print} /^    image: redis/{print "    user: redis"; print "    tmpfs:"; print "      - /tmp"}' compose.yaml > compose.new && mv compose.new compose.yaml
+cd ~/byte-layers/docker/l8/reliable && docker compose down -v
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d --wait --wait-timeout 30
 ```
 
 Cette fois, `up` se termine sans erreur : les deux services sont `healthy`. Vérifiez que l'application fonctionne et rejouez les deux essais du début :
 
 ```exec
 curl -s --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28382
-cd ~/layers-l8/reliable && docker compose exec web sh -c 'id; touch /app/fichier-pirate'
+cd ~/byte-layers/docker/l8/reliable && docker compose exec web sh -c 'id; touch /app/fichier-pirate'
 ```
 
 Vous lisez `uid=10001(appuser)`, puis `Read-only file system`. Le fichier ne peut plus être déposé, et l'application tourne quand même.

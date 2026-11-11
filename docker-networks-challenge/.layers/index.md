@@ -38,7 +38,7 @@ Voici l'architecture demandée : `api` est le seul conteneur à voir les deux r�
 
 - **Ce qu'il faut savoir** : ce qu'enseignent les cours « Localhost n'est pas l'hôte » et « Relier des conteneurs et publier un port ». Le lab « Une application et sa base, à la main » est un bon entraînement.
 - **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, `curl`, et le port 28356 libre.
-- **Un dossier de travail** : `~/layers-l5` est créé pour vous, et la dernière tâche le supprime. La vérification y garde un fichier caché, `.api-id`, qui lui sert à reconnaître votre conteneur.
+- **Un dossier de travail** : `~/byte-layers/docker/l5` est créé pour vous, et la dernière tâche le supprime. La vérification y garde un fichier caché, `.api-id`, qui lui sert à reconnaître votre conteneur.
 - **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l5-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : les tâches 3 et 4 portent sur le même conteneur. Faites-les dans l'ordre.
@@ -146,7 +146,7 @@ docker run -d --name layers-l5-cache --network layers-l5-back --network-alias ca
 ## Ce qu'il faut faire
 
 ```setup
-mkdir -p ~/layers-l5
+mkdir -p ~/byte-layers/docker/l5
 ```
 
 Lancez l'API : un petit serveur web Python sur le réseau `back`. Pour l'instant, elle ne voit que ce réseau.
@@ -186,8 +186,8 @@ if ! docker exec "$C" nc -z -w 2 cache 6379 2>/dev/null; then
   echo "ÉCHEC : $C ne joint pas cache sur le port 6379. Le cache de la tâche 2 tourne-t-il ?"
   exit 1
 fi
-mkdir -p "$HOME/layers-l5"
-docker container inspect "$C" --format '{{.Id}}' > "$HOME/layers-l5/.api-id"
+mkdir -p "$HOME/byte-layers/docker/l5"
+docker container inspect "$C" --format '{{.Id}}' > "$HOME/byte-layers/docker/l5/.api-id"
 echo "RÉUSSI : $C joint le cache par son nom."
 ```
 
@@ -218,7 +218,7 @@ if ! docker container inspect "$C" >/dev/null 2>&1; then
   echo "ÉCHEC : le conteneur $C n'existe pas. Faites d'abord la tâche 3."
   exit 1
 fi
-ID_REF=$(cat "$HOME/layers-l5/.api-id" 2>/dev/null)
+ID_REF=$(cat "$HOME/byte-layers/docker/l5/.api-id" 2>/dev/null)
 if [ -z "$ID_REF" ]; then
   echo "ÉCHEC : la tâche 3 n'a pas été vérifiée. Vérifiez-la d'abord : elle note l'identifiant de $C."
   exit 1
@@ -321,7 +321,7 @@ docker run -d --name layers-l5-web --network layers-l5-front -p 127.0.0.1:28356:
 
 ## Ce qu'il faut faire
 
-Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l5-web`, `layers-l5-api` et `layers-l5-cache`, les réseaux `layers-l5-front` et `layers-l5-back`, et le dossier `~/layers-l5`.
+Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l5-web`, `layers-l5-api` et `layers-l5-cache`, les réseaux `layers-l5-front` et `layers-l5-back`, et le dossier `~/byte-layers/docker/l5`.
 
 **Critères :** plus aucun de ces objets, plus de dossier. Vos autres conteneurs et réseaux ne sont pas concernés.
 
@@ -341,8 +341,8 @@ for N in layers-l5-front layers-l5-back; do
     exit 1
   fi
 done
-if [ -e "$HOME/layers-l5" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l5 existe encore."
+if [ -e "$HOME/byte-layers/docker/l5" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l5 existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez isoler et relier des conteneurs."
@@ -352,6 +352,6 @@ echo "RÉUSSI : tout est propre. Vous savez isoler et relier des conteneurs."
 ```bash
 docker rm -f layers-l5-web layers-l5-api layers-l5-cache
 docker network rm layers-l5-front layers-l5-back
-rm -rf ~/layers-l5
+rm -rf ~/byte-layers/docker/l5
 ```
 ````

@@ -22,7 +22,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 - **Ce qu'il faut savoir** : ce qu'enseignent les cours « Le conteneur est jetable » et « Garder ses données : volumes et bind mounts ». Le lab « Persister une base, développer en direct » est un bon entraînement.
 - **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, `curl`, `tar`, et le port 28365 libre.
-- **Un dossier de travail** : `~/layers-l6` est créé pour vous, et la dernière tâche le supprime. La vérification y garde un fichier caché, `.pg-id`, qui lui sert à reconnaître votre conteneur. Sur un poste hébergé, seuls les dossiers sous `/home/student` sont visibles du moteur Docker, ce qui est bien le cas de celui-ci.
+- **Un dossier de travail** : `~/byte-layers/docker/l6` est créé pour vous, et la dernière tâche le supprime. La vérification y garde un fichier caché, `.pg-id`, qui lui sert à reconnaître votre conteneur. Sur un poste hébergé, seuls les dossiers sous `/home/student` sont visibles du moteur Docker, ce qui est bien le cas de celui-ci.
 - **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l6-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : chaque tâche s'appuie sur la précédente, sauf la tâche 4.
@@ -32,7 +32,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 ## Ce qu'il faut faire
 
 ```setup
-mkdir -p ~/layers-l6
+mkdir -p ~/byte-layers/docker/l6
 ```
 
 Lancez une base PostgreSQL dont les données vivent dans un volume nommé.
@@ -77,8 +77,8 @@ if [ "$MOUNT" != "volume layers-l6-data" ]; then
   echo "  Trouvez ce dossier dans la fiche de l'image, supprimez le conteneur et recréez-le."
   exit 1
 fi
-mkdir -p "$HOME/layers-l6"
-[ -f "$HOME/layers-l6/.pg-id" ] || docker container inspect "$C" --format '{{.Id}}' > "$HOME/layers-l6/.pg-id"
+mkdir -p "$HOME/byte-layers/docker/l6"
+[ -f "$HOME/byte-layers/docker/l6/.pg-id" ] || docker container inspect "$C" --format '{{.Id}}' > "$HOME/byte-layers/docker/l6/.pg-id"
 echo "RÉUSSI : PostgreSQL écrit ses données dans layers-l6-data."
 ```
 
@@ -149,7 +149,7 @@ Ce nouveau conteneur met quelques secondes à répondre : `pg_isready` vous le d
 
 ```verify
 C=layers-l6-pg
-ID_REF=$(cat "$HOME/layers-l6/.pg-id" 2>/dev/null)
+ID_REF=$(cat "$HOME/byte-layers/docker/l6/.pg-id" 2>/dev/null)
 if [ -z "$ID_REF" ]; then
   echo "ÉCHEC : la tâche 1 n'a pas été vérifiée. Vérifiez-la d'abord : elle note l'identifiant du conteneur."
   exit 1
@@ -198,7 +198,7 @@ Faites servir par nginx une page qui reste sur votre machine.
 
 **Critères :**
 
-- le fichier `~/layers-l6/site/index.html` contient le mot `layers-l6-ok` ;
+- le fichier `~/byte-layers/docker/l6/site/index.html` contient le mot `layers-l6-ok` ;
 - un conteneur s'appelle exactement `layers-l6-web`, il tourne, et il vient d'une image `nginx` ;
 - ce dossier `site` est branché par un **bind mount**, en **lecture seule**, sur `/usr/share/nginx/html` ;
 - le port **28365** de l'hôte mène à son port 80, et `curl http://localhost:28365` affiche votre page.
@@ -209,8 +209,8 @@ Faites servir par nginx une page qui reste sur votre machine.
 
 ```verify
 C=layers-l6-web
-if ! grep -q layers-l6-ok "$HOME/layers-l6/site/index.html" 2>/dev/null; then
-  echo "ÉCHEC : ~/layers-l6/site/index.html n'existe pas ou ne contient pas layers-l6-ok."
+if ! grep -q layers-l6-ok "$HOME/byte-layers/docker/l6/site/index.html" 2>/dev/null; then
+  echo "ÉCHEC : ~/byte-layers/docker/l6/site/index.html n'existe pas ou ne contient pas layers-l6-ok."
   exit 1
 fi
 if [ "$(docker container inspect "$C" --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
@@ -223,8 +223,8 @@ case "$(docker container inspect "$C" --format '{{.Config.Image}}')" in
 esac
 MOUNT=$(docker container inspect "$C" --format '{{range .Mounts}}{{if eq .Destination "/usr/share/nginx/html"}}{{.Type}} {{.RW}} {{.Source}}{{end}}{{end}}')
 case "$MOUNT" in
-  "bind false "*layers-l6/site) : ;;
-  *) echo "ÉCHEC : /usr/share/nginx/html n'est pas un bind mount en lecture seule de ~/layers-l6/site (trouvé : ${MOUNT:-rien})."
+  "bind false "*byte-layers/docker/l6/site) : ;;
+  *) echo "ÉCHEC : /usr/share/nginx/html n'est pas un bind mount en lecture seule de ~/byte-layers/docker/l6/site (trouvé : ${MOUNT:-rien})."
      echo "  Un montage se fixe à la création : supprimez $C et recréez-le."
      exit 1 ;;
 esac
@@ -241,9 +241,9 @@ echo "RÉUSSI : nginx sert votre dossier, en lecture seule."
 
 ````solution
 ```bash
-mkdir -p ~/layers-l6/site
-echo '<h1>layers-l6-ok</h1>' > ~/layers-l6/site/index.html
-docker run -d --name layers-l6-web -p 28365:80 -v "$HOME/layers-l6/site:/usr/share/nginx/html:ro" nginx:1.30-alpine
+mkdir -p ~/byte-layers/docker/l6/site
+echo '<h1>layers-l6-ok</h1>' > ~/byte-layers/docker/l6/site/index.html
+docker run -d --name layers-l6-web -p 28365:80 -v "$HOME/byte-layers/docker/l6/site:/usr/share/nginx/html:ro" nginx:1.30-alpine
 ```
 ````
 
@@ -255,7 +255,7 @@ Sauvegardez le contenu du volume dans une archive sur votre machine.
 
 **Critères :**
 
-- le fichier `~/layers-l6/sauvegarde.tar.gz` existe ;
+- le fichier `~/byte-layers/docker/l6/sauvegarde.tar.gz` existe ;
 - c'est une archive `tar` compressée, qui contient directement les fichiers du volume, dont `PG_VERSION`.
 
 Arrêtez la base avant d'archiver, pour que ses fichiers soient cohérents. Relancez-la ensuite. La vérification ne peut pas savoir que vous l'avez arrêtée, mais elle regarde que la base tourne de nouveau.
@@ -269,9 +269,9 @@ Un conteneur temporaire doit voir le volume et un dossier de votre machine. Une 
 ```
 
 ```verify
-A="$HOME/layers-l6/sauvegarde.tar.gz"
+A="$HOME/byte-layers/docker/l6/sauvegarde.tar.gz"
 if [ ! -f "$A" ]; then
-  echo "ÉCHEC : le fichier ~/layers-l6/sauvegarde.tar.gz n'existe pas."
+  echo "ÉCHEC : le fichier ~/byte-layers/docker/l6/sauvegarde.tar.gz n'existe pas."
   exit 1
 fi
 if ! tar tzf "$A" >/dev/null 2>&1; then
@@ -293,7 +293,7 @@ echo "RÉUSSI : le contenu du volume est dans l'archive."
 ````solution
 ```bash
 docker stop layers-l6-pg
-docker run --rm -v layers-l6-data:/from:ro -v "$HOME/layers-l6:/to" alpine:3.22 tar czf /to/sauvegarde.tar.gz -C /from .
+docker run --rm -v layers-l6-data:/from:ro -v "$HOME/byte-layers/docker/l6:/to" alpine:3.22 tar czf /to/sauvegarde.tar.gz -C /from .
 docker start layers-l6-pg
 ```
 ````
@@ -351,7 +351,7 @@ echo "RÉUSSI : la sauvegarde est restaurée, et la donnée se lit sur un second
 ````solution
 ```bash
 docker volume create layers-l6-restaure
-docker run --rm -v "$HOME/layers-l6:/from:ro" -v layers-l6-restaure:/to alpine:3.22 tar xzf /from/sauvegarde.tar.gz -C /to
+docker run --rm -v "$HOME/byte-layers/docker/l6:/from:ro" -v layers-l6-restaure:/to alpine:3.22 tar xzf /from/sauvegarde.tar.gz -C /to
 docker run -d --name layers-l6-pg2 -v layers-l6-restaure:/var/lib/postgresql/data postgres:17-alpine
 until docker exec layers-l6-pg2 pg_isready -U postgres -h 127.0.0.1 -q; do sleep 1; done
 ```
@@ -361,7 +361,7 @@ until docker exec layers-l6-pg2 pg_isready -U postgres -h 127.0.0.1 -q; do sleep
 
 ## Ce qu'il faut faire
 
-Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l6-pg`, `layers-l6-pg2` et `layers-l6-web`, les volumes `layers-l6-data` et `layers-l6-restaure`, et le dossier `~/layers-l6`.
+Supprimez tout ce que ce challenge a créé : les conteneurs `layers-l6-pg`, `layers-l6-pg2` et `layers-l6-web`, les volumes `layers-l6-data` et `layers-l6-restaure`, et le dossier `~/byte-layers/docker/l6`.
 
 **Critères :** plus aucun de ces objets, plus de dossier. Vos autres conteneurs et volumes ne sont pas concernés.
 
@@ -381,8 +381,8 @@ for V in layers-l6-data layers-l6-restaure; do
     exit 1
   fi
 done
-if [ -e "$HOME/layers-l6" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l6 existe encore."
+if [ -e "$HOME/byte-layers/docker/l6" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l6 existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez prouver que vos données survivent."
@@ -392,6 +392,6 @@ echo "RÉUSSI : tout est propre. Vous savez prouver que vos données survivent."
 ```bash
 docker rm -f layers-l6-pg layers-l6-pg2 layers-l6-web
 docker volume rm layers-l6-data layers-l6-restaure
-rm -rf ~/layers-l6
+rm -rf ~/byte-layers/docker/l6
 ```
 ````

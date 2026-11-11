@@ -30,7 +30,7 @@ Un vrai cluster demande plusieurs machines, et vous n'en avez qu'une. Ce cours f
 
 ## Comment ça se passe
 
-Cinq étapes à suivre dans l'ordre, environ 2 heures en tout. Tout ce que vous créez porte le préfixe `layers-l9-`, et vos fichiers vont dans `~/layers-l9`.
+Cinq étapes à suivre dans l'ordre, environ 2 heures en tout. Tout ce que vous créez porte le préfixe `layers-l9-`, et vos fichiers vont dans `~/byte-layers/docker/l9`.
 
 **Une différence avec les cours précédents** : ce cours change l'état de votre moteur Docker lui-même, en le faisant entrer dans un swarm, et la dernière étape l'en fait sortir. La première étape vérifie donc que votre moteur n'est pas déjà dans un swarm, car en sortir dissoudrait celui-ci.
 

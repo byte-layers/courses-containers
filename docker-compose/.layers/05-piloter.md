@@ -10,20 +10,20 @@ Votre application tourne. Cette dernière étape rassemble les commandes du quot
 `down` supprime les conteneurs. Pour une simple pause, `docker compose stop` les arrête sans les supprimer, et `start` les relance. `-a` montre aussi les conteneurs arrêtés, et `--format` choisit les colonnes, comme pour `docker ps` :
 
 ```exec
-cd ~/layers-l7/counter && docker compose stop web
-cd ~/layers-l7/counter && docker compose ps -a --format '{{.Service}} : {{.State}}'
+cd ~/byte-layers/docker/l7/counter && docker compose stop web
+cd ~/byte-layers/docker/l7/counter && docker compose ps -a --format '{{.Service}} : {{.State}}'
 ```
 
 Vous lisez `web : exited`, alors que `cache` et `probe` tournent toujours : ces commandes acceptent un nom de service, pour n'agir que sur lui. Relancez-le :
 
 ```exec
-cd ~/layers-l7/counter && docker compose start web
+cd ~/byte-layers/docker/l7/counter && docker compose start web
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
 
 ```verify
 if [ "$(docker inspect layers-l7-counter-web-1 --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "web est arrêté. Lancez docker compose start web dans ~/layers-l7/counter."
+  echo "web est arrêté. Lancez docker compose start web dans ~/byte-layers/docker/l7/counter."
   exit 1
 fi
 if [ "$(docker inspect layers-l7-counter-web-1 --format '{{.State.FinishedAt}}')" = "0001-01-01T00:00:00Z" ]; then
@@ -38,13 +38,13 @@ echo "web a été arrêté puis relancé, sans être supprimé."
 `docker compose exec` lance une commande dans un service qui tourne, comme `docker exec`, mais avec le nom du service au lieu de celui du conteneur. Lisez le compteur directement dans Redis avec `redis-cli`, son outil en ligne de commande :
 
 ```exec
-cd ~/layers-l7/counter && docker compose exec cache redis-cli get visits
+cd ~/byte-layers/docker/l7/counter && docker compose exec cache redis-cli get visits
 ```
 
 Pour un travail ponctuel, `docker compose run` crée au contraire un conteneur **neuf** à partir de la description d'un service, avec une autre commande, et `--rm` le supprime à la fin. Ici, ce nouveau conteneur est sur le même réseau, et `-h cache` dit à `redis-cli` d'interroger le service `cache` :
 
 ```exec
-cd ~/layers-l7/counter && docker compose run --rm cache redis-cli -h cache get visits
+cd ~/byte-layers/docker/l7/counter && docker compose run --rm cache redis-cli -h cache get visits
 ```
 
 Ces deux commandes se distinguent ainsi :
@@ -64,7 +64,7 @@ Sans `--tail`, `docker compose logs` affiche tout l'historique. Avec `-f`, il re
 
 ```exec
 curl -s http://localhost:28370 >/dev/null
-cd ~/layers-l7/counter && docker compose logs --tail 3 web
+cd ~/byte-layers/docker/l7/counter && docker compose logs --tail 3 web
 ```
 
 Vous devez voir une ligne contenant `"GET / HTTP/1.1" 200`.
@@ -82,8 +82,8 @@ echo "Les requêtes apparaissent dans les logs de web."
 Il reste à ranger. `-v` supprime aussi le volume, et `--rmi local` supprime l'image que Compose a construite, sans toucher à `redis:8-alpine` ni à `alpine:3.22`. `rm -rf` efface ensuite vos fichiers, en commençant par quitter ce dossier s'il est le vôtre :
 
 ```exec
-cd ~/layers-l7/counter && docker compose down -v --rmi local
-cd ~ && rm -rf ~/layers-l7/counter
+cd ~/byte-layers/docker/l7/counter && docker compose down -v --rmi local
+cd ~ && rm -rf ~/byte-layers/docker/l7/counter
 ```
 
 ```verify
@@ -99,8 +99,8 @@ if docker image inspect layers-l7-counter-web >/dev/null 2>&1; then
   echo "L'image layers-l7-counter-web existe encore : docker rmi layers-l7-counter-web."
   exit 1
 fi
-if [ -e "$HOME/layers-l7/counter" ]; then
-  echo "Le dossier ~/layers-l7/counter existe encore."
+if [ -e "$HOME/byte-layers/docker/l7/counter" ]; then
+  echo "Le dossier ~/byte-layers/docker/l7/counter existe encore."
   exit 1
 fi
 echo "C'est propre."

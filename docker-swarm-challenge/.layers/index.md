@@ -23,7 +23,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 - **Ce qu'il faut savoir** : ce qu'enseigne le cours « Déployer sur un cluster Swarm », et écrire un petit Dockerfile.
 - **Ce qu'il faut avoir** : Docker qui répond à `docker ps`, `curl`, et le port **28394** libre. Un seul nœud suffit, et le poste hébergé convient.
 - **Votre moteur ne doit être dans aucun swarm** : la dernière tâche le fait sortir de celui que vous allez créer, et elle dissoudrait un swarm existant. Vérifiez avec `docker info --format '{{.Swarm.LocalNodeState}}'`, qui doit répondre `inactive`. La vérification de la tâche 1 refuse de continuer si ce n'est pas le cas.
-- **Un dossier de travail** : `~/layers-l9` est créé pour vous, et la dernière tâche le supprime. La vérification y garde aussi deux fichiers cachés, `.etat-initial` et `.service-id`, qui lui servent à connaître l'état de départ et à reconnaître votre service.
+- **Un dossier de travail** : `~/byte-layers/docker/l9` est créé pour vous, et la dernière tâche le supprime. La vérification y garde aussi deux fichiers cachés, `.etat-initial` et `.service-id`, qui lui servent à connaître l'état de départ et à reconnaître votre service.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l9-`. Rien d'autre n'est inspecté ni supprimé sur votre machine, à part le swarm lui-même.
 - **L'ordre compte** : chaque tâche reprend le service de la précédente. Ne le supprimez pas pour le recréer.
 - **Pour interroger le service**, utilisez `http://127.0.0.1:28394` plutôt que `localhost`.
@@ -33,8 +33,8 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 ## Ce qu'il faut faire
 
 ```setup
-mkdir -p ~/layers-l9
-[ -f ~/layers-l9/.etat-initial ] || docker info --format '{{.Swarm.LocalNodeState}}' > ~/layers-l9/.etat-initial
+mkdir -p ~/byte-layers/docker/l9
+[ -f ~/byte-layers/docker/l9/.etat-initial ] || docker info --format '{{.Swarm.LocalNodeState}}' > ~/byte-layers/docker/l9/.etat-initial
 ```
 
 Faites de votre moteur le manager d'un swarm.
@@ -53,9 +53,9 @@ Si Docker dit qu'il ne sait pas quelle adresse choisir, il cite les adresses pos
 ```
 
 ```verify
-if [ "$(cat "$HOME/layers-l9/.etat-initial" 2>/dev/null)" = "active" ]; then
+if [ "$(cat "$HOME/byte-layers/docker/l9/.etat-initial" 2>/dev/null)" = "active" ]; then
   echo "ÉCHEC : votre moteur était déjà dans un swarm avant ce challenge, et la dernière tâche le dissoudrait."
-  echo "  Si rien n'en dépend : docker swarm leave --force, puis rm ~/layers-l9/.etat-initial, et rouvrez cette tâche."
+  echo "  Si rien n'en dépend : docker swarm leave --force, puis rm ~/byte-layers/docker/l9/.etat-initial, et rouvrez cette tâche."
   exit 1
 fi
 if [ "$(docker info --format '{{.Swarm.LocalNodeState}}' 2>/dev/null)" != "active" ]; then
@@ -145,21 +145,21 @@ if [ "$(docker image inspect layers-l9-svc:1 --format '{{.Id}}')" = "$(docker im
   echo "ÉCHEC : layers-l9-svc:1 et layers-l9-svc:2 sont la même image."
   exit 1
 fi
-docker service inspect "$S" --format '{{.ID}}' > "$HOME/layers-l9/.service-id"
+docker service inspect "$S" --format '{{.ID}}' > "$HOME/byte-layers/docker/l9/.service-id"
 echo "RÉUSSI : $S tourne avec 2 répliques, sur le port 28394."
 ```
 
 ````solution
 ```bash
-mkdir -p ~/layers-l9/app
-cat > ~/layers-l9/app/Dockerfile <<'EOF'
+mkdir -p ~/byte-layers/docker/l9/app
+cat > ~/byte-layers/docker/l9/app/Dockerfile <<'EOF'
 FROM busybox:1.37
 ARG VERSION=1
 ENV VERSION=$VERSION
 CMD ["sh", "-c", "mkdir -p /www; echo \"VERSION-$VERSION\" > /www/index.html; exec httpd -f -p 8000 -h /www"]
 EOF
-docker build -t layers-l9-svc:1 --build-arg VERSION=1 ~/layers-l9/app
-docker build -t layers-l9-svc:2 --build-arg VERSION=2 ~/layers-l9/app
+docker build -t layers-l9-svc:1 --build-arg VERSION=1 ~/byte-layers/docker/l9/app
+docker build -t layers-l9-svc:2 --build-arg VERSION=2 ~/byte-layers/docker/l9/app
 docker service create --name layers-l9-front --replicas 2 -p 28394:8000 layers-l9-svc:1
 ```
 ````
@@ -190,7 +190,7 @@ if ! docker service inspect "$S" >/dev/null 2>&1; then
   echo "ÉCHEC : le service $S n'existe pas."
   exit 1
 fi
-if [ "$(cat "$HOME/layers-l9/.service-id" 2>/dev/null)" != "$(docker service inspect "$S" --format '{{.ID}}')" ]; then
+if [ "$(cat "$HOME/byte-layers/docker/l9/.service-id" 2>/dev/null)" != "$(docker service inspect "$S" --format '{{.ID}}')" ]; then
   echo "ÉCHEC : $S n'est plus le service de la tâche 2, ou celle-ci n'a pas été vérifiée. Il ne fallait pas le recréer."
   exit 1
 fi
@@ -274,7 +274,7 @@ if ! docker service inspect "$S" >/dev/null 2>&1; then
   echo "ÉCHEC : le service $S n'existe pas."
   exit 1
 fi
-if [ "$(cat "$HOME/layers-l9/.service-id" 2>/dev/null)" != "$(docker service inspect "$S" --format '{{.ID}}')" ]; then
+if [ "$(cat "$HOME/byte-layers/docker/l9/.service-id" 2>/dev/null)" != "$(docker service inspect "$S" --format '{{.ID}}')" ]; then
   echo "ÉCHEC : $S n'est plus le service de la tâche 2. Il ne fallait pas le recréer."
   exit 1
 fi
@@ -388,7 +388,7 @@ docker service update --update-failure-action rollback --image layers-l9-svc:cas
 
 ## Ce qu'il faut faire
 
-Supprimez tout ce que ce challenge a créé : le service `layers-l9-front`, le swarm, les images `layers-l9-svc` et le dossier `~/layers-l9`.
+Supprimez tout ce que ce challenge a créé : le service `layers-l9-front`, le swarm, les images `layers-l9-svc` et le dossier `~/byte-layers/docker/l9`.
 
 **Critères :** plus de service, un moteur dans l'état `inactive`, plus d'image à ce nom, plus de dossier. Vos autres images et conteneurs ne sont pas concernés.
 
@@ -410,8 +410,8 @@ if [ -n "$left" ]; then
   echo "ÉCHEC : il reste des images : $(echo "$left" | sort -u | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l9" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l9 existe encore."
+if [ -e "$HOME/byte-layers/docker/l9" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l9 existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez conduire un service sur Swarm."
@@ -423,6 +423,6 @@ docker service rm layers-l9-front
 docker swarm leave --force
 sleep 5
 docker rmi layers-l9-svc:1 layers-l9-svc:2 layers-l9-svc:casse
-rm -rf ~/layers-l9
+rm -rf ~/byte-layers/docker/l9
 ```
 ````

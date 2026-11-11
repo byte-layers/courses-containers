@@ -24,7 +24,7 @@ Vous n'avez pas besoin de connaître YAML, le format du fichier : l'étape 1 don
 
 ## Comment ça se passe
 
-Cinq étapes à suivre dans l'ordre, environ 2 heures en tout. Vous construisez une seule application, un compteur de visites, du premier fichier jusqu'à son pilotage. Vos fichiers vivent dans `~/layers-l7/counter`, et tout ce que Docker crée commence par `layers-l7-`. La dernière étape supprime le tout : vos autres conteneurs ne sont jamais touchés.
+Cinq étapes à suivre dans l'ordre, environ 2 heures en tout. Vous construisez une seule application, un compteur de visites, du premier fichier jusqu'à son pilotage. Vos fichiers vivent dans `~/byte-layers/docker/l7/counter`, et tout ce que Docker crée commence par `layers-l7-`. La dernière étape supprime le tout : vos autres conteneurs ne sont jamais touchés.
 
 Pour pratiquer ensuite sur une vraie application, faites le lab « getting-started-app en Compose ». Pour vous tester sans guide : le challenge « Une application multi-services, sans guide ».
 

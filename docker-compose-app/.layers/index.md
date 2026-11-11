@@ -20,7 +20,7 @@ Ce lab ne vous donne pas le fichier complet. Vous le **construisez** en remplaç
 
 **Niveau** : débutant sur Compose. Vous savez construire une image, relier des conteneurs et garder des données dans un volume : ce sont les cours « Écrire le Dockerfile d'une application », « Relier des conteneurs et publier un port » et « Garder ses données : volumes et bind mounts ». Le lab n'en suppose rien d'autre : chaque clé de Compose est expliquée quand elle arrive.
 
-**Ce qu'il faut** : Docker qui répond à `docker ps`, Compose qui répond à `docker compose version`, `curl`, un éditeur de texte et le port **28371** libre. Tout ce que vous créez porte le préfixe `layers-l7-`, et vos fichiers vivent dans `~/layers-l7/todo`. La vérification y garde aussi un fichier caché, `.mysql-id`, qui lui sert à reconnaître votre conteneur.
+**Ce qu'il faut** : Docker qui répond à `docker ps`, Compose qui répond à `docker compose version`, `curl`, un éditeur de texte et le port **28371** libre. Tout ce que vous créez porte le préfixe `layers-l7-`, et vos fichiers vivent dans `~/byte-layers/docker/l7/todo`. La vérification y garde aussi un fichier caché, `.mysql-id`, qui lui sert à reconnaître votre conteneur.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -31,9 +31,9 @@ Ce lab ne vous donne pas le fichier complet. Vous le **construisez** en remplaç
 C'est la même application que dans le lab « Conteneuriser une application pas à pas », à la même version, le commit `6b025fc5`, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
 
 ```exec
-mkdir -p ~/layers-l7/todo
-curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/layers-l7/todo
-ls ~/layers-l7/todo
+mkdir -p ~/byte-layers/docker/l7/todo
+curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/byte-layers/docker/l7/todo
+ls ~/byte-layers/docker/l7/todo
 ```
 
 Vous devez voir `package.json` et `src`, le code de l'application.
@@ -43,7 +43,7 @@ Vous devez voir `package.json` et `src`, le code de l'application.
 Le dépôt ne contient pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser une application pas à pas », redonné tel quel, car le sujet est Compose. Copiez cette commande : elle crée le fichier `Dockerfile` à la racine du projet avec ces huit lignes. `<<'EOF'` recopie dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
-cat > ~/layers-l7/todo/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l7/todo/Dockerfile <<'EOF'
 FROM node:22-alpine
 WORKDIR /app
 COPY . .
@@ -58,7 +58,7 @@ EOF
 Pour mémoire, l'image part de Node.js 22 sur Alpine, copie le code, installe les dépendances de production, prépare un dossier pour l'utilisateur `node`, qui n'est pas administrateur, puis lance `node src/index.js`, un serveur qui écoute sur le port 3000. Vous n'avez rien de plus à faire sur l'image dans ce lab.
 
 ```ack
-J'ai le code et le Dockerfile dans ~/layers-l7/todo
+J'ai le code et le Dockerfile dans ~/byte-layers/docker/l7/todo
 ```
 
 # L'application seule
@@ -70,7 +70,7 @@ Un fichier Compose s'écrit en **YAML** : des lignes `clé: valeur`, où le déc
 Commencez sans base de données : si aucune base n'est configurée, l'application range ses données dans un petit fichier, à l'intérieur du conteneur. Créez le fichier de départ, avec ses deux blancs :
 
 ```exec
-cat > ~/layers-l7/todo/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/todo/compose.yaml <<'EOF'
 name: layers-l7-todo
 services:
   app:
@@ -79,7 +79,7 @@ services:
 EOF
 ```
 
-Ouvrez `~/layers-l7/todo/compose.yaml` dans votre éditeur et remplacez les deux lignes `# TODO` à l'aide de ce tableau :
+Ouvrez `~/byte-layers/docker/l7/todo/compose.yaml` dans votre éditeur et remplacez les deux lignes `# TODO` à l'aide de ce tableau :
 
 | Clé | Rôle | Forme |
 |---|---|---|
@@ -94,7 +94,7 @@ Ces clés s'écrivent au même décalage, quatre espaces, sous `app:`.
 `docker compose up` fait exister ce que le fichier décrit. `-d` le laisse tourner en arrière-plan, et `--build` construit l'image d'abord. Cette commande commence par `cd`, car Compose cherche `compose.yaml` dans le dossier courant. Le premier lancement peut prendre une minute, le temps d'installer les dépendances :
 
 ```exec
-cd ~/layers-l7/todo && docker compose up -d --build
+cd ~/byte-layers/docker/l7/todo && docker compose up -d --build
 ```
 
 Demandez ensuite la liste des tâches. `/items` est l'adresse que l'application réserve à ses données, et `--retry` patiente le temps que le serveur démarre :
@@ -116,8 +116,8 @@ Une liste YAML s'écrit avec un tiret, une ligne plus bas et deux espaces plus �
 ```verify
 C=layers-l7-todo-app-1
 if ! docker container inspect "$C" >/dev/null 2>&1; then
-  echo "Le conteneur $C n'existe pas. Remplacez les TODO, puis lancez docker compose up -d --build dans ~/layers-l7/todo."
-  echo "Pour lire l'erreur de Compose : cd ~/layers-l7/todo && docker compose config"
+  echo "Le conteneur $C n'existe pas. Remplacez les TODO, puis lancez docker compose up -d --build dans ~/byte-layers/docker/l7/todo."
+  echo "Pour lire l'erreur de Compose : cd ~/byte-layers/docker/l7/todo && docker compose config"
   exit 1
 fi
 if [ "$(docker inspect "$C" --format '{{.State.Running}}')" != "true" ]; then
@@ -143,7 +143,7 @@ echo "L'application tourne, construite et publiée par Compose."
 Le fichier complet à cette étape, écrit par une commande, suivi du lancement :
 
 ```bash
-cat > ~/layers-l7/todo/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/todo/compose.yaml <<'EOF'
 name: layers-l7-todo
 services:
   app:
@@ -151,7 +151,7 @@ services:
     ports:
       - "28371:3000"
 EOF
-cd ~/layers-l7/todo && docker compose up -d --build
+cd ~/byte-layers/docker/l7/todo && docker compose up -d --build
 sleep 2
 ```
 ````
@@ -214,7 +214,7 @@ Le mot de passe écrit en clair est un autre raccourci, à ne pas reproduire sur
 Appliquez le fichier. `up` compare ce qui tourne à ce que vous décrivez : il recrée `app`, dont la configuration a changé, et crée `mysql`. L'image existe déjà, `--build` n'est donc plus utile.
 
 ```exec
-cd ~/layers-l7/todo && docker compose up -d
+cd ~/byte-layers/docker/l7/todo && docker compose up -d
 ```
 
 Ajoutez une tâche quand l'application est prête. `-X POST` envoie une création, `-H` dit que le corps est au format JSON, et `-d` donne ce corps. Pendant que MySQL s'initialise, la commande réessaie : elle peut prendre une trentaine de secondes.
@@ -226,7 +226,7 @@ curl -s --retry 20 --retry-delay 2 --retry-all-errors -X POST -H 'Content-Type: 
 Vous devez lire un objet JSON avec un `id` et le nom de votre tâche. Regardez-la maintenant dans MySQL, depuis son service. `docker compose exec` lance une commande dans un service qui tourne. Le client `mysql` reçoit l'utilisateur avec `-uroot`, le mot de passe avec `-psecret`, collé à l'option, le nom de la base, `todos`, et avec `-e` une requête SQL qui lit le nom des tâches. MySQL vous prévient que ce mot de passe en clair n'est pas prudent, et il a raison : cela reste ici un essai sur votre poste. Vous devez lire `Apprendre Compose`.
 
 ```exec
-cd ~/layers-l7/todo && docker compose exec mysql mysql -uroot -psecret todos -e 'SELECT name FROM todo_items'
+cd ~/byte-layers/docker/l7/todo && docker compose exec mysql mysql -uroot -psecret todos -e 'SELECT name FROM todo_items'
 ```
 
 ```hint
@@ -279,7 +279,7 @@ echo "L'application et MySQL se parlent : $N tâche(s) dans la base."
 Le fichier complet à cette étape, le lancement, puis une première tâche :
 
 ```bash
-cat > ~/layers-l7/todo/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/todo/compose.yaml <<'EOF'
 name: layers-l7-todo
 services:
   app:
@@ -300,7 +300,7 @@ services:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_DATABASE: todos
 EOF
-cd ~/layers-l7/todo && docker compose up -d
+cd ~/byte-layers/docker/l7/todo && docker compose up -d
 curl -s --retry 20 --retry-delay 2 --retry-all-errors -X POST -H 'Content-Type: application/json' -d '{"name":"Apprendre Compose"}' http://localhost:28371/items
 ```
 ````
@@ -334,7 +334,7 @@ Complétez `compose.yaml` avec un volume appelé `todo-data`, monté là où MyS
 Repartez d'une base vide : la table des tâches n'existera dans le nouveau volume qu'après un redémarrage de l'application. `docker compose down` supprime les conteneurs et le réseau du projet, et `-v` supprime aussi ses volumes, y compris celui, sans nom, que l'image de MySQL avait demandé d'elle-même. Rien d'utile n'y reste :
 
 ```exec
-cd ~/layers-l7/todo && docker compose down -v && docker compose up -d
+cd ~/byte-layers/docker/l7/todo && docker compose down -v && docker compose up -d
 ```
 
 Ajoutez une tâche dans cette nouvelle base :
@@ -359,7 +359,7 @@ if ! docker exec "$M" mysql -uroot -psecret todos -N -e 'SELECT name FROM todo_i
   echo "La tâche « Survivre à un down » n'est pas dans la base. MySQL s'initialise peut-être encore : relancez la commande curl, puis réessayez."
   exit 1
 fi
-docker inspect "$M" --format '{{.Id}}' > ~/layers-l7/todo/.mysql-id
+docker inspect "$M" --format '{{.Id}}' > ~/byte-layers/docker/l7/todo/.mysql-id
 echo "Le volume $SRC est monté et contient votre tâche."
 ```
 
@@ -367,7 +367,7 @@ echo "Le volume $SRC est monté et contient votre tâche."
 Le fichier complet, solution finale du lab, puis les deux commandes de cette section :
 
 ```bash
-cat > ~/layers-l7/todo/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/todo/compose.yaml <<'EOF'
 name: layers-l7-todo
 services:
   app:
@@ -392,7 +392,7 @@ services:
 volumes:
   todo-data:
 EOF
-cd ~/layers-l7/todo && docker compose down -v && docker compose up -d
+cd ~/byte-layers/docker/l7/todo && docker compose down -v && docker compose up -d
 curl -s --retry 20 --retry-delay 2 --retry-all-errors -X POST -H 'Content-Type: application/json' -d '{"name":"Survivre à un down"}' http://localhost:28371/items
 ```
 ````
@@ -409,7 +409,7 @@ Vérifiez d'abord avec `docker compose ps -a` que les conteneurs sont revenus. L
 
 ```verify
 M=layers-l7-todo-mysql-1
-REF=$(cat ~/layers-l7/todo/.mysql-id 2>/dev/null)
+REF=$(cat ~/byte-layers/docker/l7/todo/.mysql-id 2>/dev/null)
 NOW=$(docker inspect "$M" --format '{{.Id}}' 2>/dev/null)
 if [ -z "$NOW" ]; then
   echo "Le conteneur $M n'existe pas : après le down, il reste à faire docker compose up -d."
@@ -432,7 +432,7 @@ echo "Un nouveau conteneur, la même tâche : le volume a tenu."
 
 ````solution
 ```bash
-cd ~/layers-l7/todo && docker compose down && docker compose up -d
+cd ~/byte-layers/docker/l7/todo && docker compose down && docker compose up -d
 curl -s --retry 20 --retry-delay 2 --retry-all-errors http://localhost:28371/items
 ```
 ````
@@ -441,15 +441,15 @@ curl -s --retry 20 --retry-delay 2 --retry-all-errors http://localhost:28371/ite
 
 ## Ne rien laisser
 
-Dernière chose à trouver seul : supprimez tout ce que ce lab a créé. Doivent disparaître : les conteneurs, le réseau, le volume, l'image construite et le dossier `~/layers-l7/todo`. Compose sait presque tout faire d'une commande : `docker compose down` accepte `-v` pour les volumes et `--rmi local` pour les images qu'il a lui-même construites. Il reste le dossier à effacer avec `rm -rf`, après être sorti du dossier du projet.
+Dernière chose à trouver seul : supprimez tout ce que ce lab a créé. Doivent disparaître : les conteneurs, le réseau, le volume, l'image construite et le dossier `~/byte-layers/docker/l7/todo`. Compose sait presque tout faire d'une commande : `docker compose down` accepte `-v` pour les volumes et `--rmi local` pour les images qu'il a lui-même construites. Il reste le dossier à effacer avec `rm -rf`, après être sorti du dossier du projet.
 
 ```verify
 if [ -n "$(docker ps -a --filter name=layers-l7-todo --format '{{.Names}}')" ]; then
-  echo "Il reste des conteneurs du projet. Lancez docker compose down -v --rmi local depuis ~/layers-l7/todo."
+  echo "Il reste des conteneurs du projet. Lancez docker compose down -v --rmi local depuis ~/byte-layers/docker/l7/todo."
   exit 1
 fi
 if [ -n "$(docker network ls --filter name=layers-l7-todo --format '{{.Name}}')" ]; then
-  echo "Il reste un réseau du projet : lancez docker compose down depuis ~/layers-l7/todo."
+  echo "Il reste un réseau du projet : lancez docker compose down depuis ~/byte-layers/docker/l7/todo."
   exit 1
 fi
 if [ -n "$(docker volume ls --filter name=layers-l7-todo --format '{{.Name}}')" ]; then
@@ -460,8 +460,8 @@ if docker image inspect layers-l7-todo-app >/dev/null 2>&1; then
   echo "L'image layers-l7-todo-app existe encore : docker rmi layers-l7-todo-app."
   exit 1
 fi
-if [ -e "$HOME/layers-l7/todo" ]; then
-  echo "Le dossier ~/layers-l7/todo existe encore."
+if [ -e "$HOME/byte-layers/docker/l7/todo" ]; then
+  echo "Le dossier ~/byte-layers/docker/l7/todo existe encore."
   exit 1
 fi
 echo "C'est propre."
@@ -469,8 +469,8 @@ echo "C'est propre."
 
 ````solution
 ```bash
-cd ~/layers-l7/todo && docker compose down -v --rmi local
-cd ~ && rm -rf ~/layers-l7/todo
+cd ~/byte-layers/docker/l7/todo && docker compose down -v --rmi local
+cd ~ && rm -rf ~/byte-layers/docker/l7/todo
 ```
 ````
 

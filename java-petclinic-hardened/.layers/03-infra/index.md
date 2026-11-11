@@ -3,7 +3,7 @@ title: "Partie C : l'infra, du reverse proxy à la vue d'ensemble"
 description: "Un dossier infra assemblé avec include : Traefik, puis les journaux et les métriques, et Portainer pour finir"
 ---
 
-PetClinic tourne, avec sa base, mais il publie lui-même ses ports, et personne ne voit ce qui s'y passe. Sur un serveur, ce travail revient à une **infra** partagée par toutes les applications : un reverse proxy, qui est la seule porte d'entrée, et une pile d'observabilité, qui garde les journaux et les métriques. Dans cette partie, vous montez cette infra dans son propre dossier, `~/layers-l10/prod/infra`, et vous y branchez PetClinic.
+PetClinic tourne, avec sa base, mais il publie lui-même ses ports, et personne ne voit ce qui s'y passe. Sur un serveur, ce travail revient à une **infra** partagée par toutes les applications : un reverse proxy, qui est la seule porte d'entrée, et une pile d'observabilité, qui garde les journaux et les métriques. Dans cette partie, vous montez cette infra dans son propre dossier, `~/byte-layers/docker/l10/prod/infra`, et vous y branchez PetClinic.
 
 L'infra n'est pas un seul gros fichier. Un fichier Compose **parent** assemble plusieurs fichiers, un par fonction, avec la clé `include`. Vous l'enrichirez au fil des chapitres :
 

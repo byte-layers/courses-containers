@@ -18,7 +18,7 @@ Votre poste n'a ni Java ni Maven, et vous n'allez pas les installer : un contene
 ```bash
 docker run --rm -u "$(id -u):$(id -g)" \
   -v "$PWD":/src -w /src \
-  -v "$HOME/layers-l10/m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
+  -v "$HOME/byte-layers/docker/l10/m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
   maven:3.9.16-eclipse-temurin-21-noble \
   mvn -B -q -Duser.home=/var/maven package -DskipTests
 ```
@@ -28,7 +28,7 @@ docker run --rm -u "$(id -u):$(id -g)" \
 | `--rm` | supprime le conteneur à la fin de la compilation |
 | `-u "$(id -u):$(id -g)"` | lance Maven avec votre utilisateur et votre groupe, et non en root : les fichiers produits dans `target/` vous appartiendront |
 | `-v "$PWD":/src -w /src` | monte le dossier du projet dans le conteneur, et s'y place |
-| `-v "$HOME/layers-l10/m2":/var/maven/.m2` | garde les dépendances téléchargées dans `~/layers-l10/m2` sur votre poste : la compilation suivante ne les retéléchargera pas, comme le cache d'une CI. Ce dossier est dédié au cas pratique, pour ne pas toucher au `~/.m2` d'un poste de développeur Java, qui contient souvent son `settings.xml` |
+| `-v "$HOME/byte-layers/docker/l10/m2":/var/maven/.m2` | garde les dépendances téléchargées dans `~/byte-layers/docker/l10/m2` sur votre poste : la compilation suivante ne les retéléchargera pas, comme le cache d'une CI. Ce dossier est dédié au cas pratique, pour ne pas toucher au `~/.m2` d'un poste de développeur Java, qui contient souvent son `settings.xml` |
 | `-e MAVEN_CONFIG` et `-Duser.home` | disent à Maven où trouver ce dossier, puisque votre utilisateur n'a pas de dossier personnel dans le conteneur |
 | `maven:3.9.16-eclipse-temurin-21-noble` | Maven 3.9.16, avec le JDK Temurin 21, sur Ubuntu 24.04 : la version exacte, pas `latest` |
 | `-B -q` | le mode non interactif d'une CI, et des journaux réduits aux erreurs |
@@ -36,13 +36,13 @@ docker run --rm -u "$(id -u):$(id -g)" \
 
 ⚖️ Deux raccourcis sont à connaître. `-DskipTests` saute les tests, parce qu'une vraie CI les lance avant, et parce que ceux de PetClinic démarrent eux-mêmes des bases de données dans Docker, ce qui serait long ici. Java 21 est par ailleurs plus récent que le Java 17 du `pom.xml`. C'est voulu : 17 est la version **minimale** du projet, et 21 est une version maintenue à long terme (LTS). Ce qui compte, c'est que la version soit choisie et écrite, et non subie comme avec `latest`.
 
-Le dossier `~/layers-l10/m2` doit exister avant la commande. Sinon, Docker le créerait lui-même, avec root pour propriétaire, et Maven ne pourrait plus y écrire. Lancez maintenant la compilation, qui prend une à deux minutes la première fois :
+Le dossier `~/byte-layers/docker/l10/m2` doit exister avant la commande. Sinon, Docker le créerait lui-même, avec root pour propriétaire, et Maven ne pourrait plus y écrire. Lancez maintenant la compilation, qui prend une à deux minutes la première fois :
 
 ```exec
-mkdir -p ~/layers-l10/m2
-cd ~/layers-l10/prod/petclinic && docker run --rm -u "$(id -u):$(id -g)" \
+mkdir -p ~/byte-layers/docker/l10/m2
+cd ~/byte-layers/docker/l10/prod/petclinic && docker run --rm -u "$(id -u):$(id -g)" \
   -v "$PWD":/src -w /src \
-  -v "$HOME/layers-l10/m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
+  -v "$HOME/byte-layers/docker/l10/m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
   maven:3.9.16-eclipse-temurin-21-noble \
   mvn -B -q -Duser.home=/var/maven package -DskipTests
 ```
@@ -50,15 +50,15 @@ cd ~/layers-l10/prod/petclinic && docker run --rm -u "$(id -u):$(id -g)" \
 Avec `-q`, Maven n'affiche rien quand tout va bien. Contrôlez le résultat dans `target/` :
 
 ```exec
-ls -l ~/layers-l10/prod/petclinic/target/*.jar
+ls -l ~/byte-layers/docker/l10/prod/petclinic/target/*.jar
 ```
 
 Vous devez lire un fichier `spring-petclinic-4.0.0-SNAPSHOT.jar` d'environ 66 Mo, dont vous êtes le propriétaire. Le suffixe `SNAPSHOT` est la convention de Maven pour une version en cours de développement, qui n'a pas encore été publiée. Sa date, en 2024, n'est pas une erreur : PetClinic fixe la date des fichiers du JAR, pour que deux compilations du même code produisent exactement le même fichier.
 
 ```verify
-J=$(ls "$HOME"/layers-l10/prod/petclinic/target/spring-petclinic-*.jar 2>/dev/null | head -1)
+J=$(ls "$HOME"/byte-layers/docker/l10/prod/petclinic/target/spring-petclinic-*.jar 2>/dev/null | head -1)
 if [ -z "$J" ]; then
-  echo "Aucun JAR dans ~/layers-l10/prod/petclinic/target. Relancez la compilation, et lisez ses erreurs."
+  echo "Aucun JAR dans ~/byte-layers/docker/l10/prod/petclinic/target. Relancez la compilation, et lisez ses erreurs."
   exit 1
 fi
 if [ "$(stat -c %u "$J")" != "$(id -u)" ]; then
@@ -69,16 +69,16 @@ echo "Le JAR est compilé, et il vous appartient."
 ```
 
 ```hint
-Si Maven répond `Permission denied` sur `/var/maven/.m2`, le dossier `~/layers-l10/m2` a été créé par Docker, en root. Supprimez-le avec un conteneur, `docker run --rm -v "$HOME/layers-l10":/h alpine:3.22 rm -rf /h/m2`, puis relancez `mkdir -p ~/layers-l10/m2` et la compilation.
+Si Maven répond `Permission denied` sur `/var/maven/.m2`, le dossier `~/byte-layers/docker/l10/m2` a été créé par Docker, en root. Supprimez-le avec un conteneur, `docker run --rm -v "$HOME/byte-layers/docker/l10":/h alpine:3.22 rm -rf /h/m2`, puis relancez `mkdir -p ~/byte-layers/docker/l10/m2` et la compilation.
 ```
 
 ````solution
 ```bash
-mkdir -p ~/layers-l10/m2
-cd ~/layers-l10/prod/petclinic
+mkdir -p ~/byte-layers/docker/l10/m2
+cd ~/byte-layers/docker/l10/prod/petclinic
 docker run --rm -u "$(id -u):$(id -g)" \
   -v "$PWD":/src -w /src \
-  -v "$HOME/layers-l10/m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
+  -v "$HOME/byte-layers/docker/l10/m2":/var/maven/.m2 -e MAVEN_CONFIG=/var/maven/.m2 \
   maven:3.9.16-eclipse-temurin-21-noble \
   mvn -B -q -Duser.home=/var/maven package -DskipTests
 ls -l target/*.jar
@@ -140,7 +140,7 @@ Le healthcheck interroge l'adresse `/actuator/health` déjà vue. Cette image co
 Créez le fichier de départ, puis complétez ses blancs dans votre éditeur. Il remplace le `Dockerfile` naïf, dont l'image reste disponible sous le tag `1-naive` :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/Dockerfile <<'EOF'
 # TODO : l'image eclipse-temurin, en JRE 21, avec son tag le plus précis
 
 LABEL org.opencontainers.image.title="petclinic" \
@@ -171,7 +171,7 @@ Le `COPY` copie le JAR en laissant root pour propriétaire. L'utilisateur `petcl
 Avant de construire, il reste le **contexte de build** : les fichiers que `docker build` envoie au moteur. Sans précaution, il envoie tout le dossier. Un fichier `.dockerignore` filtre ce contexte, et l'écriture la plus sûre est une **liste blanche** : `*` exclut tout, puis chaque ligne qui commence par `!` réintègre ce qui est nécessaire. Ici, seul le JAR est nécessaire :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/.dockerignore <<'EOF'
 # Le contexte de build ne contient que le JAR
 *
 !target/spring-petclinic-*.jar
@@ -183,14 +183,14 @@ Une liste blanche vous protège aussi d'un oubli. Un fichier `.env` ou une clé 
 Une fois le `Dockerfile` complété, construisez l'image avec le tag `2-jar`. Dans les journaux de construction, la ligne `transferring context` montre la taille du contexte, environ 66 Mo, c'est-à-dire le JAR seul :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker build -t layers-l10-petclinic:2-jar .
+cd ~/byte-layers/docker/l10/prod/petclinic && docker build -t layers-l10-petclinic:2-jar .
 ```
 
 > 📖 [La référence du Dockerfile](https://docs.docker.com/reference/dockerfile/) · [`HEALTHCHECK`](https://docs.docker.com/reference/dockerfile/#healthcheck) · [Le fichier `.dockerignore`](https://docs.docker.com/build/concepts/context/#dockerignore-files) · [L'image `eclipse-temurin`](https://hub.docker.com/_/eclipse-temurin)
 
 ```verify
 I=layers-l10-petclinic:2-jar
-F="$HOME/layers-l10/prod/petclinic/Dockerfile"
+F="$HOME/byte-layers/docker/l10/prod/petclinic/Dockerfile"
 if ! docker image inspect $I >/dev/null 2>&1; then
   echo "L'image $I n'existe pas. Complétez le Dockerfile, puis lancez docker build -t $I ."
   exit 1
@@ -224,7 +224,7 @@ Le healthcheck tient sur deux lignes : `HEALTHCHECK --interval=30s --timeout=3s 
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > Dockerfile <<'EOF'
 FROM eclipse-temurin:21.0.13_9-jre-noble
 

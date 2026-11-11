@@ -1,4 +1,4 @@
-# Le bonus include : à placer dans ~/layers-l8/web, à côté des dossiers app1, app2 et traefik.
+# Le bonus include : à placer dans ~/byte-layers/docker/l8/web, à côté des dossiers app1, app2 et traefik.
 name: layers-l8-web
 include:
   - app1/compose.yaml

@@ -22,13 +22,13 @@ Une **image** est le modèle figé dont part un conteneur : des fichiers, plus u
 Commencez par créer le dossier du projet. `mkdir -p` crée le dossier et ses parents, sans erreur s'ils existent déjà :
 
 ```exec
-mkdir -p ~/layers-l2/hello
+mkdir -p ~/byte-layers/docker/l2/hello
 ```
 
 Écrivez maintenant l'application, un programme Python qui écoute sur le port 8000 et répond une phrase à chaque requête. La forme `cat > fichier <<'EOF'` écrit dans le fichier toutes les lignes qui suivent, jusqu'à la ligne `EOF`. Collez le bloc en entier dans le terminal, ou créez ce fichier dans votre éditeur : le résultat est le même.
 
 ```exec
-cat > ~/layers-l2/hello/app.py <<'EOF'
+cat > ~/byte-layers/docker/l2/hello/app.py <<'EOF'
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 class Page(BaseHTTPRequestHandler):
@@ -48,7 +48,7 @@ Pour tourner, ce programme n'a besoin que de Python, et c'est exactement ce que 
 Le Dockerfile se place à côté de l'application et s'appelle `Dockerfile`, sans extension. Celui-ci tient en trois lignes :
 
 ```exec
-cat > ~/layers-l2/hello/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/hello/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 COPY app.py /app.py
 CMD ["python", "/app.py"]
@@ -70,7 +70,7 @@ Chaque ligne commence par une **instruction**, écrite en majuscules par convent
 Passez à la construction, qu'on appelle aussi le **build**. `docker build` lit le Dockerfile et produit une image :
 
 ```exec
-docker build -t layers-l2-hello:1.0 ~/layers-l2/hello
+docker build -t layers-l2-hello:1.0 ~/byte-layers/docker/l2/hello
 ```
 
 Cette commande a deux éléments à retenir.
@@ -78,7 +78,7 @@ Cette commande a deux éléments à retenir.
 | Élément | Rôle |
 |---|---|
 | `-t layers-l2-hello:1.0` | nomme l'image : `layers-l2-hello` est son nom et `1.0` son **tag**, le nom de cette version, comme dans `alpine:3.22` |
-| `~/layers-l2/hello` | le **contexte de build** : le dossier dont Docker peut copier des fichiers, et où il cherche le `Dockerfile` |
+| `~/byte-layers/docker/l2/hello` | le **contexte de build** : le dossier dont Docker peut copier des fichiers, et où il cherche le `Dockerfile` |
 
 Le contexte a une conséquence : `COPY` ne voit que ce dossier. Un fichier situé ailleurs sur votre machine lui est inaccessible, quel que soit le chemin que vous écrivez. Vous verrez aussi souvent `docker build -t nom:tag .` : le point désigne le dossier courant, pour qui se trouve déjà dans le projet.
 

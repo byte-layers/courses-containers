@@ -49,8 +49,8 @@ docker rm -fv layers-l4-registry
 Retirez ensuite vos images, celle du tag et celle du digest noté, puis supprimez votre dossier de travail. Les images `alpine:3.22`, `registry:3` et `nginx:1.30-alpine` restent sur votre machine, car d'autres cours s'en servent. `rm -rf` efface sans demander confirmation, et il faut donc vérifier le chemin.
 
 ```exec
-docker rmi localhost:28340/layers-l4-hello:1.0 "$(cat ~/layers-l4/digest-v1.txt)"
-rm -rf ~/layers-l4
+docker rmi localhost:28340/layers-l4-hello:1.0 "$(cat ~/byte-layers/docker/l4/digest-v1.txt)"
+rm -rf ~/byte-layers/docker/l4
 ```
 
 ```verify
@@ -63,8 +63,8 @@ if [ -n "$left" ]; then
   echo "Il reste des images : $(echo "$left" | sort -u | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l4" ]; then
-  echo "Le dossier ~/layers-l4 existe encore."
+if [ -e "$HOME/byte-layers/docker/l4" ]; then
+  echo "Le dossier ~/byte-layers/docker/l4 existe encore."
   exit 1
 fi
 echo "C'est propre."

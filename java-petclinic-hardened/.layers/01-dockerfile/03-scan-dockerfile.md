@@ -26,7 +26,7 @@ Trivy tourne dans un conteneur, qui reçoit seulement le dossier du projet. L'im
 Vous visez le seul fichier `Dockerfile`, et non le dossier entier : le dépôt de PetClinic contient d'autres fichiers que Trivy sait lire, comme la configuration de son dossier `.devcontainer/`, qui ne vous concernent pas ici :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker run --rm -v "$PWD:/work" -w /work \
+cd ~/byte-layers/docker/l10/prod/petclinic && docker run --rm -v "$PWD:/work" -w /work \
   aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c \
   config Dockerfile
 ```

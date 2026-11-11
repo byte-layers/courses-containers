@@ -22,7 +22,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 - **Ce qu'il faut savoir** : ce qu'enseignent le cours « Décrire une application avec Compose » et le lab « getting-started-app en Compose ».
 - **Ce qu'il faut avoir** : Docker et Compose qui répondent, `curl`, un éditeur de texte et le port 28372 libre.
-- **Votre dossier de travail** : `~/layers-l7/notes` est préparé pour vous à l'ouverture de la tâche 1. La vérification y garde aussi un fichier caché, `.cache-id`, qui lui sert à reconnaître votre conteneur.
+- **Votre dossier de travail** : `~/byte-layers/docker/l7/notes` est préparé pour vous à l'ouverture de la tâche 1. La vérification y garde aussi un fichier caché, `.cache-id`, qui lui sert à reconnaître votre conteneur.
 - **Les noms comptent** : le projet s'appelle exactement `layers-l7-notes`, et ses services `front`, `api` et `cache`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : chaque tâche enrichit le fichier de la précédente. Faites-les dans l'ordre.
 - **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
@@ -35,7 +35,7 @@ Elle compte des visites, et ses trois parties se suivent ainsi :
 votre machine ──► front (nginx, port 80) ──► api (Python, port 8080) ──► cache (Redis, port 6379)
 ```
 
-Le dossier `~/layers-l7/notes` reçoit ce qu'il vous faut à l'ouverture de la tâche 1 :
+Le dossier `~/byte-layers/docker/l7/notes` reçoit ce qu'il vous faut à l'ouverture de la tâche 1 :
 
 | Fichier | Ce qu'il contient |
 |---|---|
@@ -50,8 +50,8 @@ Lisez ces fichiers à ce moment-là : ils disent ce qu'attend chaque service.
 ## Ce qu'il faut faire
 
 ```setup
-mkdir -p ~/layers-l7/notes/api ~/layers-l7/notes/front
-cat > ~/layers-l7/notes/api/app.py <<'EOF'
+mkdir -p ~/byte-layers/docker/l7/notes/api ~/byte-layers/docker/l7/notes/front
+cat > ~/byte-layers/docker/l7/notes/api/app.py <<'EOF'
 import os, socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -72,13 +72,13 @@ class Handler(BaseHTTPRequestHandler):
 
 HTTPServer(("", 8080), Handler).serve_forever()
 EOF
-cat > ~/layers-l7/notes/api/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l7/notes/api/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app.py .
 CMD ["python", "-u", "app.py"]
 EOF
-cat > ~/layers-l7/notes/front/nginx.conf <<'EOF'
+cat > ~/byte-layers/docker/l7/notes/front/nginx.conf <<'EOF'
 server {
     listen 80;
     location / {
@@ -88,7 +88,7 @@ server {
 EOF
 ```
 
-Créez le fichier `~/layers-l7/notes/compose.yaml` avec votre éditeur : il décrit les trois services selon les critères ci-dessous. Démarrez ensuite l'application avec Compose, depuis ce dossier.
+Créez le fichier `~/byte-layers/docker/l7/notes/compose.yaml` avec votre éditeur : il décrit les trois services selon les critères ci-dessous. Démarrez ensuite l'application avec Compose, depuis ce dossier.
 
 **Critères :**
 
@@ -116,7 +116,7 @@ cid() { docker ps -q --filter "label=com.docker.compose.project=$P" --filter "la
 for S in front api cache; do
   if [ -z "$(cid $S)" ]; then
     echo "ÉCHEC : aucun service $S ne tourne dans le projet $P."
-    echo "  Écrivez ~/layers-l7/notes/compose.yaml et lancez docker compose up -d --build depuis ce dossier."
+    echo "  Écrivez ~/byte-layers/docker/l7/notes/compose.yaml et lancez docker compose up -d --build depuis ce dossier."
     echo "  Si un service s'arrête aussitôt : docker compose logs $S"
     exit 1
   fi
@@ -150,7 +150,7 @@ echo "RÉUSSI : front est la seule porte, et le compteur monte."
 
 ````solution
 ```bash
-cat > ~/layers-l7/notes/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/notes/compose.yaml <<'EOF'
 name: layers-l7-notes
 services:
   front:
@@ -170,7 +170,7 @@ services:
   cache:
     image: redis:8-alpine
 EOF
-cd ~/layers-l7/notes && docker compose up -d --build
+cd ~/byte-layers/docker/l7/notes && docker compose up -d --build
 sleep 2
 ```
 ````
@@ -183,7 +183,7 @@ Le message d'accueil doit pouvoir changer sans toucher à `compose.yaml`.
 
 **Critères :**
 
-- un fichier `~/layers-l7/notes/.env` définit `GREETING` ;
+- un fichier `~/byte-layers/docker/l7/notes/.env` définit `GREETING` ;
 - `api` reçoit cette valeur ;
 - le message n'est pas écrit en dur : si `GREETING` a une autre valeur au moment de lire le fichier, `docker compose config` montre cette autre valeur ;
 - si aucune valeur n'est donnée, le message vaut `Bonjour`, et non une chaîne vide.
@@ -197,7 +197,7 @@ Après avoir créé le fichier `.env`, il faut relancer `docker compose up -d` :
 ```
 
 ```verify
-P=layers-l7-notes; D=~/layers-l7/notes
+P=layers-l7-notes; D=~/byte-layers/docker/l7/notes
 A=$(docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=api" | head -1)
 if [ -z "$A" ]; then
   echo "ÉCHEC : le service api ne tourne pas. Faites d'abord la tâche 1."
@@ -225,8 +225,8 @@ echo "RÉUSSI : le message vient du fichier .env, avec Bonjour en repli."
 
 ````solution
 ```bash
-cd ~/layers-l7/notes && printf 'GREETING=Salut\n' > .env
-cat > ~/layers-l7/notes/compose.yaml <<'EOF'
+cd ~/byte-layers/docker/l7/notes && printf 'GREETING=Salut\n' > .env
+cat > ~/byte-layers/docker/l7/notes/compose.yaml <<'EOF'
 name: layers-l7-notes
 services:
   front:
@@ -247,7 +247,7 @@ services:
   cache:
     image: redis:8-alpine
 EOF
-cd ~/layers-l7/notes && docker compose up -d
+cd ~/byte-layers/docker/l7/notes && docker compose up -d
 ```
 ````
 
@@ -274,7 +274,7 @@ Le conteneur `cache` doit être recréé pour recevoir le volume : `docker compo
 ```
 
 ```verify
-P=layers-l7-notes; D=~/layers-l7/notes
+P=layers-l7-notes; D=~/byte-layers/docker/l7/notes
 R=$(docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=cache" | head -1)
 if [ -z "$R" ]; then
   echo "ÉCHEC : le service cache ne tourne pas."
@@ -303,7 +303,7 @@ echo "RÉUSSI : le compteur vaut $V, dans le volume ${SRC#volume:}. Passez à la
 
 ````solution
 ```bash
-cat > ~/layers-l7/notes/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/notes/compose.yaml <<'EOF'
 name: layers-l7-notes
 services:
   front:
@@ -329,7 +329,7 @@ services:
 volumes:
   cache-data:
 EOF
-cd ~/layers-l7/notes && docker compose up -d
+cd ~/byte-layers/docker/l7/notes && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28372
 sleep 1
 ```
@@ -351,7 +351,7 @@ Une seule commande supprime tous les conteneurs du projet, et une seule les recr
 ```
 
 ```verify
-P=layers-l7-notes; D=~/layers-l7/notes
+P=layers-l7-notes; D=~/byte-layers/docker/l7/notes
 R=$(docker ps -q --filter "label=com.docker.compose.project=$P" --filter "label=com.docker.compose.service=cache" | head -1)
 if [ -z "$R" ]; then
   echo "ÉCHEC : le service cache ne tourne pas. Après la suppression, il reste à recréer les conteneurs."
@@ -377,7 +377,7 @@ echo "RÉUSSI : un nouveau conteneur, et le compteur vaut $V."
 
 ````solution
 ```bash
-cd ~/layers-l7/notes && docker compose down && docker compose up -d
+cd ~/byte-layers/docker/l7/notes && docker compose down && docker compose up -d
 ```
 ````
 
@@ -429,7 +429,7 @@ case "$OUT" in
   *visites*) : ;;
   *) echo "ÉCHEC : l'application ne répond plus sur le port 28372 : api doit aussi rester relié à cache."; exit 1 ;;
 esac
-OLD=$(sed -n 2p ~/layers-l7/notes/.cache-id 2>/dev/null)
+OLD=$(sed -n 2p ~/byte-layers/docker/l7/notes/.cache-id 2>/dev/null)
 N=$(echo "$OUT" | sed -n 's/.* : \([0-9]*\) visites/\1/p')
 if [ -z "$N" ] || [ "$N" -lt "${OLD:-0}" ]; then
   echo "ÉCHEC : le compteur vaut ${N:-rien}, alors qu'il valait au moins $OLD. Le volume a-t-il été supprimé ? Si oui, faites monter le compteur et reprenez à la tâche 3."
@@ -442,8 +442,8 @@ echo "RÉUSSI : front joint api mais pas cache, et l'application répond : $OUT"
 Le fichier final du challenge se trouve aussi dans le dossier `solution/` de ce contenu.
 
 ```bash
-cd ~/layers-l7/notes && docker compose down
-cat > ~/layers-l7/notes/compose.yaml <<'EOF'
+cd ~/byte-layers/docker/l7/notes && docker compose down
+cat > ~/byte-layers/docker/l7/notes/compose.yaml <<'EOF'
 name: layers-l7-notes
 services:
   front:
@@ -479,7 +479,7 @@ networks:
   edge:
   back:
 EOF
-cd ~/layers-l7/notes && docker compose up -d
+cd ~/byte-layers/docker/l7/notes && docker compose up -d
 sleep 2
 ```
 ````
@@ -488,7 +488,7 @@ sleep 2
 
 ## Ce qu'il faut faire
 
-Supprimez tout ce que ce challenge a créé : les conteneurs, les réseaux, le volume, l'image construite et le dossier `~/layers-l7/notes`.
+Supprimez tout ce que ce challenge a créé : les conteneurs, les réseaux, le volume, l'image construite et le dossier `~/byte-layers/docker/l7/notes`.
 
 **Critères :** il ne doit plus rester aucun objet du projet `layers-l7-notes` dans Docker, ni le dossier. Vos autres conteneurs ne sont pas concernés.
 
@@ -515,8 +515,8 @@ if [ -n "$(docker images -q --filter "label=com.docker.compose.project=$P")" ] |
   echo "ÉCHEC : l'image construite existe encore. Il faut l'option --rmi local."
   exit 1
 fi
-if [ -e "$HOME/layers-l7/notes" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l7/notes existe encore."
+if [ -e "$HOME/byte-layers/docker/l7/notes" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l7/notes existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez décrire une application avec Compose."
@@ -524,7 +524,7 @@ echo "RÉUSSI : tout est propre. Vous savez décrire une application avec Compos
 
 ````solution
 ```bash
-cd ~/layers-l7/notes && docker compose down -v --rmi local
-cd ~ && rm -rf ~/layers-l7/notes
+cd ~/byte-layers/docker/l7/notes && docker compose down -v --rmi local
+cd ~ && rm -rf ~/byte-layers/docker/l7/notes
 ```
 ````

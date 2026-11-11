@@ -59,8 +59,8 @@ echo "L'image est redescendue du registre."
 Avant de changer quoi que ce soit, gardez ce digest dans un fichier, car vous allez en avoir besoin. Docker l'a noté dans la fiche de l'image en la téléchargeant : `docker image inspect` lit cette fiche, `--format` en extrait le champ `RepoDigests`, et `index … 0` en prend la première valeur.
 
 ```exec
-docker image inspect localhost:28340/layers-l4-hello:1.0 --format '{{index .RepoDigests 0}}' > ~/layers-l4/digest-v1.txt
-cat ~/layers-l4/digest-v1.txt
+docker image inspect localhost:28340/layers-l4-hello:1.0 --format '{{index .RepoDigests 0}}' > ~/byte-layers/docker/l4/digest-v1.txt
+cat ~/byte-layers/docker/l4/digest-v1.txt
 ```
 
 Vous lisez le nom du dépôt, un `@`, puis le digest :
@@ -70,8 +70,8 @@ localhost:28340/layers-l4-hello@sha256:7eb048320768fb5057b1bceb27e94612ca483caf8
 ```
 
 ```verify
-if ! grep -qE '^localhost:28340/layers-l4-hello@sha256:[0-9a-f]{64}$' ~/layers-l4/digest-v1.txt 2>/dev/null; then
-  echo "~/layers-l4/digest-v1.txt ne contient pas un nom suivi d'un digest. Relancez les commandes de cette section."
+if ! grep -qE '^localhost:28340/layers-l4-hello@sha256:[0-9a-f]{64}$' ~/byte-layers/docker/l4/digest-v1.txt 2>/dev/null; then
+  echo "~/byte-layers/docker/l4/digest-v1.txt ne contient pas un nom suivi d'un digest. Relancez les commandes de cette section."
   exit 1
 fi
 echo "Le digest de la version 1 est noté."
@@ -86,7 +86,7 @@ Imaginez maintenant qu'une correction soit republiée sous le même tag `1.0`. R
 Modifiez la phrase du Dockerfile, dans votre éditeur ou avec cette commande :
 
 ```exec
-cat > ~/layers-l4/app/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l4/app/Dockerfile <<'EOF'
 FROM alpine:3.22
 CMD ["echo", "Bonjour depuis la version 2"]
 EOF
@@ -95,7 +95,7 @@ EOF
 Construisez, posez le nom complet sur cette nouvelle image, et poussez :
 
 ```exec
-docker build -t layers-l4-hello:2.0 ~/layers-l4/app
+docker build -t layers-l4-hello:2.0 ~/byte-layers/docker/l4/app
 docker tag layers-l4-hello:2.0 localhost:28340/layers-l4-hello:1.0
 docker push localhost:28340/layers-l4-hello:1.0
 ```
@@ -163,8 +163,8 @@ echo "Sous le tag 1.0, le registre donne désormais la version 2."
 Le registre devrait avoir gardé la version 1, puisque seule l'étiquette a bougé. Pour le prouver, il faut encore effacer la copie locale, car votre machine a pu garder cette version. Retirez-la, puis demandez-la par le nom que vous aviez noté. `$(cat …)` place dans la commande le contenu du fichier, ce qui vous évite de recopier le digest :
 
 ```exec
-docker rmi "$(cat ~/layers-l4/digest-v1.txt)"
-docker run --rm "$(cat ~/layers-l4/digest-v1.txt)"
+docker rmi "$(cat ~/byte-layers/docker/l4/digest-v1.txt)"
+docker run --rm "$(cat ~/byte-layers/docker/l4/digest-v1.txt)"
 ```
 
 Docker ne trouve plus l'image sur votre machine, la télécharge depuis le registre, et la dernière ligne donne la réponse :
@@ -178,11 +178,11 @@ Bonjour depuis la version 1
 Quel que soit le nombre de fois où le tag a bougé, ce nom donnera toujours cette image, et c'est pourquoi on l'utilise pour figer ce qui part en production. Une réserve : sur un vrai registre, un nettoyage peut retirer les images qui n'ont plus aucun tag. Gardez donc un tag sur ce que vous voulez retrouver.
 
 ```verify
-if [ ! -s ~/layers-l4/digest-v1.txt ]; then
-  echo "Le fichier ~/layers-l4/digest-v1.txt est vide ou absent. Reprenez la section sur le digest."
+if [ ! -s ~/byte-layers/docker/l4/digest-v1.txt ]; then
+  echo "Le fichier ~/byte-layers/docker/l4/digest-v1.txt est vide ou absent. Reprenez la section sur le digest."
   exit 1
 fi
-if ! docker run --rm "$(cat ~/layers-l4/digest-v1.txt)" | grep -q 'version 1'; then
+if ! docker run --rm "$(cat ~/byte-layers/docker/l4/digest-v1.txt)" | grep -q 'version 1'; then
   echo "L'image désignée par ce digest n'affiche pas la version 1."
   exit 1
 fi

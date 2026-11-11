@@ -10,7 +10,7 @@ Votre application sait attendre. Elle doit maintenant survivre à ce qui finit t
 Retirez d'abord le délai artificiel de Redis, qui n'a plus d'utilité, et donnez-lui un volume pour que ses données survivent, comme dans « Garder ses données : volumes et bind mounts ». Le fichier ne contient encore aucune politique de redémarrage :
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -41,7 +41,7 @@ services:
 volumes:
   cache-data:
 EOF
-cd ~/layers-l8/reliable && docker compose up -d
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d
 ```
 
 Simulez une panne de l'application, en appelant l'adresse `/crash`. Le processus principal s'arrête sur une erreur, donc le conteneur aussi. `curl` n'affiche rien, car il n'a reçu aucune réponse :
@@ -50,7 +50,7 @@ Simulez une panne de l'application, en appelant l'adresse `/crash`. Le processus
 sleep 2
 curl -s --max-time 2 http://localhost:28382/crash
 sleep 1
-cd ~/layers-l8/reliable && docker compose ps -a --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/reliable && docker compose ps -a --format '{{.Service}} : {{.Status}}'
 ```
 
 `web` est `Exited (1)`, et il le restera : rien ne le relance. Sur un serveur, à trois heures du matin, c'est une panne jusqu'à ce que quelqu'un s'en aperçoive.
@@ -67,8 +67,8 @@ La clé `restart` règle cela, avec les mêmes valeurs que `--restart` dans « L
 Sur un serveur, on préfère souvent `unless-stopped`. Ajoutez cette ligne aux deux services. `awk` recopie ici le fichier ligne à ligne, en écrivant `restart: unless-stopped` après chaque ligne `build:` ou `image:` ; vous pouvez aussi le faire dans votre éditeur :
 
 ```exec
-cd ~/layers-l8/reliable && awk '{print} /^    (build|image):/{print "    restart: unless-stopped"}' compose.yaml > compose.new && mv compose.new compose.yaml
-cd ~/layers-l8/reliable && docker compose up -d
+cd ~/byte-layers/docker/l8/reliable && awk '{print} /^    (build|image):/{print "    restart: unless-stopped"}' compose.yaml > compose.new && mv compose.new compose.yaml
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d
 ```
 
 Provoquez la même panne, puis lisez le nombre de redémarrages :
@@ -118,7 +118,7 @@ docker stats --no-stream --format '{{.Name}} : {{.MemUsage}}, {{.PIDs}} processu
 `web` consomme environ 10 Mio, soit 10 mébioctets, l'unité que Docker affiche et que Compose écrit `M` : 128 Mio laissent une marge confortable. Ajoutez la limite à `web`, et plafonnez aussi ses logs. Par défaut, Docker les garde sans limite dans un fichier, et un serveur finit par manquer de disque pour cette seule raison. Le pilote `json-file` est celui que Docker utilise déjà, et `max-size` et `max-file` limitent ici à 3 fichiers de 1 Mio :
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -172,14 +172,14 @@ services:
 volumes:
   cache-data:
 EOF
-cd ~/layers-l8/reliable && docker compose up -d
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d
 ```
 
 Vérifiez que la limite tient. Cette commande demande à Python de remplir 300 Mio. Elle doit échouer :
 
 ```exec
 sleep 3
-cd ~/layers-l8/reliable && docker compose exec web python -c "x = b'x' * (300 * 1024 * 1024); print('300 Mio obtenus')"; echo "code de sortie : $?"
+cd ~/byte-layers/docker/l8/reliable && docker compose exec web python -c "x = b'x' * (300 * 1024 * 1024); print('300 Mio obtenus')"; echo "code de sortie : $?"
 ```
 
 Le code `137` veut dire `SIGKILL`, comme dans « Lancer, configurer et observer un conteneur » : le système a tué le processus, et le message `300 Mio obtenus` ne s'affiche pas. La fiche du conteneur le confirme :

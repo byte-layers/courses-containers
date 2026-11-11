@@ -10,8 +10,8 @@ Pour fabriquer un meuble, il faut un atelier, mais on ne livre pas l'atelier ave
 Votre application est écrite en Go, un langage **compilé** : un programme, le compilateur, traduit le code source en un seul fichier exécutable, appelé **binaire**. Une fois le binaire produit, ni le compilateur ni le code ne sont utiles pour le lancer. Créez le projet :
 
 ```exec
-mkdir -p ~/layers-l3/multi
-cat > ~/layers-l3/multi/main.go <<'EOF'
+mkdir -p ~/byte-layers/docker/l3/multi
+cat > ~/byte-layers/docker/l3/multi/main.go <<'EOF'
 package main
 
 import (
@@ -35,7 +35,7 @@ EOF
 Ce programme écoute sur le port 8080 et répond une phrase. Un projet Go se décrit aussi dans un petit fichier, `go.mod`, qui lui donne un nom et indique sa version de Go :
 
 ```exec
-printf 'module example.com/hello\n\ngo 1.24\n' > ~/layers-l3/multi/go.mod
+printf 'module example.com/hello\n\ngo 1.24\n' > ~/byte-layers/docker/l3/multi/go.mod
 ```
 
 ## Le Dockerfile d'un seul tenant
@@ -43,14 +43,14 @@ printf 'module example.com/hello\n\ngo 1.24\n' > ~/layers-l3/multi/go.mod
 Ce Dockerfile part de l'image officielle de Go, qui contient le compilateur. `go build -o /hello .` compile le dossier courant et écrit le binaire dans `/hello` :
 
 ```exec
-cat > ~/layers-l3/multi/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/multi/Dockerfile <<'EOF'
 FROM golang:1.24-alpine
 WORKDIR /src
 COPY . .
 RUN go build -o /hello .
 CMD ["/hello"]
 EOF
-docker build -t layers-l3-multi:lourd ~/layers-l3/multi
+docker build -t layers-l3-multi:lourd ~/byte-layers/docker/l3/multi
 ```
 
 Lancez cette image pour vérifier qu'elle fonctionne. Le port 28331 mène au port 8080 du conteneur :

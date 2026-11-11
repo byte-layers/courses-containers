@@ -40,7 +40,7 @@ Adminer, lui, sait vivre sous un préfixe, avec le middleware `stripprefix` déj
 Le fichier qui suit remplace celui de la partie B. Créez-le, puis complétez ses trois blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
 # Les journaux : un seul réglage, réutilisé par tous les services
@@ -186,7 +186,7 @@ EOF
 Appliquez-le avec le profil `dev`, pour qu'Adminer suive. Compose recrée `app` et `adminer`, qui changent de réseau et de ports :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose --profile dev up -d
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose --profile dev up -d
 ```
 
 Compose ne supprime pas tout seul un réseau qui a disparu du fichier. Supprimez l'ancien réseau `frontend`, que plus aucun conteneur n'utilise :
@@ -197,7 +197,7 @@ docker network rm layers-l10-petclinic-frontend
 
 ```verify
 for C in layers-l10-petclinic-app-1 layers-l10-petclinic-adminer-1; do
-  [ "$(docker inspect $C --format '{{.State.Running}}' 2>/dev/null)" = "true" ] || { echo "$C ne tourne pas. Lancez docker compose --profile dev up -d depuis ~/layers-l10/prod/petclinic."; exit 1; }
+  [ "$(docker inspect $C --format '{{.State.Running}}' 2>/dev/null)" = "true" ] || { echo "$C ne tourne pas. Lancez docker compose --profile dev up -d depuis ~/byte-layers/docker/l10/prod/petclinic."; exit 1; }
   [ -z "$(docker port $C)" ] || { echo "$C publie encore un port : retirez sa clé ports, seul Traefik publie."; exit 1; }
   docker inspect $C --format '{{range $n, $x := .NetworkSettings.Networks}}{{$n}} {{end}}' | grep -q 'layers-l10-proxy' || { echo "$C n'est pas sur le réseau layers-l10-proxy."; exit 1; }
 done
@@ -218,7 +218,7 @@ Tout en bas, le réseau s'écrit `proxy:`, puis, décalés de deux espaces, `nam
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
@@ -400,6 +400,6 @@ echo "Tout passe par Traefik, sur un seul port."
 Ce contrôle ne demande rien de nouveau. Si la racine ne répond pas, vérifiez les labels de `app` dans le tableau de bord de Traefik, page **HTTP Routers**. Une route en erreur y est marquée en rouge, avec la raison. Relancez ensuite le projet :
 
 ```bash
-cd ~/layers-l10/prod/petclinic && docker compose --profile dev up -d
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose --profile dev up -d
 ```
 ````

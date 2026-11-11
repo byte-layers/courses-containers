@@ -92,7 +92,7 @@ Supprimez enfin vos images et votre dossier de travail :
 
 ```exec
 docker rmi layers-l9-app:1 layers-l9-app:2 layers-l9-app:casse
-rm -rf ~/layers-l9
+rm -rf ~/byte-layers/docker/l9
 ```
 
 Le réseau `docker_gwbridge`, créé par Swarm, reste sur votre machine après son départ. Il ne porte aucun conteneur et ne gêne en rien : Swarm le réutilisera la prochaine fois.
@@ -107,8 +107,8 @@ if [ -n "$left" ]; then
   echo "Il reste des images : $(echo "$left" | sort -u | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l9" ]; then
-  echo "Le dossier ~/layers-l9 existe encore."
+if [ -e "$HOME/byte-layers/docker/l9" ]; then
+  echo "Le dossier ~/byte-layers/docker/l9 existe encore."
   exit 1
 fi
 echo "C'est propre."

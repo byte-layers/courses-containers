@@ -10,11 +10,11 @@ Redis accepte aujourd'hui toutes les connexions. Protégez-le par un mot de pass
 La clé `secrets` de Compose prend la valeur dans un fichier de votre machine, et la place dans le conteneur, sous `/run/secrets/<nom>`. Préparez ce fichier. Le dossier est réservé à votre utilisateur avec `chmod 700`, et il n'entre jamais dans Git, ce que dit le fichier `.gitignore`. Le fichier `.dockerignore` le garde aussi hors des images construites :
 
 ```exec
-mkdir -p ~/layers-l8/reliable/secrets
-chmod 700 ~/layers-l8/reliable/secrets
-printf 'mot-de-passe-de-demo' > ~/layers-l8/reliable/secrets/redis_password.txt
-printf 'secrets/\n' > ~/layers-l8/reliable/.gitignore
-printf 'secrets/\n' > ~/layers-l8/reliable/.dockerignore
+mkdir -p ~/byte-layers/docker/l8/reliable/secrets
+chmod 700 ~/byte-layers/docker/l8/reliable/secrets
+printf 'mot-de-passe-de-demo' > ~/byte-layers/docker/l8/reliable/secrets/redis_password.txt
+printf 'secrets/\n' > ~/byte-layers/docker/l8/reliable/.gitignore
+printf 'secrets/\n' > ~/byte-layers/docker/l8/reliable/.dockerignore
 ```
 
 Dans un vrai projet, vous fourniriez un fichier d'exemple, et chacun créerait le sien : la valeur ci-dessus, écrite dans ce cours, ne doit pas servir ailleurs.
@@ -28,7 +28,7 @@ Redis, lui, n'a pas d'option qui lise un mot de passe dans un fichier. Il faut u
 Voici le fichier complet, avec ces ajouts. Le contrôle de santé de `cache` change lui aussi : la section suivante dit pourquoi.
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -106,7 +106,7 @@ secrets:
   redis_password:
     file: ./secrets/redis_password.txt
 EOF
-cd ~/layers-l8/reliable && docker compose up -d --wait --wait-timeout 30
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d --wait --wait-timeout 30
 curl -s --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28382
 ```
 
@@ -117,7 +117,7 @@ L'application répond : `web` a lu le fichier et s'est authentifié. Sans ce sec
 Pourquoi avoir changé le contrôle de `cache` ? Essayez l'ancien, qui lance `redis-cli ping` sans mot de passe, et affichez son code de sortie :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose exec cache redis-cli ping; echo "code de sortie : $?"
+cd ~/byte-layers/docker/l8/reliable && docker compose exec cache redis-cli ping; echo "code de sortie : $?"
 ```
 
 Vous lisez `NOAUTH Authentication required`, et **`code de sortie : 0`**. Redis a répondu un refus, et `redis-cli` considère que l'échange s'est bien passé. Docker ne regarde que ce code : le service aurait donc été déclaré `healthy` quoi qu'il arrive au mot de passe. Un contrôle de santé doit vérifier la réponse attendue. Le nouveau y parvient de cette façon :
@@ -132,7 +132,7 @@ Vous lisez `NOAUTH Authentication required`, et **`code de sortie : 0`**. Redis 
 Lancez la même chose à la main. Le premier appel doit répondre `PONG`, et le second, avec un faux mot de passe, doit échouer :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose exec cache sh -c 'redis-cli -a "$(cat /run/secrets/redis_password)" --no-auth-warning ping | grep PONG; echo "code : $?"; redis-cli -a faux --no-auth-warning ping | grep PONG; echo "code : $?"'
+cd ~/byte-layers/docker/l8/reliable && docker compose exec cache sh -c 'redis-cli -a "$(cat /run/secrets/redis_password)" --no-auth-warning ping | grep PONG; echo "code : $?"; redis-cli -a faux --no-auth-warning ping | grep PONG; echo "code : $?"'
 ```
 
 ```verify
@@ -168,7 +168,7 @@ docker history --no-trunc layers-l8-reliable-web | grep -c 'mot-de-passe-de-demo
 Dans le conteneur, en revanche, le fichier est lisible, comme prévu :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose exec web cat /run/secrets/redis_password
+cd ~/byte-layers/docker/l8/reliable && docker compose exec web cat /run/secrets/redis_password
 ```
 
 Une limite à connaître : Redis reçoit ici le mot de passe sur sa ligne de commande. Il la masque dès son démarrage, et `cat /proc/1/cmdline` dans le conteneur ne montre plus que `redis-server *:6379`, mais un autre processus du conteneur pourrait la lire pendant ce court instant. Une application qui lit directement le fichier, comme `web`, n'a pas ce défaut, et il vaut mieux la privilégier. Le cas d'une équipe, où le fichier doit être partagé et chiffré, relève d'outils comme HashiCorp Vault, hors du champ de ce cours.

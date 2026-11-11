@@ -33,7 +33,7 @@ Trois choix sont à faire dans le fichier de PetClinic :
 L'agent est un JAR publié sur GitHub, avec son **empreinte** `sha256`. Vous le téléchargez, puis vous vérifiez qu'il correspond à cette empreinte, pour être sûr d'exécuter le fichier publié et pas un autre : c'est le même réflexe que le digest des images. `sha256sum -c` recalcule l'empreinte et la compare :
 
 ```exec
-mkdir -p ~/layers-l10/prod/petclinic/jmx && cd ~/layers-l10/prod/petclinic/jmx
+mkdir -p ~/byte-layers/docker/l10/prod/petclinic/jmx && cd ~/byte-layers/docker/l10/prod/petclinic/jmx
 curl -LO https://github.com/prometheus/jmx_exporter/releases/download/1.7.0/jmx_prometheus_javaagent-1.7.0.jar
 echo "0ad843261c567d1924a017d542e14c40f2afff523d940c25ee000742fde4b3a9  jmx_prometheus_javaagent-1.7.0.jar" | sha256sum -c
 ```
@@ -41,13 +41,13 @@ echo "0ad843261c567d1924a017d542e14c40f2afff523d940c25ee000742fde4b3a9  jmx_prom
 La réponse doit être `jmx_prometheus_javaagent-1.7.0.jar: OK`. Ce JAR téléchargé n'a pas sa place dans Git, et il reste hors du contexte de build grâce à la liste blanche du `.dockerignore`. Ajoutez le dossier au `.gitignore` :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && (grep -qx 'jmx/' .gitignore || echo 'jmx/' >> .gitignore)
+cd ~/byte-layers/docker/l10/prod/petclinic && (grep -qx 'jmx/' .gitignore || echo 'jmx/' >> .gitignore)
 ```
 
  L'agent a besoin d'un fichier de règles, qui dit quels indicateurs JMX republier. Celui-ci les republie tous, et l'agent ajoute de lui-même les métriques de base de la JVM :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/jmx/config.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/jmx/config.yaml <<'EOF'
 # Republier tous les MBeans de la JVM, en plus des métriques JVM de base
 rules:
   - pattern: ".*"
@@ -59,7 +59,7 @@ EOF
 Le fichier qui suit reprend celui du chapitre précédent, avec l'agent. L'option `-javaagent` suit la forme `-javaagent:<chemin du JAR>=<port>:<chemin des règles>`, et l'alias se déclare dans la [forme longue des réseaux](https://docs.docker.com/reference/compose-file/services/#aliases) d'un service. Créez le fichier, puis complétez ses deux blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
 # Les journaux : un seul réglage, réutilisé par tous les services
@@ -217,11 +217,11 @@ EOF
 Appliquez le fichier :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose --profile dev up -d
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose --profile dev up -d
 ```
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 echo "0ad843261c567d1924a017d542e14c40f2afff523d940c25ee000742fde4b3a9  $P/jmx/jmx_prometheus_javaagent-1.7.0.jar" | sha256sum -c --status 2>/dev/null || { echo "Le JAR de l'agent manque dans $P/jmx, ou son empreinte ne correspond pas. Téléchargez-le à nouveau."; exit 1; }
 docker inspect layers-l10-petclinic-app-1 --format '{{json .Config.Entrypoint}}' | grep -q 'javaagent:/opt/jmx/jmx_prometheus_javaagent-1.7.0.jar=9404:/opt/jmx/config.yaml' || { echo "L'entrypoint de app ne charge pas l'agent : vérifiez la ligne -javaagent."; exit 1; }
 docker inspect layers-l10-petclinic-app-1 --format '{{json .NetworkSettings.Networks}}' | grep -q '"petclinic"' || { echo "app n'a pas l'alias petclinic sur le réseau proxy."; exit 1; }
@@ -240,7 +240,7 @@ L'alias se déclare dans la forme longue des réseaux de `app` : sous `proxy:`, 
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
@@ -404,8 +404,8 @@ docker compose --profile dev up -d
 Prometheus rejoint deux réseaux : `monitoring`, pour que Grafana le lise, et `proxy`, pour joindre ses deux cibles, Traefik et PetClinic. Il garde ses mesures deux jours dans un volume, et il n'a aucun port publié : vous le lirez par Grafana. Sa configuration liste les cibles à interroger. Créez-la, en complétant son blanc :
 
 ```exec
-mkdir -p ~/layers-l10/prod/infra/observability/prometheus
-cat > ~/layers-l10/prod/infra/observability/prometheus/prometheus.yml <<'EOF'
+mkdir -p ~/byte-layers/docker/l10/prod/infra/observability/prometheus
+cat > ~/byte-layers/docker/l10/prod/infra/observability/prometheus/prometheus.yml <<'EOF'
 global:
   scrape_interval: 15s
 
@@ -430,7 +430,7 @@ Le label `application` n'est pas nécessaire à Prometheus. Il est attendu par l
 Le fichier de la pile gagne le service `prometheus` et son volume, et Grafana attend aussi Prometheus pour démarrer. Il remplace le précédent :
 
 ```exec
-cat > ~/layers-l10/prod/infra/observability/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/observability/compose.yaml <<'EOF'
 x-logging: &default-logging
   driver: json-file
   options:
@@ -566,7 +566,7 @@ EOF
 Déclarez Prometheus comme seconde source de données de Grafana. Loki reste la source par défaut :
 
 ```exec
-cat > ~/layers-l10/prod/infra/observability/grafana/provisioning/datasources/datasources.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/observability/grafana/provisioning/datasources/datasources.yaml <<'EOF'
 # Les sources de données, déclarées au démarrage de Grafana : rien à cliquer
 apiVersion: 1
 datasources:
@@ -584,12 +584,12 @@ datasources:
 EOF
 ```
 
-Ouvrez enfin `~/layers-l10/prod/infra/traefik/compose.yaml`, et ajoutez la ligne `- --metrics.prometheus=true` à la fin de la liste `command:`, après `- --accesslog.format=json`, avec la même indentation.
+Ouvrez enfin `~/byte-layers/docker/l10/prod/infra/traefik/compose.yaml`, et ajoutez la ligne `- --metrics.prometheus=true` à la fin de la liste `command:`, après `- --accesslog.format=json`, avec la même indentation.
 
 Appliquez l'infra. Compose recrée Traefik, dont la ligne de commande a changé, et crée Prometheus. Grafana ne relit ses sources de données qu'au démarrage : redémarrez-le. Pendant son redémarrage, `/grafana/` répond `404` le temps que son healthcheck réussisse.
 
 ```exec
-cd ~/layers-l10/prod/infra && docker compose up -d && docker compose restart grafana
+cd ~/byte-layers/docker/l10/prod/infra && docker compose up -d && docker compose restart grafana
 ```
 
 Contrôlez les cibles de Prometheus. Il n'a pas de port publié, et `docker exec` lance donc la requête depuis son conteneur, avec `wget`. `grep` extrait l'état de chaque cible :
@@ -604,7 +604,7 @@ Vous devez lire les deux cibles, `traefik` et `petclinic`, chacune avec `"health
 
 ```verify
 T=$(docker exec layers-l10-infra-prometheus-1 wget -qO- http://localhost:9090/api/v1/targets 2>/dev/null)
-[ -n "$T" ] || { echo "Prometheus ne répond pas. Lancez docker compose up -d depuis ~/layers-l10/prod/infra, puis lisez docker compose logs prometheus."; exit 1; }
+[ -n "$T" ] || { echo "Prometheus ne répond pas. Lancez docker compose up -d depuis ~/byte-layers/docker/l10/prod/infra, puis lisez docker compose logs prometheus."; exit 1; }
 for J in traefik petclinic; do
   echo "$T" | tr '{' '\n' | grep "\"job\":\"$J\"" >/dev/null || { echo "Prometheus n'a pas de cible $J : vérifiez prometheus.yml."; exit 1; }
   Q=$(docker exec layers-l10-infra-prometheus-1 wget -qO- "http://localhost:9090/api/v1/query?query=up%7Bjob%3D%22$J%22%7D" 2>/dev/null)
@@ -621,7 +621,7 @@ La cible s'écrit `targets: ["petclinic:9404"]`, l'alias réseau et le port de l
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/infra
+cd ~/byte-layers/docker/l10/prod/infra
 cat > observability/prometheus/prometheus.yml <<'EOF'
 global:
   scrape_interval: 15s
@@ -713,7 +713,7 @@ Dans le tableau JVM, quelques panneaux restent vides, ceux de la section sur le 
 Dans le tableau de Traefik, le service `petclinic@docker` montre les requêtes de la boucle. Relancez-la pour voir la courbe monter.
 
 ```verify
-PW=$(cat "$HOME/layers-l10/prod/infra/observability/secrets/grafana_admin_password.txt" 2>/dev/null)
+PW=$(cat "$HOME/byte-layers/docker/l10/prod/infra/observability/secrets/grafana_admin_password.txt" 2>/dev/null)
 R=$(curl -s --max-time 5 -u "admin:$PW" "http://localhost:28402/grafana/api/search?type=dash-db")
 echo "$R" | grep -q '"JVM Overview"' || { echo "Grafana n'a pas de dashboard « JVM Overview ». Importez le dashboard 19799."; exit 1; }
 echo "$R" | grep -q '"Traefik Official Standalone Dashboard"' || { echo "Grafana n'a pas de dashboard « Traefik Official Standalone Dashboard ». Importez le dashboard 17346, avec la source Prometheus."; exit 1; }

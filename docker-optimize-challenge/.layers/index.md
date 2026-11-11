@@ -22,7 +22,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 - **Ce qu'il faut savoir** : ce qu'enseignent « Couches et copy-on-write », « Accélérer un build avec le cache » et « Réduire une image avec le multi-stage ».
 - **Ce qu'il faut avoir** : Docker, `curl`, un éditeur de texte, et le port 28332 libre.
-- **Votre dossier de travail** : `~/layers-l3/slow` est créé pour vous, avec un petit service web écrit en Go et son Dockerfile. Il écoute sur le port 8080. Ses dépendances sont décrites dans `go.mod` et `go.sum`, et `go mod download` les télécharge. Vous n'avez pas besoin de savoir programmer en Go.
+- **Votre dossier de travail** : `~/byte-layers/docker/l3/slow` est créé pour vous, avec un petit service web écrit en Go et son Dockerfile. Il écoute sur le port 8080. Ses dépendances sont décrites dans `go.mod` et `go.sum`, et `go mod download` les télécharge. Vous n'avez pas besoin de savoir programmer en Go.
 - **Si un téléchargement échoue** avec `429 Too Many Requests`, vous avez atteint la limite de Docker Hub. Attendez, ou créez un compte gratuit et lancez `docker login`.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l3-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : chaque tâche reprend le Dockerfile de la précédente, et la tâche 1 sert de point de comparaison.
@@ -32,19 +32,19 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 ## Ce qu'il faut faire
 
 ```setup
-mkdir -p ~/layers-l3/slow/docs
-cat > ~/layers-l3/slow/go.mod <<'EOF'
+mkdir -p ~/byte-layers/docker/l3/slow/docs
+cat > ~/byte-layers/docker/l3/slow/go.mod <<'EOF'
 module example.com/slow
 
 go 1.24
 
 require github.com/google/uuid v1.6.0
 EOF
-cat > ~/layers-l3/slow/go.sum <<'EOF'
+cat > ~/byte-layers/docker/l3/slow/go.sum <<'EOF'
 github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 EOF
-cat > ~/layers-l3/slow/main.go <<'EOF'
+cat > ~/byte-layers/docker/l3/slow/main.go <<'EOF'
 package main
 
 import (
@@ -61,9 +61,9 @@ func main() {
     http.ListenAndServe(":8080", nil)
 }
 EOF
-echo 'Notes de conception, sans intérêt pour le service.' > ~/layers-l3/slow/docs/notes.md
-[ -f ~/layers-l3/slow/fixtures.bin ] || head -c 20000000 /dev/urandom > ~/layers-l3/slow/fixtures.bin
-[ -f ~/layers-l3/slow/Dockerfile ] || cat > ~/layers-l3/slow/Dockerfile <<'EOF'
+echo 'Notes de conception, sans intérêt pour le service.' > ~/byte-layers/docker/l3/slow/docs/notes.md
+[ -f ~/byte-layers/docker/l3/slow/fixtures.bin ] || head -c 20000000 /dev/urandom > ~/byte-layers/docker/l3/slow/fixtures.bin
+[ -f ~/byte-layers/docker/l3/slow/Dockerfile ] || cat > ~/byte-layers/docker/l3/slow/Dockerfile <<'EOF'
 FROM golang:1.24-alpine
 WORKDIR /src
 COPY . .
@@ -74,12 +74,12 @@ CMD ["slow"]
 EOF
 ```
 
-On n'améliore bien que ce que l'on a mesuré. Lisez `~/layers-l3/slow/Dockerfile`, construisez-le tel quel, puis notez le poids de l'image.
+On n'améliore bien que ce que l'on a mesuré. Lisez `~/byte-layers/docker/l3/slow/Dockerfile`, construisez-le tel quel, puis notez le poids de l'image.
 
 **Critères :**
 
 - une image s'appelle exactement `layers-l3-slow:before`, construite avec le Dockerfile fourni, sans le modifier ;
-- le fichier `~/layers-l3/slow-mesure.txt` contient le poids de cette image, en octets, tel que le donne le champ `.Size` de sa fiche.
+- le fichier `~/byte-layers/docker/l3/slow-mesure.txt` contient le poids de cette image, en octets, tel que le donne le champ `.Size` de sa fiche.
 
 ```hint
 `docker image inspect` lit la fiche d'une image, et `--format` en extrait un champ. Une redirection `>` envoie le résultat dans un fichier.
@@ -104,7 +104,7 @@ if ! docker run --rm --entrypoint sh "$I" -c 'test -f /src/fixtures.bin'; then
   exit 1
 fi
 SIZE=$(docker image inspect "$I" --format '{{.Size}}')
-REPORT="$HOME/layers-l3/slow-mesure.txt"
+REPORT="$HOME/byte-layers/docker/l3/slow-mesure.txt"
 if [ ! -f "$REPORT" ]; then
   echo "ÉCHEC : le fichier $REPORT n'existe pas."
   exit 1
@@ -118,8 +118,8 @@ echo "RÉUSSI : vous partez de $SIZE octets."
 
 ````solution
 ```bash
-docker build -t layers-l3-slow:before ~/layers-l3/slow
-docker image inspect layers-l3-slow:before --format '{{.Size}}' > ~/layers-l3/slow-mesure.txt
+docker build -t layers-l3-slow:before ~/byte-layers/docker/l3/slow
+docker image inspect layers-l3-slow:before --format '{{.Size}}' > ~/byte-layers/docker/l3/slow-mesure.txt
 ```
 ````
 
@@ -143,7 +143,7 @@ Une instruction rejouée entraîne toutes celles qui la suivent. Quelle ligne du
 ```
 
 ```verify
-SRC="$HOME/layers-l3/slow"
+SRC="$HOME/byte-layers/docker/l3/slow"
 if [ ! -f "$SRC/Dockerfile" ]; then
   echo "ÉCHEC : le fichier $SRC/Dockerfile n'existe pas."
   exit 1
@@ -174,7 +174,7 @@ echo "RÉUSSI : modifier le code ne relance plus le téléchargement."
 
 ````solution
 ```bash
-cat > ~/layers-l3/slow/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/slow/Dockerfile <<'EOF'
 FROM golang:1.24-alpine
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -203,7 +203,7 @@ Un seul fichier suffit, à la racine du projet : il liste ce que Docker doit lai
 ```
 
 ```verify
-DIR="$HOME/layers-l3/slow"
+DIR="$HOME/byte-layers/docker/l3/slow"
 OUT=$(mktemp -d)
 if ! printf 'FROM scratch\nCOPY . /\n' | docker build -q -f - -o "type=local,dest=$OUT" "$DIR" >/dev/null 2>&1; then
   echo "ÉCHEC : l'essai de build a échoué sur le dossier $DIR. Le .dockerignore a-t-il exclu tout le projet ?"
@@ -231,7 +231,7 @@ echo "RÉUSSI : le contexte ne contient plus que ce qui sert."
 
 ````solution
 ```bash
-cat > ~/layers-l3/slow/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l3/slow/.dockerignore <<'EOF'
 fixtures.bin
 docs
 Dockerfile
@@ -273,7 +273,7 @@ A=layers-l3-slow:after
 B=layers-l3-slow:before
 C=layers-l3-slow
 E=layers-l3-slow-essai
-SRC="$HOME/layers-l3/slow"
+SRC="$HOME/byte-layers/docker/l3/slow"
 if ! docker image inspect "$A" >/dev/null 2>&1; then
   echo "ÉCHEC : l'image $A n'existe pas."
   exit 1
@@ -334,7 +334,7 @@ echo "RÉUSSI : de $SB à $SA octets, et le service répond."
 
 ````solution
 ```bash
-cat > ~/layers-l3/slow/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/slow/Dockerfile <<'EOF'
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY go.mod go.sum ./
@@ -347,7 +347,7 @@ COPY --from=build /slow /slow
 EXPOSE 8080
 CMD ["/slow"]
 EOF
-docker build -t layers-l3-slow:after ~/layers-l3/slow
+docker build -t layers-l3-slow:after ~/byte-layers/docker/l3/slow
 docker rm -f layers-l3-slow
 docker run -d --name layers-l3-slow -p 28332:8080 layers-l3-slow:after
 ```
@@ -359,7 +359,7 @@ docker run -d --name layers-l3-slow -p 28332:8080 layers-l3-slow:after
 
 Supprimez tout ce que ce challenge a créé.
 
-**Critères :** plus de conteneur `layers-l3-slow`, plus d'images `layers-l3-slow:before` et `layers-l3-slow:after`, plus de dossier `~/layers-l3/slow`, plus de fichier `~/layers-l3/slow-mesure.txt`. Vos autres images et vos autres conteneurs ne sont pas concernés. Si vous avez reconstruit plusieurs fois sous un même tag, d'anciennes versions peuvent rester sans nom, affichées `<none>` par `docker images` : la vérification ne les regarde pas, et `docker image rm <identifiant>` supprime celles que vous reconnaissez.
+**Critères :** plus de conteneur `layers-l3-slow`, plus d'images `layers-l3-slow:before` et `layers-l3-slow:after`, plus de dossier `~/byte-layers/docker/l3/slow`, plus de fichier `~/byte-layers/docker/l3/slow-mesure.txt`. Vos autres images et vos autres conteneurs ne sont pas concernés. Si vous avez reconstruit plusieurs fois sous un même tag, d'anciennes versions peuvent rester sans nom, affichées `<none>` par `docker images` : la vérification ne les regarde pas, et `docker image rm <identifiant>` supprime celles que vous reconnaissez.
 
 ```hint
 Le conteneur d'abord, les images ensuite, et les fichiers enfin : `docker rm -f`, `docker image rm`, `rm -rf`.
@@ -375,8 +375,8 @@ if [ -n "$left" ]; then
   echo "ÉCHEC : il reste ces images : $(echo "$left" | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l3/slow" ] || [ -e "$HOME/layers-l3/slow-mesure.txt" ]; then
-  echo "ÉCHEC : ~/layers-l3/slow ou ~/layers-l3/slow-mesure.txt existe encore."
+if [ -e "$HOME/byte-layers/docker/l3/slow" ] || [ -e "$HOME/byte-layers/docker/l3/slow-mesure.txt" ]; then
+  echo "ÉCHEC : ~/byte-layers/docker/l3/slow ou ~/byte-layers/docker/l3/slow-mesure.txt existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez réduire et accélérer une image."
@@ -386,6 +386,6 @@ echo "RÉUSSI : tout est propre. Vous savez réduire et accélérer une image."
 ```bash
 docker rm -f layers-l3-slow
 docker image rm layers-l3-slow:before layers-l3-slow:after
-rm -rf ~/layers-l3/slow ~/layers-l3/slow-mesure.txt
+rm -rf ~/byte-layers/docker/l3/slow ~/byte-layers/docker/l3/slow-mesure.txt
 ```
 ````

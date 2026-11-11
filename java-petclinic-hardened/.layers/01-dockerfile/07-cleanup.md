@@ -17,11 +17,11 @@ docker image prune -f
 
 `docker image prune -f` supprime en plus les images **orphelines** (*dangling*), celles qui n'ont plus de nom : chaque reconstruction de `3-multistage` a laissé l'ancienne version sans nom.
 
-La simulation de la CI a laissé deux choses dont vous n'avez plus besoin, puisque le multi-stage compile maintenant dans l'image : l'image Maven lancée avec `docker run`, environ 540 Mo, et le dossier `~/layers-l10/m2` de ses dépendances, environ 200 Mo. Supprimez-les aussi :
+La simulation de la CI a laissé deux choses dont vous n'avez plus besoin, puisque le multi-stage compile maintenant dans l'image : l'image Maven lancée avec `docker run`, environ 540 Mo, et le dossier `~/byte-layers/docker/l10/m2` de ses dépendances, environ 200 Mo. Supprimez-les aussi :
 
 ```exec
 docker rmi maven:3.9.16-eclipse-temurin-21-noble
-rm -rf ~/layers-l10/m2
+rm -rf ~/byte-layers/docker/l10/m2
 ```
 
 Vous ne trouverez pas, en revanche, les images `maven` ou `eclipse-temurin` des `FROM` dans `docker images`. Le moteur de construction, **BuildKit**, les garde dans son propre **cache de construction**, avec les couches des stages `build` et leurs dépendances Maven. `docker system df` affiche sa taille à la ligne `Build Cache`, près d'un gigaoctet :
@@ -40,7 +40,7 @@ for T in 1-naive 2-jar 3-multistage; do
   fi
 done
 if ! docker image inspect layers-l10-petclinic:4-distroless >/dev/null 2>&1; then
-  echo "L'image layers-l10-petclinic:4-distroless a disparu : la partie B en a besoin. Reconstruisez-la depuis ~/layers-l10/prod/petclinic."
+  echo "L'image layers-l10-petclinic:4-distroless a disparu : la partie B en a besoin. Reconstruisez-la depuis ~/byte-layers/docker/l10/prod/petclinic."
   exit 1
 fi
 echo "Il ne reste que l'image distroless, celle de la suite."
@@ -52,7 +52,7 @@ docker rm -f layers-l10-petclinic 2>/dev/null
 docker rmi layers-l10-petclinic:1-naive layers-l10-petclinic:2-jar layers-l10-petclinic:3-multistage
 docker image prune -f
 docker rmi maven:3.9.16-eclipse-temurin-21-noble
-rm -rf ~/layers-l10/m2
+rm -rf ~/byte-layers/docker/l10/m2
 ```
 ````
 
