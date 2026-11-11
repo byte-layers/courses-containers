@@ -10,8 +10,8 @@ Votre registre est prêt et vide. Il vous faut une image à y mettre, et un nom 
 Créez un dossier de travail et, dedans, un Dockerfile minimal. Cette image affiche simplement son numéro de version, ce qui permettra de reconnaître plus tard laquelle on a sous les yeux :
 
 ```exec
-mkdir -p ~/layers-l4/app
-cat > ~/layers-l4/app/Dockerfile <<'EOF'
+mkdir -p ~/byte-layers/docker/l4/app
+cat > ~/byte-layers/docker/l4/app/Dockerfile <<'EOF'
 FROM alpine:3.22
 CMD ["echo", "Bonjour depuis la version 1"]
 EOF
@@ -20,7 +20,7 @@ EOF
 Construisez-la, puis lancez-la pour vérifier qu'elle dit ce qu'on attend :
 
 ```exec
-docker build -t layers-l4-hello:1.0 ~/layers-l4/app
+docker build -t layers-l4-hello:1.0 ~/byte-layers/docker/l4/app
 docker run --rm layers-l4-hello:1.0
 ```
 

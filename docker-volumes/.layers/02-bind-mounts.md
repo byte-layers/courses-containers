@@ -10,20 +10,20 @@ Un volume convient à des données qui appartiennent au conteneur. Parfois, on v
 Créez un petit site dans votre dossier de travail. `$HOME` est le chemin de votre dossier personnel, et le shell le remplace par sa valeur :
 
 ```exec
-mkdir -p "$HOME/layers-l6/site"
-echo '<h1>Mon site</h1>' > "$HOME/layers-l6/site/index.html"
+mkdir -p "$HOME/byte-layers/docker/l6/site"
+echo '<h1>Mon site</h1>' > "$HOME/byte-layers/docker/l6/site/index.html"
 ```
 
 Lancez nginx en branchant ce dossier sur son dossier de pages. C'est toujours l'option `-v`, mais ce qui précède le `:` est maintenant **un chemin** et non un nom. `:ro` donne à nginx un accès en lecture seule, car il n'a pas à modifier votre site. Du côté de `curl`, `-sS` n'affiche que les erreurs, et les options `--retry` réessaient le temps que le serveur démarre :
 
 ```exec
-docker run -d --name layers-l6-site -p 28360:80 -v "$HOME/layers-l6/site:/usr/share/nginx/html:ro" nginx:1.30-alpine
+docker run -d --name layers-l6-site -p 28360:80 -v "$HOME/byte-layers/docker/l6/site:/usr/share/nginx/html:ro" nginx:1.30-alpine
 curl -sS --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28360
 ```
 
 Une erreur de connexion peut s'afficher le temps que nginx démarre, puis vous lisez `<h1>Mon site</h1>`.
 
-Si vous travaillez sur un poste hébergé, c'est-à-dire un VS Code ouvert dans votre navigateur et fourni par votre formateur, retenez cette règle : le moteur Docker ne voit que les dossiers placés sous `/home/student`. C'est pour cela que tous vos fichiers vont dans `~/layers-l6`.
+Si vous travaillez sur un poste hébergé, c'est-à-dire un VS Code ouvert dans votre navigateur et fourni par votre formateur, retenez cette règle : le moteur Docker ne voit que les dossiers placés sous `/home/student`. C'est pour cela que tous vos fichiers vont dans `~/byte-layers/docker/l6`.
 
 ```verify
 MOUNT=$(docker inspect layers-l6-site --format '{{range .Mounts}}{{.Type}} {{.Destination}} {{.RW}}{{end}}' 2>/dev/null)
@@ -43,7 +43,7 @@ echo "nginx sert votre dossier."
 Puisque c'est le même dossier, toute modification de votre côté se voit immédiatement dans le conteneur. Modifiez la page sur votre machine, puis redemandez-la :
 
 ```exec
-echo '<h1>Mon site, modifié</h1>' > "$HOME/layers-l6/site/index.html"
+echo '<h1>Mon site, modifié</h1>' > "$HOME/byte-layers/docker/l6/site/index.html"
 curl -sS http://localhost:28360
 ```
 
@@ -63,8 +63,8 @@ Un bind mount **masque** ce que l'image contient à cet endroit. Il ne recopie r
 
 ```exec
 docker rm -f layers-l6-site
-mkdir -p "$HOME/layers-l6/vide"
-docker run -d --name layers-l6-site -p 28360:80 -v "$HOME/layers-l6/vide:/usr/share/nginx/html:ro" nginx:1.30-alpine
+mkdir -p "$HOME/byte-layers/docker/l6/vide"
+docker run -d --name layers-l6-site -p 28360:80 -v "$HOME/byte-layers/docker/l6/vide:/usr/share/nginx/html:ro" nginx:1.30-alpine
 curl -sS -o /dev/null -w '%{http_code}\n' --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28360
 ```
 
@@ -84,7 +84,7 @@ echo "Le dossier vide masque bien les pages de l'image."
 
 - *Symptôme :* ce que le conteneur écrit n'arrive pas dans votre dossier, et ce que vous y mettez n'arrive pas dans le conteneur.
 - *Cause :* sans `/` ni `.` au début, Docker lit le premier terme de `-v` comme le nom d'un volume, et il le crée sans rien dire.
-- *Correctif :* écrivez un chemin, comme `"$HOME/layers-l6/site"` ou `./site`.
+- *Correctif :* écrivez un chemin, comme `"$HOME/byte-layers/docker/l6/site"` ou `./site`.
 
 Constatez-le avec un nom écrit sans `/` ni `.`, puis supprimez ce volume créé par erreur. `true` est une commande qui ne fait rien, car seul le montage compte ici :
 
@@ -103,7 +103,7 @@ docker volume rm layers-l6-oups
 Voici ce refus, et `true` ne sera même pas lancée :
 
 ```exec
-docker run --rm --mount type=bind,src="$HOME/layers-l6/absent",dst=/x alpine:3.22 true
+docker run --rm --mount type=bind,src="$HOME/byte-layers/docker/l6/absent",dst=/x alpine:3.22 true
 ```
 
 Vous lisez `bind source path does not exist`.
@@ -113,25 +113,25 @@ Vous lisez `bind source path does not exist`.
 Un fichier écrit par le conteneur dans un bind mount apparaît sur votre machine, et il appartient à l'utilisateur du conteneur, souvent `root`. Écrivez-en un pour voir le résultat. `ls -l` affiche le propriétaire en troisième colonne :
 
 ```exec
-docker run --rm -v "$HOME/layers-l6/vide:/sortie" alpine:3.22 sh -c 'echo trace > /sortie/trace.txt'
-ls -l "$HOME/layers-l6/vide/trace.txt"
+docker run --rm -v "$HOME/byte-layers/docker/l6/vide:/sortie" alpine:3.22 sh -c 'echo trace > /sortie/trace.txt'
+ls -l "$HOME/byte-layers/docker/l6/vide/trace.txt"
 ```
 
 Sur Docker Desktop, le partage de fichiers vous l'attribue. Sous Linux et sur un poste hébergé, vous voyez `root`, et vous ne pourrez pas modifier ce fichier sans droits supplémentaires. Vous pourrez toutefois le supprimer, puisque le dossier parent est à vous.
 
 ```verify
-if [ ! -f "$HOME/layers-l6/vide/trace.txt" ]; then
+if [ ! -f "$HOME/byte-layers/docker/l6/vide/trace.txt" ]; then
   echo "Le fichier trace.txt n'est pas apparu sur votre machine. Lancez la commande de cette section."
   exit 1
 fi
 echo "Le fichier écrit par le conteneur est bien sur votre machine."
 ```
 
-Cette étape est terminée. Supprimez le conteneur et les dossiers de cet essai, en gardant `~/layers-l6` pour la suite :
+Cette étape est terminée. Supprimez le conteneur et les dossiers de cet essai, en gardant `~/byte-layers/docker/l6` pour la suite :
 
 ```exec
 docker rm -f layers-l6-site
-rm -rf "$HOME/layers-l6/site" "$HOME/layers-l6/vide"
+rm -rf "$HOME/byte-layers/docker/l6/site" "$HOME/byte-layers/docker/l6/vide"
 ```
 
 ```verify
@@ -139,7 +139,7 @@ if docker container inspect layers-l6-site >/dev/null 2>&1; then
   echo "layers-l6-site existe encore. Lancez la commande ci-dessus."
   exit 1
 fi
-if [ -e "$HOME/layers-l6/site" ] || [ -e "$HOME/layers-l6/vide" ]; then
+if [ -e "$HOME/byte-layers/docker/l6/site" ] || [ -e "$HOME/byte-layers/docker/l6/vide" ]; then
   echo "Les dossiers site et vide existent encore. Lancez la commande ci-dessus."
   exit 1
 fi

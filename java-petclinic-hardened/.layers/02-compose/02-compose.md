@@ -53,7 +53,7 @@ Deux réglages, enfin, font démarrer les services dans le bon ordre. Le **healt
 Créez le fichier de départ, puis complétez ses quatre blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
 services:
@@ -115,19 +115,19 @@ Le service `db` reçoit son secret par la forme courte, `- db_password`. Compose
 `docker compose config` lit le fichier, le complète et l'affiche, ou signale l'erreur. `-q` n'affiche rien si tout va bien. Lancez-le avant de démarrer quoi que ce soit, car c'est le contrôle le plus rapide :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose config -q && echo "Le fichier est valide."
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose config -q && echo "Le fichier est valide."
 ```
 
 Démarrez ensuite le projet. Compose construit l'image, que le cache de la partie A rend rapide, puis attend que la base soit prête avant de lancer l'application :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose up -d --build
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose up -d --build
 ```
 
 > 📖 [`depends_on`](https://docs.docker.com/reference/compose-file/services/#depends_on) · [`healthcheck`](https://docs.docker.com/reference/compose-file/services/#healthcheck) · [Les réseaux internes](https://docs.docker.com/reference/compose-file/networks/#internal) · [`secrets` dans un service](https://docs.docker.com/reference/compose-file/services/#secrets)
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 CFG=$(cd "$P" && docker compose config 2>&1) || { echo "Le fichier Compose n'est pas valide : $(echo "$CFG" | tail -1)"; exit 1; }
 echo "$CFG" | grep -q 'condition: service_healthy' || { echo "app n'attend pas db : il manque le depends_on avec condition: service_healthy."; exit 1; }
 echo "$CFG" | grep -q 'POSTGRES_PASSWORD_FILE: /run/secrets/db_password' || { echo "db ne lit pas son mot de passe dans le secret : il manque POSTGRES_PASSWORD_FILE: /run/secrets/db_password."; exit 1; }
@@ -149,7 +149,7 @@ Sous `environment:` de `db`, ajoutez `POSTGRES_PASSWORD_FILE: /run/secrets/db_pa
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
@@ -220,19 +220,19 @@ docker compose up -d --build
 `docker compose ps` affiche l'état des deux services. Relancez-le jusqu'à lire `(healthy)` pour les deux, ce qui prend une à deux minutes la première fois :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose ps
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose ps
 ```
 
 Les journaux de l'application confirment le profil et la base. `grep` ne garde que les lignes qui en parlent :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose logs app | grep -E 'profile is active|Database driver|Database version'
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose logs app | grep -E 'profile is active|Database driver|Database version'
 ```
 
 Vous devez lire le profil `postgres`, le pilote `PostgreSQL JDBC Driver` et la version 18.6 de la base. PetClinic a aussi créé ses tables et chargé ses données de démonstration au démarrage. `psql`, le client de PostgreSQL, les compte depuis le conteneur de la base :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose exec db psql -U petclinic -d petclinic -c 'select count(*) from owners'
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose exec db psql -U petclinic -d petclinic -c 'select count(*) from owners'
 ```
 
 La réponse est `10`, les dix propriétaires de démonstration. Ajoutez-en un depuis le navigateur, avec **Find owners** puis **Add Owner** sur `http://localhost:28400` : contrairement à H2, il survivra à un redémarrage, parce que ses données vivent dans le volume.
@@ -240,13 +240,13 @@ La réponse est `10`, les dix propriétaires de démonstration. Ajoutez-en un de
 Vérifiez enfin que le mot de passe n'apparaît nulle part dans la configuration des conteneurs. `docker inspect` affiche leurs variables d'environnement, et `grep -c` compte les lignes qui contiennent le mot de passe :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && for C in layers-l10-petclinic-app-1 layers-l10-petclinic-db-1; do docker inspect $C --format '{{json .Config.Env}}' | grep -c "$(cat secrets/db_password.txt)"; done
+cd ~/byte-layers/docker/l10/prod/petclinic && for C in layers-l10-petclinic-app-1 layers-l10-petclinic-db-1; do docker inspect $C --format '{{json .Config.Env}}' | grep -c "$(cat secrets/db_password.txt)"; done
 ```
 
 Les deux comptes sont `0`. Le mot de passe n'existe que dans les fichiers de `/run/secrets/`, et la variable `POSTGRES_PASSWORD_FILE` ne contient que son chemin.
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 N=$(cd "$P" && docker compose exec -T db psql -U petclinic -d petclinic -tAc 'select count(*) from owners' 2>/dev/null)
 [ -n "$N" ] && [ "$N" -ge 10 ] || { echo "La table owners n'est pas lisible dans PostgreSQL : PetClinic ne s'est pas connecté à sa base. Lisez docker compose logs app."; exit 1; }
 docker logs layers-l10-petclinic-app-1 2>&1 | grep -q 'profile is active: "postgres"' || { echo "Le profil postgres n'est pas actif : vérifiez SPRING_PROFILES_ACTIVE."; exit 1; }
@@ -261,7 +261,7 @@ echo "PetClinic lit sa base PostgreSQL, et le mot de passe n'est dans aucune var
 Ce contrôle ne demande rien de nouveau. Si la table `owners` n'est pas lisible, l'application ne s'est pas connectée : `docker compose logs app` en donne la raison. Une erreur `password authentication failed` signale que les deux fichiers de secrets ne contiennent pas le même mot de passe, et la section sur les secrets les régénère. Après une régénération, repartez d'une base vide, car PostgreSQL ne lit son mot de passe qu'à sa première initialisation :
 
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 docker compose down -v
 docker compose up -d
 ```

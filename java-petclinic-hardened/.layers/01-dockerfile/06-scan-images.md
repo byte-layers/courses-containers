@@ -16,7 +16,7 @@ Vous comparez les images `3-multistage` et `4-distroless`, que vous avez encore 
 Trivy lit une image depuis une archive, que `docker save` produit. Il n'a ainsi pas besoin d'accéder au socket Docker, qui donnerait tous les droits sur le moteur. Le volume `layers-l10-scan-cache` garde les bases téléchargées, pour qu'un second scan ne les retélécharge pas :
 
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 docker save layers-l10-petclinic:4-distroless -o distroless.tar
 docker run --rm -v "$PWD:/work" -w /work -v layers-l10-scan-cache:/cache \
   aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c \
@@ -34,7 +34,7 @@ docker run --rm -v "$PWD:/work" -w /work -v layers-l10-scan-cache:/cache \
 Le même scan analyse ensuite l'image Ubuntu. Il réutilise les bases du volume, et il est donc bien plus rapide :
 
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 docker save layers-l10-petclinic:3-multistage -o multistage.tar
 docker run --rm -v "$PWD:/work" -w /work -v layers-l10-scan-cache:/cache \
   aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c \
@@ -65,7 +65,7 @@ Le second, plus important : les failles les plus graves sont dans **le JAR**, et
 Si vous avez lancé les scans, supprimez les archives, le volume des bases et l'image de Trivy. Ce sont les plus gros fichiers de ce cas pratique :
 
 ```bash
-cd ~/layers-l10/prod/petclinic && rm -f distroless.tar multistage.tar
+cd ~/byte-layers/docker/l10/prod/petclinic && rm -f distroless.tar multistage.tar
 docker volume rm layers-l10-scan-cache
 docker rmi aquasec/trivy:0.76.1@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c
 ```

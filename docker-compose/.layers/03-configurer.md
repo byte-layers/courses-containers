@@ -10,7 +10,7 @@ Le port est écrit en dur dans le fichier, et le message dans le code. Or un mê
 Le code lit déjà la variable `GREETING`. Réécrivez le fichier pour que le port et le message viennent de variables :
 
 ```exec
-cat > ~/layers-l7/counter/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/counter/compose.yaml <<'EOF'
 name: layers-l7-counter
 services:
   web:
@@ -30,7 +30,7 @@ EOF
 Regardez ce que Compose comprend. `docker compose config` affiche le fichier après ce remplacement, et `grep` ne garde que la ligne du message :
 
 ```exec
-cd ~/layers-l7/counter && docker compose config | grep GREETING
+cd ~/byte-layers/docker/l7/counter && docker compose config | grep GREETING
 ```
 
 Vous devez lire `GREETING: Bonjour`, la valeur par défaut.
@@ -40,14 +40,14 @@ Vous devez lire `GREETING: Bonjour`, la valeur par défaut.
 Compose lit automatiquement un fichier nommé `.env`, placé à côté du fichier Compose, et s'en sert pour remplacer les variables. Créez-en un :
 
 ```exec
-printf 'GREETING=Salut\n' > ~/layers-l7/counter/.env
-cd ~/layers-l7/counter && docker compose config | grep GREETING
+printf 'GREETING=Salut\n' > ~/byte-layers/docker/l7/counter/.env
+cd ~/byte-layers/docker/l7/counter && docker compose config | grep GREETING
 ```
 
 La valeur est maintenant `Salut`, sans que `compose.yaml` ait bougé. Appliquez ce changement. Compose voit que la configuration de `web` a changé et recrée ce seul conteneur :
 
 ```exec
-cd ~/layers-l7/counter && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose up -d
 sleep 1
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
@@ -55,12 +55,12 @@ curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 Vous devez lire `Salut ! Visites : ...`, et le compteur continue : `cache` n'a pas été recréé.
 
 ```verify
-if ! grep -q '^GREETING=' ~/layers-l7/counter/.env 2>/dev/null; then
-  echo "~/layers-l7/counter/.env ne définit pas GREETING. Lancez la commande de cette section."
+if ! grep -q '^GREETING=' ~/byte-layers/docker/l7/counter/.env 2>/dev/null; then
+  echo "~/byte-layers/docker/l7/counter/.env ne définit pas GREETING. Lancez la commande de cette section."
   exit 1
 fi
 V=$(docker inspect layers-l7-counter-web-1 --format '{{range .Config.Env}}{{println .}}{{end}}' 2>/dev/null | sed -n 's/^GREETING=//p')
-F=$(sed -n 's/^GREETING=//p' ~/layers-l7/counter/.env)
+F=$(sed -n 's/^GREETING=//p' ~/byte-layers/docker/l7/counter/.env)
 if [ "$V" != "$F" ]; then
   echo "Le conteneur a GREETING=$V et le fichier .env dit $F. Lancez docker compose up -d pour appliquer."
   exit 1
@@ -80,9 +80,9 @@ Le mot « environnement » désigne ici deux choses différentes, et cette confu
 Un fichier `.env` ne donne donc rien au conteneur à lui seul : c'est la ligne `GREETING: ${GREETING:-Bonjour}` qui transmet la valeur. Le prouver prend une commande. Ajoutez au fichier `.env` une variable que `compose.yaml` ne mentionne pas, recréez le conteneur, puis cherchez-la dedans. `>>` ajoute à la fin d'un fichier sans l'effacer, et `grep -E` accepte plusieurs mots séparés par `|` :
 
 ```exec
-printf 'FORGOTTEN=coucou\n' >> ~/layers-l7/counter/.env
-cd ~/layers-l7/counter && docker compose up -d --force-recreate web
-cd ~/layers-l7/counter && docker compose exec web env | grep -E 'GREETING|FORGOTTEN'
+printf 'FORGOTTEN=coucou\n' >> ~/byte-layers/docker/l7/counter/.env
+cd ~/byte-layers/docker/l7/counter && docker compose up -d --force-recreate web
+cd ~/byte-layers/docker/l7/counter && docker compose exec web env | grep -E 'GREETING|FORGOTTEN'
 ```
 
 `--force-recreate` recrée le conteneur même si rien n'a changé, et `docker compose exec` lance une commande dans un service qui tourne. Seul `GREETING` apparaît. `FORGOTTEN` est resté du côté de Compose.
@@ -90,7 +90,7 @@ cd ~/layers-l7/counter && docker compose exec web env | grep -E 'GREETING|FORGOT
 Une variable de votre terminal passe avant le fichier `.env`. Écrite devant une commande, `NOM=valeur` ne vaut que pour cette commande. C'est pratique pour un essai ponctuel, comme ici, où `config` lit la valeur sans rien démarrer :
 
 ```exec
-cd ~/layers-l7/counter && GREETING=Essai docker compose config | grep GREETING
+cd ~/byte-layers/docker/l7/counter && GREETING=Essai docker compose config | grep GREETING
 ```
 
 ```ack

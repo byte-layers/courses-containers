@@ -31,7 +31,7 @@ Comme Adminer, Portainer vit sous un préfixe, `/portainer`, retiré par un midd
 Créez le dossier, le secret de l'administrateur, puis le fichier, en complétant son blanc dans votre éditeur :
 
 ```exec
-mkdir -p ~/layers-l10/prod/infra/portainer/secrets && cd ~/layers-l10/prod/infra/portainer
+mkdir -p ~/byte-layers/docker/l10/prod/infra/portainer/secrets && cd ~/byte-layers/docker/l10/prod/infra/portainer
 openssl rand -base64 18 | tr -d '\n' > secrets/portainer_admin_password.txt && chmod 700 secrets
 cat > compose.yaml <<'EOF'
 x-logging: &default-logging
@@ -93,7 +93,7 @@ EOF
 Ajoutez ce troisième fichier au parent de l'infra, qui prend sa forme finale :
 
 ```exec
-cat > ~/layers-l10/prod/infra/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/compose.yaml <<'EOF'
 name: layers-l10-infra
 
 # Le fichier parent : il ne décrit aucun service, il assemble ceux de l'infra
@@ -107,8 +107,8 @@ EOF
 Lancez l'infra sans profil, puis avec le profil `dev`, et comparez les deux listes de services :
 
 ```exec
-cd ~/layers-l10/prod/infra && docker compose up -d && docker compose ps --format '{{.Service}}'
-cd ~/layers-l10/prod/infra && docker compose --profile dev up -d && docker compose --profile dev ps --format '{{.Service}}'
+cd ~/byte-layers/docker/l10/prod/infra && docker compose up -d && docker compose ps --format '{{.Service}}'
+cd ~/byte-layers/docker/l10/prod/infra && docker compose --profile dev up -d && docker compose --profile dev ps --format '{{.Service}}'
 ```
 
 La première liste n'a pas `portainer`, la seconde l'a.
@@ -116,7 +116,7 @@ La première liste n'a pas `portainer`, la seconde l'a.
 > 📖 [Installer Portainer CE avec Docker](https://docs.portainer.io/start/install-ce/server/docker/linux) · [Les options de Portainer](https://docs.portainer.io/advanced/cli)
 
 ```verify
-P="$HOME/layers-l10/prod/infra"
+P="$HOME/byte-layers/docker/l10/prod/infra"
 (cd "$P" && docker compose config --services 2>/dev/null) | grep -qx portainer && { echo "portainer démarre sans profil : il manque profiles: [dev]."; exit 1; }
 [ "$(docker inspect layers-l10-infra-portainer-1 --format '{{.State.Running}}' 2>/dev/null)" = "true" ] || { echo "Portainer ne tourne pas. Lancez docker compose --profile dev up -d depuis $P."; exit 1; }
 docker inspect layers-l10-infra-portainer-1 --format '{{json .Config.Cmd}}' | grep -q 'admin-password-file' || { echo "Portainer ne lit pas le mot de passe de l'administrateur dans un fichier : il manque --admin-password-file."; exit 1; }
@@ -130,7 +130,7 @@ L'option manquante s'écrit sur deux lignes de la liste `command:`, `- --admin-p
 
 ````solution
 ```bash
-mkdir -p ~/layers-l10/prod/infra/portainer/secrets && cd ~/layers-l10/prod/infra
+mkdir -p ~/byte-layers/docker/l10/prod/infra/portainer/secrets && cd ~/byte-layers/docker/l10/prod/infra
 [ -s portainer/secrets/portainer_admin_password.txt ] || openssl rand -base64 18 | tr -d '\n' > portainer/secrets/portainer_admin_password.txt
 chmod 700 portainer/secrets
 cat > portainer/compose.yaml <<'EOF'
@@ -207,7 +207,7 @@ docker compose --profile dev up -d
 Ouvrez `http://localhost:28402/portainer/`, et connectez-vous avec l'utilisateur `admin` et le mot de passe que cette commande affiche :
 
 ```exec
-cat ~/layers-l10/prod/infra/portainer/secrets/portainer_admin_password.txt; echo
+cat ~/byte-layers/docker/l10/prod/infra/portainer/secrets/portainer_admin_password.txt; echo
 ```
 
 Choisissez l'environnement **primary**, puis parcourez ce que vous avez monté :

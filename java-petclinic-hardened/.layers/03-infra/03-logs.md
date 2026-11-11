@@ -32,13 +32,13 @@ Alloy remplace Promtail, l'ancien collecteur de Loki, dont la maintenance s'est 
 La pile vit dans un nouveau dossier de l'infra, `observability/`. Créez-le, avec un sous-dossier par outil :
 
 ```exec
-mkdir -p ~/layers-l10/prod/infra/observability/{loki,alloy,grafana/provisioning/datasources,secrets}
+mkdir -p ~/byte-layers/docker/l10/prod/infra/observability/{loki,alloy,grafana/provisioning/datasources,secrets}
 ```
 
 Loki tourne ici en un seul processus, avec ses données sur un disque local, ce qui convient à un poste ou à un petit serveur. Le fichier garde les journaux 48 heures, et le **compacteur** supprime les plus anciens. Vous n'avez pas besoin de comprendre chaque ligne : le schéma de stockage, en particulier, se recopie de la documentation de Loki. Créez-le :
 
 ```exec
-cat > ~/layers-l10/prod/infra/observability/loki/config.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/observability/loki/config.yaml <<'EOF'
 # Loki en un seul processus, avec un stockage sur disque : la configuration d'un poste de test
 auth_enabled: false
 
@@ -79,7 +79,7 @@ EOF
 La configuration d'Alloy est écrite dans son propre langage, l'**Alloy syntax**. Elle enchaîne quatre **composants**, dans l'ordre du schéma : trouver les conteneurs, transformer leurs métadonnées en labels, lire leurs journaux, les envoyer à Loki. Docker fournit les métadonnées sous des noms qui commencent par `__meta_docker_`, et chaque `rule` en recopie une dans un label lisible. Créez-la :
 
 ```exec
-cat > ~/layers-l10/prod/infra/observability/alloy/config.alloy <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/observability/alloy/config.alloy <<'EOF'
 // 1. Trouver les conteneurs, en interrogeant le moteur Docker
 discovery.docker "containers" {
   host = "unix:///var/run/docker.sock"
@@ -140,7 +140,7 @@ Le label `job` reprend le nom du conteneur, comme `container`. Il n'est pas redo
 Grafana peut lire sa configuration au démarrage, dans des fichiers de **provisioning**. Celui-ci déclare Loki comme source de données, pour que vous n'ayez rien à cliquer :
 
 ```exec
-cat > ~/layers-l10/prod/infra/observability/grafana/provisioning/datasources/datasources.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/observability/grafana/provisioning/datasources/datasources.yaml <<'EOF'
 # Les sources de données, déclarées au démarrage de Grafana : rien à cliquer
 apiVersion: 1
 datasources:
@@ -156,7 +156,7 @@ EOF
 Le mot de passe de l'administrateur de Grafana est un secret, généré comme celui de la base :
 
 ```exec
-cd ~/layers-l10/prod/infra/observability && openssl rand -base64 18 | tr -d '\n' > secrets/grafana_admin_password.txt && chmod 700 secrets
+cd ~/byte-layers/docker/l10/prod/infra/observability && openssl rand -base64 18 | tr -d '\n' > secrets/grafana_admin_password.txt && chmod 700 secrets
 ```
 
 ## Le fichier Compose de la pile
@@ -178,7 +178,7 @@ Les trois services reçoivent le durcissement de la partie B, par un bloc `x-har
 Créez le fichier, puis complétez ses trois blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/infra/observability/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/observability/compose.yaml <<'EOF'
 x-logging: &default-logging
   driver: json-file
   options:
@@ -280,7 +280,7 @@ EOF
 Ajoutez enfin ce fichier au parent de l'infra. Le fichier parent devient :
 
 ```exec
-cat > ~/layers-l10/prod/infra/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/compose.yaml <<'EOF'
 name: layers-l10-infra
 
 # Le fichier parent : il ne décrit aucun service, il assemble ceux de l'infra
@@ -293,14 +293,14 @@ EOF
 Lancez l'infra. Traefik ne change pas, et Compose ne crée que les trois nouveaux services :
 
 ```exec
-cd ~/layers-l10/prod/infra && docker compose up -d && docker compose ps
+cd ~/byte-layers/docker/l10/prod/infra && docker compose up -d && docker compose ps
 ```
 
 > 📖 [Alloy et les journaux Docker](https://grafana.com/docs/alloy/latest/reference/components/loki/loki.source.docker/) · [La configuration de Loki](https://grafana.com/docs/loki/latest/configure/) · [Grafana derrière un reverse proxy](https://grafana.com/tutorials/run-grafana-behind-a-proxy/) · [Le provisioning de Grafana](https://grafana.com/docs/grafana/latest/administration/provisioning/)
 
 ```verify
 for S in loki alloy grafana; do
-  [ "$(docker inspect layers-l10-infra-$S-1 --format '{{.State.Running}}' 2>/dev/null)" = "true" ] || { echo "Le service $S ne tourne pas. Lancez docker compose up -d depuis ~/layers-l10/prod/infra, puis lisez docker compose logs $S."; exit 1; }
+  [ "$(docker inspect layers-l10-infra-$S-1 --format '{{.State.Running}}' 2>/dev/null)" = "true" ] || { echo "Le service $S ne tourne pas. Lancez docker compose up -d depuis ~/byte-layers/docker/l10/prod/infra, puis lisez docker compose logs $S."; exit 1; }
 done
 docker inspect layers-l10-infra-alloy-1 --format '{{range .Mounts}}{{.Destination}} {{end}}' | grep -q '/var/run/docker.sock' || { echo "Alloy n'a pas le socket Docker : il ne peut pas lire les journaux."; exit 1; }
 J=$(docker exec layers-l10-infra-grafana-1 wget -qO- http://loki:3100/loki/api/v1/label/job/values 2>/dev/null)
@@ -320,7 +320,7 @@ La règle de Grafana s'écrit `- traefik.http.routers.grafana.rule=PathPrefix(`/
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/infra
+cd ~/byte-layers/docker/l10/prod/infra
 cat > observability/compose.yaml <<'EOF'
 x-logging: &default-logging
   driver: json-file
@@ -442,7 +442,7 @@ docker compose up -d
 Grafana met jusqu'à une minute à démarrer. Tant que son healthcheck n'a pas réussi, Traefik répond `404 page not found` sur `/grafana/` : il ne route que les conteneurs en bonne santé, et ignore ceux qui sont encore en `health: starting`. Attendez que `docker compose ps` affiche Grafana `(healthy)`. Ouvrez ensuite `http://localhost:28402/grafana/`, et connectez-vous avec l'utilisateur `admin` et le mot de passe que cette commande affiche :
 
 ```exec
-cat ~/layers-l10/prod/infra/observability/secrets/grafana_admin_password.txt; echo
+cat ~/byte-layers/docker/l10/prod/infra/observability/secrets/grafana_admin_password.txt; echo
 ```
 
 Ouvrez le menu **Explore**, choisissez la source **Loki**, passez l'éditeur en mode **Code**, et lancez ces requêtes LogQL une à une :
@@ -475,7 +475,7 @@ Le tableau montre le nombre de lignes de journaux dans le temps, puis les lignes
 Vous pouvez essayer d'autres tableaux de la bibliothèque. Un tableau importé suppose des labels précis, et beaucoup sont faits pour Kubernetes, avec des labels comme `namespace` ou `pod` : ceux-là resteront vides ici.
 
 ```verify
-PW=$(cat "$HOME/layers-l10/prod/infra/observability/secrets/grafana_admin_password.txt" 2>/dev/null)
+PW=$(cat "$HOME/byte-layers/docker/l10/prod/infra/observability/secrets/grafana_admin_password.txt" 2>/dev/null)
 R=$(curl -s --max-time 5 -u "admin:$PW" "http://localhost:28402/grafana/api/search?type=dash-db")
 echo "$R" | grep -q '"Logs / App"' || { echo "Grafana n'a pas de dashboard « Logs / App ». Importez le dashboard 13639, avec la source Loki."; exit 1; }
 echo "Le dashboard de journaux est importé."

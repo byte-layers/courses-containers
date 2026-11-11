@@ -89,7 +89,7 @@ Au chapitre sur le JAR de la CI, vous aviez noté que c'est à celui qui exécut
 Le fichier qui suit reprend celui du chapitre précédent, avec les deux blocs communs et le durcissement. Il remplace l'ancien. Créez-le, puis complétez ses blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
 # Les journaux : un seul réglage, réutilisé par tous les services
@@ -193,17 +193,17 @@ EOF
 Vérifiez d'abord ce que chaque service reçoit vraiment, une fois les ancres résolues. `docker compose config` affiche le fichier complet, et `grep` en extrait les lignes du durcissement :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose config | grep -E '^  [a-z]+:$|read_only|cap_drop|no-new-privileges|max-size'
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose config | grep -E '^  [a-z]+:$|read_only|cap_drop|no-new-privileges|max-size'
 ```
 
 Chaque service, `app` comme `db`, doit afficher `read_only: true`, `cap_drop`, `no-new-privileges:true` et `max-size: 10m`. Les lignes `backend:` et `frontend:` viennent de la section des réseaux, que le filtre attrape aussi. Appliquez ensuite le fichier. `up -d` recrée les conteneurs dont la configuration a changé, et les données restent dans le volume :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose up -d
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose up -d
 ```
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 (cd "$P" && docker compose config -q 2>/dev/null) || { echo "Le fichier Compose n'est pas valide : lancez docker compose config pour lire l'erreur."; exit 1; }
 for C in layers-l10-petclinic-app-1 layers-l10-petclinic-db-1; do
   [ "$(docker inspect $C --format '{{.HostConfig.ReadonlyRootfs}}' 2>/dev/null)" = "true" ] || { echo "$C n'a pas de système de fichiers en lecture seule : le bloc x-hardening lui manque-t-il ?"; exit 1; }
@@ -231,7 +231,7 @@ Les dossiers en mémoire s'écrivent `tmpfs:`, puis `- /tmp` et `- /var/run/post
 Cette commande écrit le fichier complet, sans le service `adminer`, que le chapitre suivant ajoute, puis l'applique. Le même fichier, avec Adminer, est [`solution/05-compose/compose.yaml`](../../solution/05-compose/compose.yaml).
 
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > compose.yaml <<'EOF'
 name: layers-l10-petclinic
 
@@ -354,7 +354,7 @@ La colonne `MEM USAGE / LIMIT` montre par exemple `366MiB / 768MiB` pour PetClin
 Redémarrez maintenant la base, comme le ferait une mise à jour. Grâce à `restart: true` dans le `depends_on`, Compose redémarre aussi l'application, une fois la base de nouveau prête :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose restart db && docker compose ps
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose restart db && docker compose ps
 ```
 
 La colonne `STATUS` montre l'application qui redémarre, en `health: starting`, quelques secondes après la base. L'ordre de démarrage est ainsi respecté à chaque redémarrage, et pas seulement au premier `up`.

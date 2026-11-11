@@ -10,7 +10,7 @@ Un Dockerfile peut contenir plusieurs `FROM`. Chacun ouvre un **stage**, une con
 Le premier stage garde le compilateur et produit le binaire. Le second repart d'une petite image et n'y copie que ce binaire :
 
 ```exec
-cat > ~/layers-l3/multi/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/multi/Dockerfile <<'EOF'
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY . .
@@ -43,7 +43,7 @@ stage build                         stage final, l'image livrée
 Construisez sous un autre tag, puis comparez :
 
 ```exec
-docker build -t layers-l3-multi:alpine ~/layers-l3/multi
+docker build -t layers-l3-multi:alpine ~/byte-layers/docker/l3/multi
 docker images layers-l3-multi
 ```
 

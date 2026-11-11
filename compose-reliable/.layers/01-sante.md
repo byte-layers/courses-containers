@@ -10,8 +10,8 @@ Pour Docker, un conteneur va bien tant que son processus principal tourne. Cela 
 Créez son code. Vous n'avez pas besoin de lire Python : l'application écoute sur le port 8000 et compte les visites dans Redis. Son adresse `/health` répond seulement si Redis répond : une telle adresse existe précisément pour les contrôles de santé. Son adresse `/crash` arrête brutalement le programme, pour que ce cours puisse simuler une panne. `cat > fichier <<'EOF'` écrit dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
-mkdir -p ~/layers-l8/reliable
-cat > ~/layers-l8/reliable/app.py <<'EOF'
+mkdir -p ~/byte-layers/docker/l8/reliable
+cat > ~/byte-layers/docker/l8/reliable/app.py <<'EOF'
 import os, socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -43,7 +43,7 @@ class Handler(BaseHTTPRequestHandler):
 
 HTTPServer(("", 8000), Handler).serve_forever()
 EOF
-cat > ~/layers-l8/reliable/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app.py .
@@ -56,7 +56,7 @@ EOF
 Voici le fichier Compose, sans aucune protection. Pour rendre la panne visible, `cache` attend 6 secondes avant de lancer Redis, comme le ferait une base de données qui s'initialise. `sh -c` fait exécuter la phrase par un shell, et `exec` lui fait céder sa place à Redis, qui devient le processus principal :
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -76,7 +76,7 @@ EOF
 Démarrez et demandez la page aussitôt. Pour `curl`, `-s` masque la progression, `-o /dev/null` jette le contenu de la page, `--max-time 2` abandonne après 2 secondes, et `-w` affiche le code de la réponse HTTP :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose up -d --build
+cd ~/byte-layers/docker/l8/reliable && docker compose up -d --build
 sleep 1
 curl -s --max-time 2 -o /dev/null -w 'code HTTP : %{http_code}\n' http://localhost:28382
 ```
@@ -84,7 +84,7 @@ curl -s --max-time 2 -o /dev/null -w 'code HTTP : %{http_code}\n' http://localho
 Vous lisez `code HTTP : 000` : aucune réponse. `up` a rendu la main, `depends_on` a bien démarré `cache` en premier, et pourtant l'application échoue. Le conteneur `cache` tourne, mais Redis n'a pas encore démarré. Le `docker compose ps` le confirme, puisqu'il voit deux services `Up` :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
 ```
 
 ```ack
@@ -118,7 +118,7 @@ Le conteneur passe alors par trois états : `starting`, puis `healthy` ou `unhea
 Réécrivez le fichier avec ces deux ajouts, plus un contrôle de santé sur `web`, qui appelle `/health` avec le Python de l'image, puisque cette image n'a pas `curl` :
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -150,7 +150,7 @@ EOF
 Repartez de zéro et lancez la même séquence. Cette fois, prévoyez ce que vous allez voir. `--retry` recommence quelques fois en cas d'erreur, à 1 seconde d'intervalle, ce qui laisse à `web` le temps de démarrer :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose down && docker compose up -d
+cd ~/byte-layers/docker/l8/reliable && docker compose down && docker compose up -d
 sleep 1
 curl -s --retry 5 --retry-delay 1 --retry-all-errors --max-time 2 -o /dev/null -w 'code HTTP : %{http_code}\n' http://localhost:28382
 ```
@@ -159,7 +159,7 @@ curl -s --retry 5 --retry-delay 1 --retry-all-errors --max-time 2 -o /dev/null -
 
 ```exec
 sleep 5
-cd ~/layers-l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
 ```
 
 ```verify
@@ -182,9 +182,9 @@ echo "Les deux services sont healthy, et web attend cache."
 Provoquez une panne : arrêtez Redis, attendez, regardez. Il faut deux échecs de suite, à 3 secondes d'intervalle :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose stop cache
+cd ~/byte-layers/docker/l8/reliable && docker compose stop cache
 sleep 12
-cd ~/layers-l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
 ```
 
 `web` s'affiche `Up ... (unhealthy)`. Il est signalé, **mais il tourne toujours** : sur un seul serveur, Compose et Docker n'agissent pas sur cet état. Un conteneur `unhealthy` n'est pas relancé tout seul. Ce signal sert aux humains, aux outils de surveillance, aux dépendances, et à un orchestrateur comme Swarm, qu'un prochain cours présente.
@@ -198,9 +198,9 @@ docker inspect layers-l8-reliable-web-1 --format '{{range .State.Health.Log}}{{.
 Un `1` veut dire échec. Relancez Redis et attendez le retour à la normale :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose start cache
+cd ~/byte-layers/docker/l8/reliable && docker compose start cache
 sleep 12
-cd ~/layers-l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/reliable && docker compose ps --format '{{.Service}} : {{.Status}}'
 ```
 
 ```verify

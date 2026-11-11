@@ -29,14 +29,14 @@ La règle la plus simple tient en une phrase : **les données appartiennent à u
 Docker n'a pas de commande pour sauvegarder un volume, mais il n'en a pas besoin. On lance un conteneur temporaire qui voit à la fois le volume et un dossier de votre machine, puis on archive de l'un vers l'autre avec `tar`, l'outil d'archivage standard. Ce schéma montre le chemin des données :
 
 ```
-volume layers-l6-data ──► /from (lecture seule) ──► tar ──► /to ──► ~/layers-l6/ sur votre machine
+volume layers-l6-data ──► /from (lecture seule) ──► tar ──► /to ──► ~/byte-layers/docker/l6/ sur votre machine
 ```
 
 Dans cette commande, `czf` crée une archive compressée, et `-C /from .` archive le contenu de ce dossier sans son nom :
 
 ```exec
-docker run --rm -v layers-l6-data:/from:ro -v "$HOME/layers-l6:/to" alpine:3.22 tar czf /to/sauvegarde.tar.gz -C /from .
-tar tzf "$HOME/layers-l6/sauvegarde.tar.gz"
+docker run --rm -v layers-l6-data:/from:ro -v "$HOME/byte-layers/docker/l6:/to" alpine:3.22 tar czf /to/sauvegarde.tar.gz -C /from .
+tar tzf "$HOME/byte-layers/docker/l6/sauvegarde.tar.gz"
 ```
 
 Vous lisez `./` et `./note.txt` : la seconde commande a listé le contenu de l'archive. Un simple conteneur et `tar` ont suffi pour sauvegarder le volume.
@@ -44,8 +44,8 @@ Vous lisez `./` et `./note.txt` : la seconde commande a listé le contenu de l'a
 ⚖️ Pour une base de données en service, arrêtez le conteneur avant d'archiver : sinon, des fichiers en cours d'écriture peuvent donner une sauvegarde incohérente. Les bases ont aussi leurs propres outils de sauvegarde, comme `pg_dump` pour PostgreSQL ou `mysqldump` pour MySQL.
 
 ```verify
-if ! tar tzf "$HOME/layers-l6/sauvegarde.tar.gz" 2>/dev/null | grep -q 'note.txt'; then
-  echo "L'archive ~/layers-l6/sauvegarde.tar.gz ne contient pas note.txt. Lancez la commande de cette section."
+if ! tar tzf "$HOME/byte-layers/docker/l6/sauvegarde.tar.gz" 2>/dev/null | grep -q 'note.txt'; then
+  echo "L'archive ~/byte-layers/docker/l6/sauvegarde.tar.gz ne contient pas note.txt. Lancez la commande de cette section."
   exit 1
 fi
 echo "L'archive contient note.txt."
@@ -57,7 +57,7 @@ Une sauvegarde qu'on n'a jamais restaurée n'est pas une sauvegarde. Faites le c
 
 ```exec
 docker volume create layers-l6-restaure
-docker run --rm -v "$HOME/layers-l6:/from:ro" -v layers-l6-restaure:/to alpine:3.22 tar xzf /from/sauvegarde.tar.gz -C /to
+docker run --rm -v "$HOME/byte-layers/docker/l6:/from:ro" -v layers-l6-restaure:/to alpine:3.22 tar xzf /from/sauvegarde.tar.gz -C /to
 docker run --rm -v layers-l6-restaure:/data alpine:3.22 cat /data/note.txt
 ```
 
@@ -77,7 +77,7 @@ Supprimez les deux volumes et votre dossier de travail. Vos autres volumes ne so
 
 ```exec
 docker volume rm layers-l6-data layers-l6-restaure
-rm -rf "$HOME/layers-l6"
+rm -rf "$HOME/byte-layers/docker/l6"
 ```
 
 ```verify
@@ -85,8 +85,8 @@ if docker volume inspect layers-l6-data >/dev/null 2>&1 || docker volume inspect
   echo "Il reste un volume. Lancez le docker volume rm ci-dessus."
   exit 1
 fi
-if [ -e "$HOME/layers-l6" ]; then
-  echo "Le dossier ~/layers-l6 existe encore."
+if [ -e "$HOME/byte-layers/docker/l6" ]; then
+  echo "Le dossier ~/byte-layers/docker/l6 existe encore."
   exit 1
 fi
 echo "C'est propre."

@@ -21,7 +21,7 @@ Pour faire tourner la même application, vous avez deux façons de partir : pren
 `RUN` exécute une commande **pendant la construction**, et son résultat reste dans l'image. `apk` est le gestionnaire de paquets d'Alpine, et `--no-cache` lui évite de garder son index dans l'image. Ce paquet fournit la commande `python3`, d'où le changement dans `CMD`. Faites cette modification dans votre éditeur, c'est le meilleur entraînement, ou laissez cette commande écrire le même fichier :
 
 ```exec
-cat > ~/layers-l2/hello/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/hello/Dockerfile <<'EOF'
 FROM alpine:3.22
 RUN apk add --no-cache python3
 COPY app.py /app.py
@@ -32,7 +32,7 @@ EOF
 Construisez cette variante sous un autre tag, puis comparez les deux images :
 
 ```exec
-docker build -t layers-l2-hello:base-nue ~/layers-l2/hello
+docker build -t layers-l2-hello:base-nue ~/byte-layers/docker/l2/hello
 docker images layers-l2-hello
 ```
 
@@ -87,8 +87,8 @@ Je sais ce qui décide du choix d'une image de base
 Passons à une application qui a besoin d'installer quelque chose. Celle-ci utilise Flask, une bibliothèque Python pour écrire des serveurs web. Créez son dossier et son code :
 
 ```exec
-mkdir -p ~/layers-l2/web
-cat > ~/layers-l2/web/app.py <<'EOF'
+mkdir -p ~/byte-layers/docker/l2/web
+cat > ~/byte-layers/docker/l2/web/app.py <<'EOF'
 import os
 from flask import Flask
 
@@ -105,7 +105,7 @@ Ce code répond une phrase dont le début vient de la variable d'environnement `
 Un projet Python liste ses dépendances dans un fichier, appelé par habitude `requirements.txt`. Il n'y a ici qu'une ligne, qui demande Flask en version 3.1 :
 
 ```exec
-echo 'flask==3.1.*' > ~/layers-l2/web/requirements.txt
+echo 'flask==3.1.*' > ~/byte-layers/docker/l2/web/requirements.txt
 ```
 
 ## Écrire le Dockerfile avec WORKDIR et RUN
@@ -113,7 +113,7 @@ echo 'flask==3.1.*' > ~/layers-l2/web/requirements.txt
 Ce Dockerfile ajoute `WORKDIR` et `RUN pip`. Il contient aussi un défaut volontaire, que vous allez rencontrer puis corriger un peu plus bas.
 
 ```exec
-cat > ~/layers-l2/web/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/web/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY requirements.txt .
@@ -137,7 +137,7 @@ La différence entre `RUN` et `CMD` est le point essentiel de cette étape. `RUN
 Construisez cette première version. Il faut un accès au réseau, car Flask se télécharge sur la ligne `RUN`, et compter quelques secondes :
 
 ```exec
-docker build -t layers-l2-web:1.0 ~/layers-l2/web
+docker build -t layers-l2-web:1.0 ~/byte-layers/docker/l2/web
 ```
 
 Vous voyez passer une ligne par étape, de `[1/5]` à `[5/5]`. Chaque instruction qui change des fichiers, comme `COPY` ou `RUN`, ajoute une **couche** à l'image (*layer* en anglais) : une tranche de fichiers posée sur les précédentes. Une image est donc un empilement de couches, à commencer par celles de sa base.
@@ -216,7 +216,7 @@ Le correctif ne touche que la dernière ligne du Dockerfile :
 Modifiez-la dans votre éditeur, ou laissez cette commande réécrire le fichier :
 
 ```exec
-cat > ~/layers-l2/web/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/web/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY requirements.txt .
@@ -229,7 +229,7 @@ EOF
 Reconstruisez sous un nouveau tag, et regardez la ligne du `RUN` :
 
 ```exec
-docker build -t layers-l2-web:1.1 ~/layers-l2/web
+docker build -t layers-l2-web:1.1 ~/byte-layers/docker/l2/web
 ```
 
 Le build ne prend qu'un instant, et les lignes qui n'ont pas changé portent le mot `CACHED` :
@@ -288,12 +288,12 @@ docker rm -f layers-l2-web
 Votre Dockerfile fonctionne. Vous rencontrerez pourtant des builds qui échouent, et il vaut mieux savoir où regarder. Ce dossier d'essai contient un Dockerfile avec une faute de frappe : le fichier demandé à `COPY` n'existe pas.
 
 ```exec
-mkdir -p ~/layers-l2/erreur
-cat > ~/layers-l2/erreur/Dockerfile <<'EOF'
+mkdir -p ~/byte-layers/docker/l2/erreur
+cat > ~/byte-layers/docker/l2/erreur/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 COPY requirement.txt .
 EOF
-docker build ~/layers-l2/erreur
+docker build ~/byte-layers/docker/l2/erreur
 ```
 
 Docker s'arrête en montrant la ligne fautive, marquée `>>>`, et donne la raison à la fin de son message :
@@ -309,11 +309,11 @@ ERROR: failed to build: failed to solve: failed to compute cache key: failed to 
 Ce chemin se lit depuis le contexte de build : aucun fichier de ce nom ne se trouve dans le dossier. Le reste de la ligne est interne à Docker. Une commande qui échoue dans un `RUN` s'affiche autrement. Essayez avec un `pip` à qui il manque son fichier, jamais copié dans l'image :
 
 ```exec
-cat > ~/layers-l2/erreur/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/erreur/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 RUN pip install -r requirements.txt
 EOF
-docker build ~/layers-l2/erreur
+docker build ~/byte-layers/docker/l2/erreur
 ```
 
 La dernière ligne dit seulement que le processus a échoué, avec `exit code: 1`. Le vrai message est plus haut, écrit par `pip` lui-même, sous le rappel de la ligne fautive :
@@ -325,7 +325,7 @@ ERROR: Could not open requirements file: [Errno 2] No such file or directory: 'r
 Le réflexe est donc de remonter au-dessus de la dernière ligne. Ce dossier d'essai ne sert plus, supprimez-le. `rm -rf` efface sans demander confirmation, et il faut donc vérifier le chemin :
 
 ```exec
-rm -rf ~/layers-l2/erreur
+rm -rf ~/byte-layers/docker/l2/erreur
 ```
 
 ```ack

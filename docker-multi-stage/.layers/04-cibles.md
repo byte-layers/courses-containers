@@ -10,7 +10,7 @@ Un Dockerfile multi-stage peut contenir plus que de la construction et une image
 Écrivez un petit test de l'application. Son contenu importe peu : `go test` lance la fonction `TestMessage`, qui vérifie la phrase renvoyée par `message()`, et `./...` veut dire « tout le projet ».
 
 ```exec
-cat > ~/layers-l3/multi/main_test.go <<'EOF'
+cat > ~/byte-layers/docker/l3/multi/main_test.go <<'EOF'
 package main
 
 import "testing"
@@ -26,7 +26,7 @@ EOF
 Ajoutez un stage `test` entre les deux autres. `FROM build AS test` repart du stage `build`, tel qu'il est à sa fin : un stage peut en prolonger un autre.
 
 ```exec
-cat > ~/layers-l3/multi/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/multi/Dockerfile <<'EOF'
 FROM golang:1.24-alpine AS build
 WORKDIR /src
 COPY . .
@@ -46,13 +46,13 @@ EOF
 Sans option, Docker vise le dernier stage et ne construit que ce dont il dépend. `test` n'en fait pas partie, car le stage final ne copie rien de lui. Pour le constater, `--progress=plain` détaille les étapes, `2>&1` envoie les messages de Docker dans le tube `|`, et `grep` cherche celle du test. Elle ne doit pas apparaître, et `grep -c` compte donc `0` :
 
 ```exec
-docker build --progress=plain -t layers-l3-multi:scratch ~/layers-l3/multi 2>&1 | grep -c 'go test'
+docker build --progress=plain -t layers-l3-multi:scratch ~/byte-layers/docker/l3/multi 2>&1 | grep -c 'go test'
 ```
 
 L'option `--target` choisit le stage à construire. Docker s'arrête après lui, et l'image contient donc ce stage. Lancez les tests. Docker garde le résultat des étapes déjà faites et ne les réaffiche pas : `--no-cache` l'oblige à tout refaire, pour que la sortie de `go test` s'affiche. `grep -E` retient ici les lignes qui parlent de `go test` et celles qui disent `ok` :
 
 ```exec
-docker build --no-cache --target test --progress=plain -t layers-l3-multi:test ~/layers-l3/multi 2>&1 | grep -E 'go test|^#[0-9]+ .*ok'
+docker build --no-cache --target test --progress=plain -t layers-l3-multi:test ~/byte-layers/docker/l3/multi 2>&1 | grep -E 'go test|^#[0-9]+ .*ok'
 ```
 
 Vous devez lire la ligne `RUN CGO_ENABLED=0 go test ./...`, puis une ligne qui contient `ok  	example.com/hello`. C'est ainsi qu'un serveur qui vérifie chaque modification du code, ce qu'on appelle l'intégration continue, peut tester puis construire l'image avec un seul Dockerfile. Si un test échoue, `go test` sort en erreur, et le build échoue avec lui.
@@ -79,7 +79,7 @@ Supprimez les images de ce cours et votre dossier. Le conteneur est déjà parti
 
 ```exec
 docker image rm layers-l3-multi:lourd layers-l3-multi:alpine layers-l3-multi:scratch layers-l3-multi:test
-rm -rf ~/layers-l3/multi
+rm -rf ~/byte-layers/docker/l3/multi
 ```
 
 ```verify
@@ -92,8 +92,8 @@ if docker container inspect layers-l3-multi >/dev/null 2>&1; then
   echo "Le conteneur layers-l3-multi existe encore."
   exit 1
 fi
-if [ -e "$HOME/layers-l3/multi" ]; then
-  echo "Le dossier ~/layers-l3/multi existe encore."
+if [ -e "$HOME/byte-layers/docker/l3/multi" ]; then
+  echo "Le dossier ~/byte-layers/docker/l3/multi existe encore."
   exit 1
 fi
 echo "C'est propre."

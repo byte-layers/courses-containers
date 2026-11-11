@@ -30,8 +30,8 @@ gcr.io/distroless/java21-debian13:nonroot@sha256:b22857e939bd95abd69d9d747f0421a
 Le healthcheck interroge toujours `/actuator/health`, mais avec un petit programme Java plutôt qu'avec `curl`. Il envoie la requête, attend deux secondes au plus, et sort avec le code `0` si l'application répond `200`, ou `1` sinon, comme Docker l'attend. Créez-le :
 
 ```exec
-mkdir -p ~/layers-l10/prod/petclinic/healthcheck
-cat > ~/layers-l10/prod/petclinic/healthcheck/HealthCheck.java <<'EOF'
+mkdir -p ~/byte-layers/docker/l10/prod/petclinic/healthcheck
+cat > ~/byte-layers/docker/l10/prod/petclinic/healthcheck/HealthCheck.java <<'EOF'
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -74,7 +74,7 @@ Dans le stage `runtime`, le healthcheck s'écrit forcément en **forme exec**, a
 Le stage `build` gagne deux lignes, qui copient et compilent le healthcheck. Le stage `runtime` change de base, perd son `RUN` et copie un fichier de plus. Créez le fichier de départ, puis complétez ses blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/Dockerfile <<'EOF'
 # ---- Stage 1 : construire le JAR et le healthcheck, avec Maven et un JDK ----
 FROM maven:3.9.16-eclipse-temurin-21-noble AS build
 WORKDIR /src
@@ -122,7 +122,7 @@ Le `ENTRYPOINT` et le healthcheck désignent Java par son chemin complet, `/usr/
 Le stage `build` copie maintenant le dossier `healthcheck/`, qu'il faut ajouter à la liste blanche du contexte :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/.dockerignore <<'EOF'
 # Le contexte de build ne contient que ce que le stage build copie
 *
 !pom.xml
@@ -134,14 +134,14 @@ EOF
 Construisez l'image avec le tag `4-distroless`. Les dépendances viennent du cache du chapitre précédent, et seule l'image distroless est à télécharger :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker build -t layers-l10-petclinic:4-distroless .
+cd ~/byte-layers/docker/l10/prod/petclinic && docker build -t layers-l10-petclinic:4-distroless .
 ```
 
 > 📖 [Les images distroless](https://github.com/GoogleContainerTools/distroless) · [Les images Java distroless](https://github.com/GoogleContainerTools/distroless/blob/main/java/README.md) · [Désigner une image par son empreinte](https://docs.docker.com/reference/cli/docker/image/pull/#pull-an-image-by-digest-immutable-identifier)
 
 ```verify
 I=layers-l10-petclinic:4-distroless
-F="$HOME/layers-l10/prod/petclinic/Dockerfile"
+F="$HOME/byte-layers/docker/l10/prod/petclinic/Dockerfile"
 if ! docker image inspect $I >/dev/null 2>&1; then
   echo "L'image $I n'existe pas. Complétez le Dockerfile, puis lancez docker build -t $I ."
   exit 1
@@ -178,7 +178,7 @@ La copie s'écrit `COPY --from=build /src/hc /app/hc`, et l'utilisateur `USER no
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > Dockerfile <<'EOF'
 # ---- Stage 1 : construire le JAR et le healthcheck, avec Maven et un JDK ----
 FROM maven:3.9.16-eclipse-temurin-21-noble AS build

@@ -21,7 +21,7 @@ for C in layers-l10-petclinic-app-1 layers-l10-petclinic-db-1 layers-l10-infra-t
   [ "$(docker inspect $C --format '{{.State.Running}}' 2>/dev/null)" = "true" ] || fail "$C ne tourne pas."
 done
 case "$(docker inspect layers-l10-petclinic-app-1 --format '{{.Config.User}}')" in nonroot|65532*) : ;; *) false ;; esac || fail "PetClinic ne tourne pas avec l'utilisateur nonroot de l'image distroless."
-PW=$(cat "$HOME/layers-l10/prod/petclinic/secrets/db_password.txt" 2>/dev/null)
+PW=$(cat "$HOME/byte-layers/docker/l10/prod/petclinic/secrets/db_password.txt" 2>/dev/null)
 for C in layers-l10-petclinic-app-1 layers-l10-petclinic-db-1; do
   docker inspect $C --format '{{json .Config.Env}}' | grep -qF "$PW" && fail "Le mot de passe apparaît dans l'environnement de $C."
 done
@@ -40,8 +40,8 @@ echo "Le cas pratique est complet : une application durcie, une seule porte, et 
 Ce contrôle ne demande rien de nouveau : si un élément manque, reprenez le chapitre qui le construit. Ces commandes relancent les deux projets, l'infra d'abord, puisqu'elle crée le réseau partagé :
 
 ```bash
-cd ~/layers-l10/prod/infra && docker compose --profile dev up -d
-cd ~/layers-l10/prod/petclinic && docker compose --profile dev up -d
+cd ~/byte-layers/docker/l10/prod/infra && docker compose --profile dev up -d
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose --profile dev up -d
 ```
 ````
 
@@ -60,8 +60,8 @@ Chaque partie a apporté une couche, et chaque choix répond à un risque préci
 L'ordre compte : l'application part d'abord, car elle utilise le réseau de l'infra, que Docker refuse de supprimer tant qu'il sert. `--profile dev` arrête aussi les services de ce profil, et `-v` supprime les volumes, donc les données :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose --profile dev down -v
-cd ~/layers-l10/prod/infra && docker compose --profile dev down -v
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose --profile dev down -v
+cd ~/byte-layers/docker/l10/prod/infra && docker compose --profile dev down -v
 ```
 
 Supprimez ensuite les images que le cas pratique a construites ou téléchargées, puis le cache de construction de BuildKit, et enfin le dossier de travail :
@@ -70,7 +70,7 @@ Supprimez ensuite les images que le cas pratique a construites ou téléchargée
 docker images 'layers-l10-petclinic' -q | sort -u | xargs -r docker rmi -f
 docker rmi postgres:18.6-alpine3.24 adminer:5.5.1 traefik:v3.7.17 grafana/loki:3.7.9 grafana/alloy:v1.21.3 prom/prometheus:v3.16.0 grafana/grafana:13.2.5 portainer/portainer-ce:2.45.3
 docker builder prune -f
-cd ~ && rm -rf ~/layers-l10
+cd ~ && rm -rf ~/byte-layers/docker/l10
 ```
 
 La première ligne supprime toutes les versions de l'image de PetClinic, quels que soient leurs tags. Si une image de la deuxième ligne est absente, parce que vous avez sauté un chapitre, `docker rmi` le signale et supprime les autres. `docker builder prune -f` vide le cache de BuildKit, qui garde aussi les images de base de la partie A : Maven, Temurin et distroless.
@@ -80,18 +80,18 @@ La première ligne supprime toutes les versions de l'image de PetClinic, quels q
 [ -z "$(docker network ls --format '{{.Name}}' | grep '^layers-l10-')" ] || { echo "Il reste des réseaux : $(docker network ls --format '{{.Name}}' | grep '^layers-l10-' | tr '\n' ' ')"; exit 1; }
 [ -z "$(docker volume ls --format '{{.Name}}' | grep '^layers-l10-')" ] || { echo "Il reste des volumes : $(docker volume ls --format '{{.Name}}' | grep '^layers-l10-' | tr '\n' ' ')"; exit 1; }
 [ -z "$(docker images --format '{{.Repository}}' | grep '^layers-l10-')" ] || { echo "Il reste des images layers-l10- : supprimez-les avec docker rmi."; exit 1; }
-[ ! -e "$HOME/layers-l10" ] || { echo "Le dossier ~/layers-l10 existe encore."; exit 1; }
+[ ! -e "$HOME/byte-layers/docker/l10" ] || { echo "Le dossier ~/byte-layers/docker/l10 existe encore."; exit 1; }
 echo "C'est propre."
 ```
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic 2>/dev/null && docker compose --profile dev down -v
-cd ~/layers-l10/prod/infra 2>/dev/null && docker compose --profile dev down -v
+cd ~/byte-layers/docker/l10/prod/petclinic 2>/dev/null && docker compose --profile dev down -v
+cd ~/byte-layers/docker/l10/prod/infra 2>/dev/null && docker compose --profile dev down -v
 docker images 'layers-l10-petclinic' -q | sort -u | xargs -r docker rmi -f
 docker rmi postgres:18.6-alpine3.24 adminer:5.5.1 traefik:v3.7.17 grafana/loki:3.7.9 grafana/alloy:v1.21.3 prom/prometheus:v3.16.0 grafana/grafana:13.2.5 portainer/portainer-ce:2.45.3 2>/dev/null
 docker builder prune -f
-cd ~ && rm -rf ~/layers-l10
+cd ~ && rm -rf ~/byte-layers/docker/l10
 ```
 ````
 

@@ -24,7 +24,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 - **Ce qu'il faut savoir** : ce qu'enseigne le lab [Installer Docker et vérifier son poste](https://byte-layers.com/fr/labs/docker-install).
 - **Ce qu'il faut avoir** : Docker installé, `curl`, et le port **28301** libre. Sur un poste hébergé, tout est déjà installé.
-- **Un dossier de travail** : `~/layers-l0`, où `~` désigne votre dossier personnel, est créé pour vous, et la dernière tâche le supprime. Vous y écrirez deux petits fichiers à la main, avec l'éditeur de votre choix. Dans le terminal, `nano ~/layers-l0/audit.txt` ouvre le premier ; `Ctrl-O` puis `Entrée` enregistre, et `Ctrl-X` quitte.
+- **Un dossier de travail** : `~/byte-layers/docker/l0`, où `~` désigne votre dossier personnel, est créé pour vous, et la dernière tâche le supprime. Vous y écrirez deux petits fichiers à la main, avec l'éditeur de votre choix. Dans le terminal, `nano ~/byte-layers/docker/l0/audit.txt` ouvre le premier ; `Ctrl-O` puis `Entrée` enregistre, et `Ctrl-X` quitte.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l0-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 
 # Tâche 1 : la fiche du poste
@@ -32,10 +32,10 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 ## Noter les versions et l'architecture dans un fichier
 
 ```setup
-mkdir -p ~/layers-l0
+mkdir -p ~/byte-layers/docker/l0
 ```
 
-Créez le fichier `~/layers-l0/audit.txt` avec votre éditeur, et notez-y la fiche de ce poste, avec une ligne par information, au format `nom=valeur`.
+Créez le fichier `~/byte-layers/docker/l0/audit.txt` avec votre éditeur, et notez-y la fiche de ce poste, avec une ligne par information, au format `nom=valeur`.
 
 **Critères :**
 
@@ -60,9 +60,9 @@ Le client et le moteur ont chacun leur partie dans `docker version`, avec une li
 ```
 
 ```verify
-F="$HOME/layers-l0/audit.txt"
+F="$HOME/byte-layers/docker/l0/audit.txt"
 if [ ! -f "$F" ]; then
-  echo "ÉCHEC : le fichier ~/layers-l0/audit.txt n'existe pas."
+  echo "ÉCHEC : le fichier ~/byte-layers/docker/l0/audit.txt n'existe pas."
   exit 1
 fi
 val() { grep -iE "^[[:space:]]*$1[[:space:]]*=" "$F" | tail -n 1 | sed 's/^[^=]*=//' | tr -d ' \r'; }
@@ -100,7 +100,7 @@ Recopier les valeurs à la main suffit. Cette commande fait la même chose sans 
   echo "client=$(docker version --format '{{.Client.Version}}')"
   echo "moteur=$(docker version --format '{{.Server.Version}}')"
   echo "architecture=$(docker version --format '{{.Server.Arch}}')"
-} > ~/layers-l0/audit.txt
+} > ~/byte-layers/docker/l0/audit.txt
 ```
 ````
 
@@ -223,11 +223,11 @@ curl http://localhost:28301
 
 ## Garder le message du client sans moteur
 
-Un collègue vous dira un jour que « Docker ne marche plus ». Faites parler le client à un moteur absent, sans rien arrêter sur votre poste, puis créez le fichier `~/layers-l0/panne.txt` avec votre éditeur et collez-y le message qu'il affiche.
+Un collègue vous dira un jour que « Docker ne marche plus ». Faites parler le client à un moteur absent, sans rien arrêter sur votre poste, puis créez le fichier `~/byte-layers/docker/l0/panne.txt` avec votre éditeur et collez-y le message qu'il affiche.
 
 **Critères :**
 
-- le fichier `~/layers-l0/panne.txt` contient le message d'erreur du client ;
+- le fichier `~/byte-layers/docker/l0/panne.txt` contient le message d'erreur du client ;
 - ce message désigne l'adresse `tcp://localhost:1`, où aucun moteur n'écoute.
 
 ```hint
@@ -239,9 +239,9 @@ Lancez cette commande, copiez la ligne d'erreur qu'elle affiche, puis collez-la 
 ```
 
 ```verify
-F="$HOME/layers-l0/panne.txt"
+F="$HOME/byte-layers/docker/l0/panne.txt"
 if [ ! -f "$F" ]; then
-  echo "ÉCHEC : le fichier ~/layers-l0/panne.txt n'existe pas."
+  echo "ÉCHEC : le fichier ~/byte-layers/docker/l0/panne.txt n'existe pas."
   exit 1
 fi
 if ! grep -q 'Cannot connect to the Docker daemon' "$F"; then
@@ -260,7 +260,7 @@ echo "RÉUSSI : vous saurez reconnaître un moteur qui ne répond pas."
 Copier la ligne à la main suffit. Cette commande fait la même chose : `>` envoie la sortie dans le fichier, et `2>&1` y ajoute les messages d'erreur, qui n'empruntent pas la sortie normale.
 
 ```bash
-DOCKER_HOST=tcp://localhost:1 docker version > ~/layers-l0/panne.txt 2>&1
+DOCKER_HOST=tcp://localhost:1 docker version > ~/byte-layers/docker/l0/panne.txt 2>&1
 ```
 ````
 
@@ -268,7 +268,7 @@ DOCKER_HOST=tcp://localhost:1 docker version > ~/layers-l0/panne.txt 2>&1
 
 ## Supprimer les conteneurs et le dossier
 
-Supprimez ce que ce challenge a créé : les conteneurs `layers-l0-probe` et `layers-l0-audit-web`, et le dossier `~/layers-l0`.
+Supprimez ce que ce challenge a créé : les conteneurs `layers-l0-probe` et `layers-l0-audit-web`, et le dossier `~/byte-layers/docker/l0`.
 
 **Critères :** plus aucun de ces conteneurs, plus de dossier. Vos autres conteneurs ne sont pas concernés.
 
@@ -286,8 +286,8 @@ if [ -n "$left" ]; then
   echo "ÉCHEC : il reste : $(echo "$left" | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l0" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l0 existe encore."
+if [ -e "$HOME/byte-layers/docker/l0" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l0 existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre, et votre audit est terminé."
@@ -296,6 +296,6 @@ echo "RÉUSSI : tout est propre, et votre audit est terminé."
 ````solution
 ```bash
 docker rm -f layers-l0-probe layers-l0-audit-web
-rm -r ~/layers-l0
+rm -r ~/byte-layers/docker/l0
 ```
 ````

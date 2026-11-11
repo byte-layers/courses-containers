@@ -30,8 +30,8 @@ Ce tableau rappelle ce qui sert ici et donne ce qui n'a pas encore été vu.
 Préparez un dossier, avec un faux secret dans un fichier :
 
 ```exec
-mkdir -p ~/layers-l8/secret
-printf 'faux-jeton-1234\n' > ~/layers-l8/secret/token.txt
+mkdir -p ~/byte-layers/docker/l8/secret
+printf 'faux-jeton-1234\n' > ~/byte-layers/docker/l8/secret/token.txt
 ```
 
 ### Par une variable d'environnement
@@ -39,11 +39,11 @@ printf 'faux-jeton-1234\n' > ~/layers-l8/secret/token.txt
 `ENV` a l'air de fixer une simple configuration. Écrivez ce `Dockerfile`, et construisez l'image. `cat > fichier <<'EOF'` écrit dans le fichier tout ce qui suit, jusqu'à la ligne `EOF`, et `-q` n'affiche de la construction que l'identifiant de l'image :
 
 ```exec
-cat > ~/layers-l8/secret/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/secret/Dockerfile <<'EOF'
 FROM alpine:3.22
 ENV API_TOKEN=faux-jeton-1234
 EOF
-cd ~/layers-l8/secret && docker build -q -t layers-l8-secret-env .
+cd ~/byte-layers/docker/l8/secret && docker build -q -t layers-l8-secret-env .
 ```
 
 Sans démarrer de conteneur, n'importe qui disposant de l'image lit la valeur dans sa fiche :
@@ -59,12 +59,12 @@ Vous lisez `API_TOKEN=faux-jeton-1234` à côté du `PATH`.
 Le second réflexe est de copier le fichier, de s'en servir, puis de l'effacer. Dans ce `Dockerfile`, `wc -c` compte les octets du fichier et joue le rôle d'une étape qui aurait besoin du secret, comme une installation de dépendances privées :
 
 ```exec
-cat > ~/layers-l8/secret/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/secret/Dockerfile <<'EOF'
 FROM alpine:3.22
 COPY token.txt /tmp/token.txt
 RUN wc -c /tmp/token.txt && rm /tmp/token.txt
 EOF
-cd ~/layers-l8/secret && docker build -q -t layers-l8-secret-rm .
+cd ~/byte-layers/docker/l8/secret && docker build -q -t layers-l8-secret-rm .
 ```
 
 Dans un conteneur issu de cette image, le fichier a bien disparu :
@@ -101,7 +101,7 @@ Un secret se donne au conteneur **quand il démarre**, jamais à l'image quand o
 La variable d'environnement au démarrage est déjà bien mieux que l'image, mais reste visible de quiconque peut interroger Docker. Comparez avec un fichier monté. `-v fichier:chemin:ro` le place dans le conteneur, en lecture seule, et la commande affiche ensuite l'environnement du conteneur :
 
 ```exec
-docker run -d --name layers-l8-secret-run -v ~/layers-l8/secret/token.txt:/run/secrets/token:ro alpine:3.22 sleep 60
+docker run -d --name layers-l8-secret-run -v ~/byte-layers/docker/l8/secret/token.txt:/run/secrets/token:ro alpine:3.22 sleep 60
 docker exec layers-l8-secret-run cat /run/secrets/token
 docker inspect layers-l8-secret-run --format '{{.Config.Env}}'
 ```
@@ -111,11 +111,11 @@ Le programme lit la valeur dans `/run/secrets/token`, et la fiche du conteneur n
 Si la **construction** elle-même a besoin du secret, pour télécharger une dépendance privée par exemple, BuildKit, le moteur de construction de Docker, sait le prêter à une seule instruction `RUN`, sans l'écrire dans aucune couche. Le secret est présent le temps de cette instruction, à l'adresse `/run/secrets/<id>` :
 
 ```exec
-cat > ~/layers-l8/secret/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l8/secret/Dockerfile <<'EOF'
 FROM alpine:3.22
 RUN --mount=type=secret,id=token wc -c /run/secrets/token
 EOF
-cd ~/layers-l8/secret && docker build -q --secret id=token,src=token.txt -t layers-l8-secret-mount .
+cd ~/byte-layers/docker/l8/secret && docker build -q --secret id=token,src=token.txt -t layers-l8-secret-mount .
 docker save layers-l8-secret-mount | docker run --rm -i alpine:3.22 sh -c 'tar -x -C /tmp; cd /tmp/blobs/sha256; for b in *; do tar -xOf "$b" run/secrets/token 2>/dev/null; done; echo "fin de la recherche"'
 ```
 
@@ -126,7 +126,7 @@ Il reste à ranger ce que vous avez créé :
 ```exec
 docker rm -f layers-l8-secret-run
 docker rmi layers-l8-secret-env layers-l8-secret-rm layers-l8-secret-mount
-rm -rf ~/layers-l8/secret
+rm -rf ~/byte-layers/docker/l8/secret
 ```
 
 Deux habitudes complètent tout cela. Ne versionnez jamais un fichier de secret : ajoutez-le à `.gitignore`. Et ajoutez-le aussi à `.dockerignore`, sans quoi un `COPY . .` l'embarque sans que vous l'ayez demandé. Si un vrai secret a fini dans une image publiée, le retirer ne suffit plus, d'autres ont pu la tirer : changez-le.

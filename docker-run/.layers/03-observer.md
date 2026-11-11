@@ -73,14 +73,14 @@ Retenez `-f`, celui qu'on utilise pour suivre un service en direct : ici il veut
 Pour garder ces logs, par exemple pour les transmettre à un collègue, envoyez-les dans un fichier. `~` désigne votre dossier personnel, `mkdir -p` y crée le dossier au besoin, et `>` envoie la réponse dans le fichier, dont il remplace le contenu s'il existe déjà :
 
 ```exec
-mkdir -p ~/layers-l1
-docker logs layers-l1-obs > ~/layers-l1/obs.txt
+mkdir -p ~/byte-layers/docker/l1
+docker logs layers-l1-obs > ~/byte-layers/docker/l1/obs.txt
 ```
 
 `cat` affiche ce fichier, pour vérifier qu'il contient bien votre requête :
 
 ```exec
-cat ~/layers-l1/obs.txt
+cat ~/byte-layers/docker/l1/obs.txt
 ```
 
 ```verify
@@ -88,8 +88,8 @@ if ! docker logs layers-l1-obs 2>/dev/null | grep -q 'moi=1'; then
   echo "Votre requête n'est pas dans les logs. Relancez le curl."
   exit 1
 fi
-if ! grep -q 'moi=1' ~/layers-l1/obs.txt 2>/dev/null; then
-  echo "~/layers-l1/obs.txt ne contient pas votre requête. Relancez la redirection."
+if ! grep -q 'moi=1' ~/byte-layers/docker/l1/obs.txt 2>/dev/null; then
+  echo "~/byte-layers/docker/l1/obs.txt ne contient pas votre requête. Relancez la redirection."
   exit 1
 fi
 echo "Votre requête est dans les logs, et dans votre fichier."
@@ -157,11 +157,11 @@ Il reste à ranger le conteneur et le dossier. `rm -r` supprime un dossier et so
 
 ```exec
 docker rm -f layers-l1-obs
-rm -r ~/layers-l1
+rm -r ~/byte-layers/docker/l1
 ```
 
 ```verify
-if docker container inspect layers-l1-obs >/dev/null 2>&1 || [ -e ~/layers-l1 ]; then
+if docker container inspect layers-l1-obs >/dev/null 2>&1 || [ -e ~/byte-layers/docker/l1 ]; then
   echo "Il reste le conteneur ou le dossier. Lancez les commandes ci-dessus."
   exit 1
 fi

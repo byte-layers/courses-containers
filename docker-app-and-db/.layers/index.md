@@ -18,7 +18,7 @@ options:
 
 **Niveau** : débutant. Vous savez lancer un conteneur, lire ses logs et utiliser `docker exec` (cours « Lancer, configurer et observer un conteneur »), et vous savez ce qu'est un Dockerfile (cours « Écrire le Dockerfile d'une application »). Toutes les options de réseau utiles sont expliquées ici au moment où elles servent.
 
-**Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, et le port **28355** libre. Tout ce que vous créez porte le préfixe `layers-l5-`, et vos fichiers vont dans `~/layers-l5`. La dernière étape supprime le tout, sauf les images téléchargées, qui restent pour servir à nouveau.
+**Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, et le port **28355** libre. Tout ce que vous créez porte le préfixe `layers-l5-`, et vos fichiers vont dans `~/byte-layers/docker/l5`. La dernière étape supprime le tout, sauf les images téléchargées, qui restent pour servir à nouveau.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -55,8 +55,8 @@ Ce lab prend deux raccourcis, à ne pas reproduire en production. Les mots de pa
 Ce code est sur GitHub, et vous en prenez la même version précise que dans le lab « Conteneuriser une application pas à pas » : le commit `6b025fc5`, c'est-à-dire un état enregistré du code, pour que ce lab fonctionne encore quand le dépôt évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
 
 ```exec
-mkdir -p ~/layers-l5/app
-curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/layers-l5/app
+mkdir -p ~/byte-layers/docker/l5/app
+curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/byte-layers/docker/l5/app
 ```
 
 ## Écrire le Dockerfile
@@ -64,7 +64,7 @@ curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz 
 Le dépôt ne contient pas de Dockerfile. Vous prenez ici celui du lab « Conteneuriser une application pas à pas », redonné tel quel, car le sujet est le réseau. Copiez cette commande : elle crée le fichier `Dockerfile` à la racine du projet avec ces huit lignes. `<<'EOF'` recopie dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
-cat > ~/layers-l5/app/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l5/app/Dockerfile <<'EOF'
 FROM node:22-alpine
 WORKDIR /app
 COPY . .
@@ -80,7 +80,7 @@ Pour mémoire, l'image part de Node.js 22 sur Alpine, copie le code, installe le
 
 ## Construire l'image
 
-🚧 **À compléter** : construisez l'image à partir du dossier `~/layers-l5/app`, sous le nom et le tag `layers-l5-todo:1.0`. Remplacez le `# TODO` par l'option qui donne un nom et un tag à l'image, sur une seule ligne :
+🚧 **À compléter** : construisez l'image à partir du dossier `~/byte-layers/docker/l5/app`, sous le nom et le tag `layers-l5-todo:1.0`. Remplacez le `# TODO` par l'option qui donne un nom et un tag à l'image, sur une seule ligne :
 
 ```bash
 docker build # TODO : l'option, le nom et le tag de l'image, puis le dossier
@@ -100,14 +100,14 @@ fi
 CMD=$(docker image inspect layers-l5-todo:1.0 --format '{{json .Config.Cmd}}')
 case "$CMD" in
   *src/index.js*) : ;;
-  *) echo "L'image layers-l5-todo:1.0 ne lance pas src/index.js (trouvé : $CMD). Construisez-la depuis ~/layers-l5/app."; exit 1 ;;
+  *) echo "L'image layers-l5-todo:1.0 ne lance pas src/index.js (trouvé : $CMD). Construisez-la depuis ~/byte-layers/docker/l5/app."; exit 1 ;;
 esac
 echo "L'image layers-l5-todo:1.0 est prête."
 ```
 
 ````solution
 ```bash
-docker build -t layers-l5-todo:1.0 ~/layers-l5/app
+docker build -t layers-l5-todo:1.0 ~/byte-layers/docker/l5/app
 ```
 ````
 
@@ -344,7 +344,7 @@ curl -sS http://localhost:28355/items
 
 Vous lisez votre tâche en JSON, deux fois sur la même ligne : d'abord seule, en réponse à l'ajout, puis dans une liste entre crochets. Vous pouvez aussi ouvrir `http://localhost:28355` dans un navigateur pour voir la page. Sur un poste hébergé, utilisez l'onglet **PORTS** de VS Code, qui donne le lien de ce port.
 
-🚧 **À compléter** : prouvez que la tâche est bien dans MySQL et non dans l'application. Le client `mysql` de l'image prend un utilisateur (`-u`), un mot de passe (`-p`, collé à sa valeur), le nom de la base, seul et sans option, puis une requête (`-e`, suivi de la requête entre apostrophes). La requête à lancer est `SELECT name FROM todo_items`, et la sortie doit aller dans le fichier `~/layers-l5/todos.txt`.
+🚧 **À compléter** : prouvez que la tâche est bien dans MySQL et non dans l'application. Le client `mysql` de l'image prend un utilisateur (`-u`), un mot de passe (`-p`, collé à sa valeur), le nom de la base, seul et sans option, puis une requête (`-e`, suivi de la requête entre apostrophes). La requête à lancer est `SELECT name FROM todo_items`, et la sortie doit aller dans le fichier `~/byte-layers/docker/l5/todos.txt`.
 
 ```bash
 docker exec layers-l5-db mysql # TODO : l'utilisateur, le mot de passe, la base, la requête, puis la redirection
@@ -353,7 +353,7 @@ docker exec layers-l5-db mysql # TODO : l'utilisateur, le mot de passe, la base,
 MySQL signale `Using a password on the command line interface can be insecure` : c'est vrai, et c'est le raccourci annoncé au départ.
 
 ```hint
-La redirection `> ~/layers-l5/todos.txt` s'écrit à la fin de la commande, et elle s'exécute sur votre machine, ce que vous voulez ici.
+La redirection `> ~/byte-layers/docker/l5/todos.txt` s'écrit à la fin de la commande, et elle s'exécute sur votre machine, ce que vous voulez ici.
 ```
 
 ```verify
@@ -361,8 +361,8 @@ if ! docker exec layers-l5-db mysql -u todos -psecret todos -e 'SELECT name FROM
   echo "La tâche Acheter du pain n'est pas dans la table todo_items. Lancez d'abord la commande curl de cette section."
   exit 1
 fi
-if ! grep -q 'Acheter du pain' "$HOME/layers-l5/todos.txt" 2>/dev/null; then
-  echo "Le fichier ~/layers-l5/todos.txt ne contient pas la tâche. Redirigez-y la sortie de la requête."
+if ! grep -q 'Acheter du pain' "$HOME/byte-layers/docker/l5/todos.txt" 2>/dev/null; then
+  echo "Le fichier ~/byte-layers/docker/l5/todos.txt ne contient pas la tâche. Redirigez-y la sortie de la requête."
   exit 1
 fi
 echo "La tâche est dans MySQL, et sa trace dans votre fichier."
@@ -370,7 +370,7 @@ echo "La tâche est dans MySQL, et sa trace dans votre fichier."
 
 ````solution
 ```bash
-docker exec layers-l5-db mysql -u todos -psecret todos -e 'SELECT name FROM todo_items' > ~/layers-l5/todos.txt
+docker exec layers-l5-db mysql -u todos -psecret todos -e 'SELECT name FROM todo_items' > ~/byte-layers/docker/l5/todos.txt
 ```
 ````
 
@@ -450,7 +450,7 @@ La liste est vide : `[]`. Le nom a suffi à retrouver le service, sans changer l
 
 ## Ne rien laisser
 
-🚧 **À compléter** : supprimez tout ce que ce lab a créé, dans le bon ordre, car un réseau occupé ne se supprime pas. Il s'agit des conteneurs `layers-l5-todo` et `layers-l5-db`, avec le volume anonyme de la base, du réseau `layers-l5-net`, de l'image `layers-l5-todo:1.0` et du dossier `~/layers-l5`. La vérification ne peut pas reconnaître un volume anonyme oublié : pensez bien au `-v`.
+🚧 **À compléter** : supprimez tout ce que ce lab a créé, dans le bon ordre, car un réseau occupé ne se supprime pas. Il s'agit des conteneurs `layers-l5-todo` et `layers-l5-db`, avec le volume anonyme de la base, du réseau `layers-l5-net`, de l'image `layers-l5-todo:1.0` et du dossier `~/byte-layers/docker/l5`. La vérification ne peut pas reconnaître un volume anonyme oublié : pensez bien au `-v`.
 
 ```bash
 # TODO : les conteneurs, avec leur volume anonyme
@@ -476,8 +476,8 @@ if docker image inspect layers-l5-todo:1.0 >/dev/null 2>&1; then
   echo "L'image layers-l5-todo:1.0 existe encore."
   exit 1
 fi
-if [ -e "$HOME/layers-l5" ]; then
-  echo "Le dossier ~/layers-l5 existe encore."
+if [ -e "$HOME/byte-layers/docker/l5" ]; then
+  echo "Le dossier ~/byte-layers/docker/l5 existe encore."
   exit 1
 fi
 echo "C'est propre."
@@ -488,7 +488,7 @@ echo "C'est propre."
 docker rm -f -v layers-l5-todo layers-l5-db
 docker network rm layers-l5-net
 docker rmi layers-l5-todo:1.0
-rm -rf ~/layers-l5
+rm -rf ~/byte-layers/docker/l5
 ```
 ````
 

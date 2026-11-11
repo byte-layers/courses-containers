@@ -10,8 +10,8 @@ Quand vous construisez une image, Docker garde le résultat de chaque instructio
 Créez une petite application et son Dockerfile. Celui-ci est écrit comme on l'écrit spontanément, et vous allez découvrir son défaut :
 
 ```exec
-mkdir -p ~/layers-l3/cache
-cat > ~/layers-l3/cache/app.py <<'EOF'
+mkdir -p ~/byte-layers/docker/l3/cache
+cat > ~/byte-layers/docker/l3/cache/app.py <<'EOF'
 from flask import Flask
 
 app = Flask(__name__)
@@ -20,13 +20,13 @@ app = Flask(__name__)
 def home():
     return "version 1\n"
 EOF
-echo 'flask==3.1.*' > ~/layers-l3/cache/requirements.txt
+echo 'flask==3.1.*' > ~/byte-layers/docker/l3/cache/requirements.txt
 ```
 
 Voici le Dockerfile. Il copie tout le projet, puis installe les dépendances :
 
 ```exec
-cat > ~/layers-l3/cache/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY . .
@@ -38,7 +38,7 @@ EOF
 Construisez-le avec `--no-cache`, qui oblige Docker à tout refaire. Ainsi, vous partez du même point, même si vous avez déjà construit quelque chose de semblable. `time` affiche la durée de la commande, sur la ligne `real` ou `total` selon votre shell :
 
 ```exec
-time docker build --no-cache -t layers-l3-cache:1.0 ~/layers-l3/cache
+time docker build --no-cache -t layers-l3-cache:1.0 ~/byte-layers/docker/l3/cache
 ```
 
 Vous voyez passer le téléchargement de Flask sur la ligne `RUN`, et cela prend plusieurs secondes. Notez cette durée.
@@ -56,7 +56,7 @@ echo "L'image est construite."
 Relancez la construction, sans `--no-cache` et sans rien changer :
 
 ```exec
-time docker build -t layers-l3-cache:1.0 ~/layers-l3/cache
+time docker build -t layers-l3-cache:1.0 ~/byte-layers/docker/l3/cache
 ```
 
 La commande se termine presque aussitôt, et chaque étape après `FROM` porte le mot `CACHED`, par exemple `CACHED [4/4] RUN pip install -r requirements.txt`. Le téléchargement n'a pas eu lieu : Docker a réutilisé les couches déjà faites.
@@ -77,14 +77,14 @@ Cette dernière ligne est la règle la plus importante. Une couche se pose sur c
 Vérifiez d'abord que seul le contenu compte. `touch` change la date d'un fichier sans toucher à son contenu :
 
 ```exec
-touch ~/layers-l3/cache/app.py
-docker build -t layers-l3-cache:1.0 ~/layers-l3/cache
+touch ~/byte-layers/docker/l3/cache/app.py
+docker build -t layers-l3-cache:1.0 ~/byte-layers/docker/l3/cache
 ```
 
 Tout reste `CACHED` après `FROM`. Changez maintenant le code. Cette commande réécrit `app.py` avec une autre réponse :
 
 ```exec
-cat > ~/layers-l3/cache/app.py <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/app.py <<'EOF'
 from flask import Flask
 
 app = Flask(__name__)
@@ -93,7 +93,7 @@ app = Flask(__name__)
 def home():
     return "version 2\n"
 EOF
-time docker build -t layers-l3-cache:1.1 ~/layers-l3/cache
+time docker build -t layers-l3-cache:1.1 ~/byte-layers/docker/l3/cache
 ```
 
 Vous n'avez modifié qu'une ligne de votre application, et Flask se télécharge à nouveau. `COPY . .` a vu un fichier changer, et le `RUN` situé dessous a donc été rejoué, alors que vos dépendances n'ont pas bougé. C'est le défaut annoncé, et la prochaine étape le corrige.

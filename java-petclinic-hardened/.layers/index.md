@@ -22,7 +22,7 @@ Vous complétez vous-même les `# TODO`. Le bouton de vérification contrôle le
 
 **Niveau** : intermédiaire. Vous savez écrire un `Dockerfile` avec `FROM`, `COPY`, `RUN`, `USER`, `EXPOSE` et `HEALTHCHECK`, comme dans « Écrire le Dockerfile d'une application ». Vous savez lancer un projet Compose avec des réseaux, des volumes, un `healthcheck` et un `depends_on`, et vous avez déjà placé des applications derrière Traefik avec des labels, comme dans « Deux applications derrière nginx, puis Traefik ». Vous n'avez besoin de connaître ni Java ni Maven : chaque commande propre à Java est expliquée. Ce qui est nouveau est guidé pas à pas, en particulier le **multi-stage** et l'**observabilité** (les journaux et les métriques).
 
-**Ce qu'il faut** : Docker et Compose qui répondent, un terminal bash ou zsh (sous Windows, celui de WSL), `curl`, `openssl` et `sha256sum`, un éditeur de texte, les ports **28400** à **28409** libres, environ 1,5 Go de mémoire, la consommation mesurée de l'ensemble des conteneurs de la partie C, et 5 Go d'espace disque pour les images et les caches. Tout ce que vous créez porte le préfixe `layers-l10-`, et vos fichiers vivent dans `~/layers-l10/prod`.
+**Ce qu'il faut** : Docker et Compose qui répondent, un terminal bash ou zsh (sous Windows, celui de WSL), `curl`, `openssl` et `sha256sum`, un éditeur de texte, les ports **28400** à **28409** libres, environ 1,5 Go de mémoire, la consommation mesurée de l'ensemble des conteneurs de la partie C, et 5 Go d'espace disque pour les images et les caches. Tout ce que vous créez porte le préfixe `layers-l10-`, et vos fichiers vivent dans `~/byte-layers/docker/l10/prod`.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -44,10 +44,10 @@ Certains chapitres portent un titre qui commence par « Facultatif ». Ils scann
 
 ## Organiser le dossier de travail comme un serveur
 
-Sur un serveur qui héberge des applications Docker, on range souvent chaque projet Compose dans son dossier, sous une racine commune comme `/srv/docker`. Ce cas pratique suit la même organisation, avec `~/layers-l10/prod` pour racine. Voici où vous arriverez à la fin des trois parties :
+Sur un serveur qui héberge des applications Docker, on range souvent chaque projet Compose dans son dossier, sous une racine commune comme `/srv/docker`. Ce cas pratique suit la même organisation, avec `~/byte-layers/docker/l10/prod` pour racine. Voici où vous arriverez à la fin des trois parties :
 
 ```
-~/layers-l10/prod/
+~/byte-layers/docker/l10/prod/
 ├── petclinic/          # partie A et partie B : le code, le Dockerfile, le fichier Compose
 └── infra/              # partie C : ce que partagent toutes les applications du serveur
     ├── compose.yaml    # le fichier parent, qui inclut les deux suivants

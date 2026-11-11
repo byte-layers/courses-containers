@@ -33,7 +33,7 @@ La seconde technique fonctionne avec n'importe quelle application Spring Boot, y
 Un mot de passe de secret ne se choisit pas : il se génère. `openssl rand -base64 24` tire 24 octets au hasard et les écrit en caractères imprimables, et `tr -d '\n'` retire le retour à la ligne final, qui ferait partie du mot de passe. Le second fichier reprend ce mot de passe dans une ligne de configuration de Spring Boot :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && mkdir -p secrets
+cd ~/byte-layers/docker/l10/prod/petclinic && mkdir -p secrets
 openssl rand -base64 24 | tr -d '\n' > secrets/db_password.txt
 printf 'spring.datasource.password=%s\n' "$(cat secrets/db_password.txt)" > secrets/petclinic-db.properties
 chmod 700 secrets
@@ -45,7 +45,7 @@ Le dossier `secrets` est réservé à votre utilisateur (`chmod 700`), pour que 
 Ces fichiers ne doivent jamais partir dans Git. Le dépôt de PetClinic a déjà un `.gitignore`, et vous y ajoutez le dossier, si la ligne n'y est pas déjà :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && (grep -qx 'secrets/' .gitignore || echo 'secrets/' >> .gitignore) && tail -1 .gitignore
+cd ~/byte-layers/docker/l10/prod/petclinic && (grep -qx 'secrets/' .gitignore || echo 'secrets/' >> .gitignore) && tail -1 .gitignore
 ```
 
 Ils ne partiront pas non plus dans une image : le `.dockerignore` en liste blanche de la partie A n'envoie au moteur que `pom.xml`, `src` et `healthcheck`, et le dossier `secrets/` reste hors du contexte de build.
@@ -53,7 +53,7 @@ Ils ne partiront pas non plus dans une image : le `.dockerignore` en liste blanc
 ⚖️ Le mot de passe est maintenant hors du fichier Compose, mais il reste en clair sur le disque du poste. C'est le premier niveau de la gestion des secrets. Sur un serveur, on le complète par un coffre-fort : Ansible Vault chiffre les fichiers dans le dépôt, et HashiCorp Vault ou le gestionnaire de secrets d'un fournisseur cloud les distribue au démarrage.
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 if [ ! -s "$P/secrets/db_password.txt" ] || [ ! -s "$P/secrets/petclinic-db.properties" ]; then
   echo "Les deux fichiers de secrets manquent dans $P/secrets. Relancez le bloc qui les génère."
   exit 1
@@ -75,7 +75,7 @@ echo "Les secrets sont prêts, et Git les ignorera."
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic && mkdir -p secrets
+cd ~/byte-layers/docker/l10/prod/petclinic && mkdir -p secrets
 openssl rand -base64 24 | tr -d '\n' > secrets/db_password.txt
 printf 'spring.datasource.password=%s\n' "$(cat secrets/db_password.txt)" > secrets/petclinic-db.properties
 chmod 700 secrets

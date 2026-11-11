@@ -24,7 +24,7 @@ Adminer reçoit le même durcissement que les autres services, par la fusion du 
 
 Son healthcheck n'a pas `curl`, absent de l'image. Il utilise donc PHP, déjà présent : `file_get_contents` télécharge la page d'accueil, et le programme sort avec le code `1` si elle ne répond pas. C'est l'idée du healthcheck écrit en Java de la partie A : on teste avec ce que l'image contient.
 
-Ouvrez `~/layers-l10/prod/petclinic/compose.yaml` et ajoutez ce service à la fin de la section `services:`, juste avant `networks:`, en complétant ses deux blancs :
+Ouvrez `~/byte-layers/docker/l10/prod/petclinic/compose.yaml` et ajoutez ce service à la fin de la section `services:`, juste avant `networks:`, en complétant ses deux blancs :
 
 ```yaml
   adminer:
@@ -57,13 +57,13 @@ Ouvrez `~/layers-l10/prod/petclinic/compose.yaml` et ajoutez ce service à la fi
 Lancez d'abord le projet sans profil, et constatez qu'Adminer ne démarre pas :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose up -d && docker compose ps --format '{{.Service}}'
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose up -d && docker compose ps --format '{{.Service}}'
 ```
 
 La liste ne contient que `app` et `db`. Activez maintenant le profil :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker compose --profile dev up -d && docker compose --profile dev ps
+cd ~/byte-layers/docker/l10/prod/petclinic && docker compose --profile dev up -d && docker compose --profile dev ps
 ```
 
 Une dizaine de secondes plus tard, Adminer est `(healthy)`. Ouvrez `http://localhost:28401` dans votre navigateur, et connectez-vous avec ces réglages :
@@ -73,7 +73,7 @@ Une dizaine de secondes plus tard, Adminer est `(healthy)`. Ouvrez `http://local
 | Système | PostgreSQL |
 | Serveur | `db`, déjà rempli |
 | Utilisateur | `petclinic` |
-| Mot de passe | le contenu de `secrets/db_password.txt`, que `cat ~/layers-l10/prod/petclinic/secrets/db_password.txt` affiche |
+| Mot de passe | le contenu de `secrets/db_password.txt`, que `cat ~/byte-layers/docker/l10/prod/petclinic/secrets/db_password.txt` affiche |
 | Base de données | `petclinic` |
 
 Vous voyez les tables de PetClinic : `owners`, `pets`, `vets`, `visits`. Ouvrez `owners` pour retrouver les propriétaires, et celui que vous avez peut-être ajouté.
@@ -81,7 +81,7 @@ Vous voyez les tables de PetClinic : `owners`, `pets`, `vets`, `visits`. Ouvrez 
 ⚠️ Une interface comme Adminer ne doit jamais être ouverte à tous sur un serveur. Le profil la réserve au développement, et le port publié sur `127.0.0.1` la limite à la machine. Si on en a besoin sur un serveur, on la place derrière le reverse proxy, avec une authentification devant elle : la partie C la branche sur Traefik, et y revient.
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 (cd "$P" && docker compose config --services 2>/dev/null) | grep -qx adminer && { echo "adminer démarre sans profil : il manque profiles: [dev]."; exit 1; }
 (cd "$P" && docker compose --profile dev config --services 2>/dev/null) | grep -qx adminer || { echo "Le service adminer n'existe pas dans le fichier Compose, même avec le profil dev."; exit 1; }
 C=layers-l10-petclinic-adminer-1
@@ -103,7 +103,7 @@ Le profil s'écrit `profiles: [dev]`, sous `image:`. Les réseaux s'écrivent co
 Cette commande écrit le fichier complet de cette partie, le même que [`solution/05-compose/compose.yaml`](../../solution/05-compose/compose.yaml), puis lance le projet avec le profil `dev`.
 
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 cat > compose.yaml <<'EOF'
 name: layers-l10-petclinic
 

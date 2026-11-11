@@ -10,7 +10,7 @@ Votre Dockerfile retélécharge les dépendances à chaque modification du code.
 Les dépendances ne dépendent que d'un fichier, `requirements.txt`. Copiez donc ce fichier seul, installez, et copiez le reste ensuite :
 
 ```exec
-cat > ~/layers-l3/cache/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY requirements.txt .
@@ -18,7 +18,7 @@ RUN pip install -r requirements.txt
 COPY . .
 CMD ["flask", "run", "--host", "0.0.0.0"]
 EOF
-docker build -t layers-l3-cache:2.0 ~/layers-l3/cache
+docker build -t layers-l3-cache:2.0 ~/byte-layers/docker/l3/cache
 ```
 
 Ce build rejoue l'installation, car vous avez changé ce qui se trouve au-dessus d'elle. Il prépare le cache pour la suite.
@@ -28,7 +28,7 @@ Ce build rejoue l'installation, car vous avez changé ce qui se trouve au-dessus
 Modifiez le code une nouvelle fois, puis reconstruisez :
 
 ```exec
-cat > ~/layers-l3/cache/app.py <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/app.py <<'EOF'
 from flask import Flask
 
 app = Flask(__name__)
@@ -37,7 +37,7 @@ app = Flask(__name__)
 def home():
     return "version 3\n"
 EOF
-time docker build -t layers-l3-cache:2.1 ~/layers-l3/cache
+time docker build -t layers-l3-cache:2.1 ~/byte-layers/docker/l3/cache
 ```
 
 La ligne `RUN pip install` porte le mot `CACHED`, et seul le dernier `COPY . .` est rejoué. Le build est quasi instantané, alors que votre code a bien changé. Lancez l'image pour vous en assurer. Le port 28330 mène au port 5000, celui de Flask :
@@ -56,9 +56,9 @@ docker rm -f layers-l3-cache
 La vérification suivante refait ce test sur une copie temporaire de votre projet : elle change une ligne de code, reconstruit, et regarde si l'installation est restée en cache.
 
 ```verify
-SRC="$HOME/layers-l3/cache"
+SRC="$HOME/byte-layers/docker/l3/cache"
 if [ ! -f "$SRC/Dockerfile" ]; then
-  echo "Le dossier ~/layers-l3/cache n'est pas là. Reprenez l'étape précédente."
+  echo "Le dossier ~/byte-layers/docker/l3/cache n'est pas là. Reprenez l'étape précédente."
   exit 1
 fi
 TMP=$(mktemp -d)
@@ -86,8 +86,8 @@ echo "Modifier le code ne relance plus l'installation."
 Le cache n'empêche pas d'ajouter une dépendance : l'empreinte de `requirements.txt` change, et l'installation est rejouée à juste titre. Ajoutez une bibliothèque au fichier avec `>>`, qui écrit à la suite sans effacer :
 
 ```exec
-echo 'requests==2.32.*' >> ~/layers-l3/cache/requirements.txt
-docker build -t layers-l3-cache:2.2 ~/layers-l3/cache
+echo 'requests==2.32.*' >> ~/byte-layers/docker/l3/cache/requirements.txt
+docker build -t layers-l3-cache:2.2 ~/byte-layers/docker/l3/cache
 ```
 
 Cette fois, `RUN pip install` n'est plus en cache, et tout ce qui le suit non plus.

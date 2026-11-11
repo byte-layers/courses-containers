@@ -57,8 +57,8 @@ Le durcissement suit celui de la partie B, `cap_drop: [ALL]` compris. Traefik ou
 Créez d'abord le dossier de l'infra et son fichier parent. Pour l'instant, il n'inclut que Traefik :
 
 ```exec
-mkdir -p ~/layers-l10/prod/infra/traefik
-cat > ~/layers-l10/prod/infra/compose.yaml <<'EOF'
+mkdir -p ~/byte-layers/docker/l10/prod/infra/traefik
+cat > ~/byte-layers/docker/l10/prod/infra/compose.yaml <<'EOF'
 name: layers-l10-infra
 
 # Le fichier parent : il ne décrit aucun service, il assemble ceux de l'infra
@@ -70,7 +70,7 @@ EOF
 Créez ensuite le fichier de Traefik, puis complétez ses deux blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l10/prod/infra/traefik/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/infra/traefik/compose.yaml <<'EOF'
 x-logging: &default-logging
   driver: json-file
   options:
@@ -123,7 +123,7 @@ EOF
 Lancez l'infra depuis son dossier. Compose crée le réseau `layers-l10-proxy`, puis démarre Traefik :
 
 ```exec
-cd ~/layers-l10/prod/infra && docker compose up -d && docker compose ps
+cd ~/byte-layers/docker/l10/prod/infra && docker compose up -d && docker compose ps
 ```
 
 Ouvrez le tableau de bord de Traefik, `http://localhost:28403/dashboard/`, avec la barre oblique finale. La page **HTTP Routers** ne montre encore que les routes internes de Traefik : aucune application ne porte de label. L'entrée elle-même répond `404 page not found`, et c'est normal :
@@ -137,7 +137,7 @@ curl -i http://localhost:28402/
 ```verify
 C=layers-l10-infra-traefik-1
 H=$(docker inspect $C --format '{{if .State.Health}}{{.State.Health.Status}}{{end}}' 2>/dev/null)
-[ "$H" = "healthy" ] || { echo "Traefik n'est pas en bonne santé (état : ${H:-absent}). Lancez docker compose up -d depuis ~/layers-l10/prod/infra, puis lisez docker compose logs traefik."; exit 1; }
+[ "$H" = "healthy" ] || { echo "Traefik n'est pas en bonne santé (état : ${H:-absent}). Lancez docker compose up -d depuis ~/byte-layers/docker/l10/prod/infra, puis lisez docker compose logs traefik."; exit 1; }
 docker network inspect layers-l10-proxy >/dev/null 2>&1 || { echo "Le réseau layers-l10-proxy n'existe pas."; exit 1; }
 docker inspect $C --format '{{json .Config.Cmd}}' | grep -q 'exposedbydefault=false' || { echo "Traefik expose tous les conteneurs : il manque --providers.docker.exposedbydefault=false."; exit 1; }
 docker inspect $C --format '{{range .Mounts}}{{.Destination}}:{{.RW}} {{end}}' | grep -q '/var/run/docker.sock:false' || { echo "Le socket Docker n'est pas monté, ou pas en lecture seule (:ro)."; exit 1; }
@@ -156,8 +156,8 @@ L'option manquante de la ligne de commande s'écrit `- --providers.docker.expose
 
 ````solution
 ```bash
-mkdir -p ~/layers-l10/prod/infra/traefik
-cd ~/layers-l10/prod/infra
+mkdir -p ~/byte-layers/docker/l10/prod/infra/traefik
+cd ~/byte-layers/docker/l10/prod/infra
 cat > compose.yaml <<'EOF'
 name: layers-l10-infra
 

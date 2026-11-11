@@ -10,8 +10,8 @@ Changer de version sans coupure est la raison pour laquelle beaucoup d'équipes 
 Créez un dossier et un Dockerfile. Cette image part de `busybox:1.37`, un Linux minimal qui contient un petit serveur web. `cat > fichier <<'EOF'` écrit dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
-mkdir -p ~/layers-l9/app
-cat > ~/layers-l9/app/Dockerfile <<'EOF'
+mkdir -p ~/byte-layers/docker/l9/app
+cat > ~/byte-layers/docker/l9/app/Dockerfile <<'EOF'
 FROM busybox:1.37
 ARG VERSION=1
 ENV VERSION=$VERSION
@@ -31,8 +31,8 @@ Le tableau suivant détaille ce que fait ce Dockerfile.
 Construisez les deux versions. `--build-arg` donne sa valeur à `VERSION` :
 
 ```exec
-docker build -t layers-l9-app:1 ~/layers-l9/app
-docker build -t layers-l9-app:2 --build-arg VERSION=2 ~/layers-l9/app
+docker build -t layers-l9-app:1 ~/byte-layers/docker/l9/app
+docker build -t layers-l9-app:2 --build-arg VERSION=2 ~/byte-layers/docker/l9/app
 ```
 
 ```verify

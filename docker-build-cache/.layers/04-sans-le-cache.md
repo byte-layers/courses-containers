@@ -17,7 +17,7 @@ Pour `RUN`, Docker ne regarde que le texte de la commande. `RUN pip install flas
 Essayez la seconde sur votre projet, en regardant la durée :
 
 ```exec
-time docker build --no-cache -t layers-l3-cache:4.0 ~/layers-l3/cache
+time docker build --no-cache -t layers-l3-cache:4.0 ~/byte-layers/docker/l3/cache
 ```
 
 L'installation est rejouée, et Flask se télécharge à nouveau. Seul `WORKDIR` peut encore porter le mot `CACHED`, car il ne fait que créer un dossier vide. Sur un vrai projet, il vaut mieux réserver ce mode aux builds de livraison, et garder le cache au quotidien.
@@ -27,7 +27,7 @@ L'installation est rejouée, et Flask se télécharge à nouveau. Seul `WORKDIR`
 Quand vous ajoutez une dépendance, `pip` retélécharge tout, y compris ce qu'il avait déjà récupéré. Une option de `RUN` permet de lui garder un dossier d'un build à l'autre : c'est un **cache mount**. Réécrivez le Dockerfile avec cette option :
 
 ```exec
-cat > ~/layers-l3/cache/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY requirements.txt .
@@ -36,7 +36,7 @@ COPY . .
 RUN python -m compileall -q .
 CMD ["flask", "run", "--host", "0.0.0.0"]
 EOF
-docker build -t layers-l3-cache:4.1 ~/layers-l3/cache
+docker build -t layers-l3-cache:4.1 ~/byte-layers/docker/l3/cache
 ```
 
 Voici ce que dit chaque morceau de cette option.
@@ -49,16 +49,16 @@ Voici ce que dit chaque morceau de cette option.
 Ajoutez une dépendance et reconstruisez. `--progress=plain` affiche la sortie de `pip`, `2>&1` envoie les messages de Docker dans le tube `|`, le premier `grep` n'en garde que les lignes `Using cached` et `Downloading`, et `grep -v metadata` retire celles qui parlent des fiches de description, pour ne laisser que les bibliothèques elles-mêmes :
 
 ```exec
-echo 'pyyaml==6.0.*' >> ~/layers-l3/cache/requirements.txt
-docker build --progress=plain -t layers-l3-cache:4.2 ~/layers-l3/cache 2>&1 | grep -E 'Using cached|Downloading' | grep -v metadata
+echo 'pyyaml==6.0.*' >> ~/byte-layers/docker/l3/cache/requirements.txt
+docker build --progress=plain -t layers-l3-cache:4.2 ~/byte-layers/docker/l3/cache 2>&1 | grep -E 'Using cached|Downloading' | grep -v metadata
 ```
 
 Les bibliothèques déjà récupérées affichent `Using cached`, et seule la nouvelle, `pyyaml`, affiche `Downloading`. L'étape a été rejouée, mais elle n'a pas tout repris à zéro. Si vous refaites ce cours, cette étape peut déjà être en cache, et la commande n'affiche alors rien.
 
 ```verify
-SRC="$HOME/layers-l3/cache"
+SRC="$HOME/byte-layers/docker/l3/cache"
 if ! grep -q 'type=cache' "$SRC/Dockerfile" 2>/dev/null; then
-  echo "Le Dockerfile de ~/layers-l3/cache ne monte pas de cache sur son RUN pip install."
+  echo "Le Dockerfile de ~/byte-layers/docker/l3/cache ne monte pas de cache sur son RUN pip install."
   exit 1
 fi
 TMP=$(mktemp -d)
@@ -99,7 +99,7 @@ Supprimez ce que ce cours a créé, images et dossier. Le conteneur est déjà p
 
 ```exec
 for t in 1.0 1.1 2.0 2.1 2.2 3.0 3.1 3.2 3.3 4.0 4.1 4.2; do docker image rm layers-l3-cache:$t; done
-rm -rf ~/layers-l3/cache
+rm -rf ~/byte-layers/docker/l3/cache
 ```
 
 ```verify
@@ -108,8 +108,8 @@ if [ -n "$left" ]; then
   echo "Il reste ces images : $(echo "$left" | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l3/cache" ]; then
-  echo "Le dossier ~/layers-l3/cache existe encore."
+if [ -e "$HOME/byte-layers/docker/l3/cache" ]; then
+  echo "Le dossier ~/byte-layers/docker/l3/cache existe encore."
   exit 1
 fi
 echo "C'est propre."

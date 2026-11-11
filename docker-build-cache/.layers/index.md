@@ -26,7 +26,7 @@ Il faut `curl` et le port 28330 libre.
 
 ## Comment ça se passe
 
-Quatre étapes à suivre dans l'ordre, environ 1 h 15 en tout. Chacune donne de vraies commandes à lancer, vérifie le résultat, puis se termine par quelques questions. Vos fichiers vont dans `~/layers-l3/cache`, où `~` désigne votre dossier personnel, et vos images portent le préfixe `layers-l3-`. La dernière étape supprime tout cela. Le cache de build, lui, reste sur votre machine : si vous refaites ce cours, des étapes annoncées comme lentes seront donc déjà `CACHED`.
+Quatre étapes à suivre dans l'ordre, environ 1 h 15 en tout. Chacune donne de vraies commandes à lancer, vérifie le résultat, puis se termine par quelques questions. Vos fichiers vont dans `~/byte-layers/docker/l3/cache`, où `~` désigne votre dossier personnel, et vos images portent le préfixe `layers-l3-`. La dernière étape supprime tout cela. Le cache de build, lui, reste sur votre machine : si vous refaites ce cours, des étapes annoncées comme lentes seront donc déjà `CACHED`.
 
 Pour vous tester sans guide : le challenge « Réduire et accélérer une image existante ».
 

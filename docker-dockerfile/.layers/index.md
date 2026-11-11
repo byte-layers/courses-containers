@@ -28,6 +28,6 @@ Il vous faut Docker qui répond à `docker ps`, `curl` pour interroger un serveu
 
 Le cours compte quatre étapes à suivre dans l'ordre, pour environ 2 heures en tout. Chacune fait lancer de vraies commandes, vérifie le résultat, puis se termine par quelques questions.
 
-Vos fichiers vont dans `~/layers-l2/`, où `~` désigne votre dossier personnel, et tout ce que vous créez dans Docker porte le préfixe `layers-l2-`. La dernière étape supprime ce que ce cours a créé, sans toucher à vos autres images ni à vos autres conteneurs.
+Vos fichiers vont dans `~/byte-layers/docker/l2/`, où `~` désigne votre dossier personnel, et tout ce que vous créez dans Docker porte le préfixe `layers-l2-`. La dernière étape supprime ce que ce cours a créé, sans toucher à vos autres images ni à vos autres conteneurs.
 
 Pour pratiquer ensuite sur une vraie application, faites le lab [Conteneuriser une application pas à pas](https://byte-layers.com/fr/labs/docker-containerize-app). Pour vous tester sans guide, faites le challenge [Conteneuriser une application inconnue](https://byte-layers.com/fr/challenges/docker-dockerfile-challenge).

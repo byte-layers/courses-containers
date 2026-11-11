@@ -12,7 +12,7 @@ Le code de PetClinic est sur GitHub. Vous allez le télécharger à un **commit*
 GitHub sert une archive de n'importe quel commit. `curl -L` la télécharge en suivant les redirections, et `tar xz` la décompresse au fil de l'eau. `--strip-components=1` retire le dossier racine de l'archive, pour que les fichiers arrivent directement dans le dossier courant :
 
 ```exec
-mkdir -p ~/layers-l10/prod/petclinic && cd ~/layers-l10/prod/petclinic
+mkdir -p ~/byte-layers/docker/l10/prod/petclinic && cd ~/byte-layers/docker/l10/prod/petclinic
 curl -L https://codeload.github.com/spring-projects/spring-petclinic/tar.gz/500158f732419217507c7656904b8e6aa1bcc0d6 | tar xz --strip-components=1
 ls
 ```
@@ -30,11 +30,11 @@ Le résultat de la construction est un **JAR** : une archive qui contient l'appl
 Le dépôt contient aussi un `docker-compose.yml` et un dossier `k8s/`, fournis par les auteurs de PetClinic. Vous écrirez les vôtres, et ceux-ci ne feraient que gêner : Compose afficherait un avertissement en trouvant deux fichiers dans le même dossier, et un scanner les analyserait aussi. Supprimez-les :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && rm -r docker-compose.yml k8s
+cd ~/byte-layers/docker/l10/prod/petclinic && rm -r docker-compose.yml k8s
 ```
 
 ```verify
-P="$HOME/layers-l10/prod/petclinic"
+P="$HOME/byte-layers/docker/l10/prod/petclinic"
 if [ ! -s "$P/pom.xml" ] || [ ! -d "$P/src/main/java" ]; then
   echo "Le code de PetClinic manque dans $P. Relancez le bloc de téléchargement."
   exit 1
@@ -52,8 +52,8 @@ echo "Le code de PetClinic est en place."
 
 ````solution
 ```bash
-rm -rf ~/layers-l10/prod/petclinic
-mkdir -p ~/layers-l10/prod/petclinic && cd ~/layers-l10/prod/petclinic
+rm -rf ~/byte-layers/docker/l10/prod/petclinic
+mkdir -p ~/byte-layers/docker/l10/prod/petclinic && cd ~/byte-layers/docker/l10/prod/petclinic
 curl -L https://codeload.github.com/spring-projects/spring-petclinic/tar.gz/500158f732419217507c7656904b8e6aa1bcc0d6 | tar xz --strip-components=1
 rm -r docker-compose.yml k8s
 ```
@@ -64,7 +64,7 @@ rm -r docker-compose.yml k8s
 Voici un `Dockerfile` comme on en trouve beaucoup : il part d'une image qui contient Maven, copie tout le projet, le compile et lance le JAR. Il fonctionne, et c'est son seul mérite :
 
 ```exec
-cat > ~/layers-l10/prod/petclinic/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l10/prod/petclinic/Dockerfile <<'EOF'
 FROM maven
 COPY . /app
 WORKDIR /app
@@ -83,9 +83,9 @@ EOF
 | `CMD java -jar target/*.jar` | lance le JAR au démarrage du conteneur |
 
 ```verify
-F="$HOME/layers-l10/prod/petclinic/Dockerfile"
+F="$HOME/byte-layers/docker/l10/prod/petclinic/Dockerfile"
 if [ ! -s "$F" ] || ! grep -q '^FROM maven$' "$F"; then
-  echo "Le Dockerfile naïf manque dans ~/layers-l10/prod/petclinic. Relancez le bloc qui le crée."
+  echo "Le Dockerfile naïf manque dans ~/byte-layers/docker/l10/prod/petclinic. Relancez le bloc qui le crée."
   exit 1
 fi
 echo "Le Dockerfile naïf est en place."
@@ -100,7 +100,7 @@ Il n'y a rien à compléter ici : relancez le bloc qui crée le `Dockerfile`, pu
 Construisez l'image avec le tag `1-naive`. Le premier lancement prend une à deux minutes, le temps de télécharger l'image `maven`, puis les dépendances de PetClinic :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker build -t layers-l10-petclinic:1-naive .
+cd ~/byte-layers/docker/l10/prod/petclinic && docker build -t layers-l10-petclinic:1-naive .
 ```
 
 Lancez ensuite un conteneur, en publiant le port 8080 du conteneur sur le port 28400 de la machine. L'adresse `127.0.0.1` devant le port limite cette publication à la machine elle-même : sans elle, le port serait ouvert sur toutes ses interfaces réseau, et donc joignable depuis l'extérieur d'un serveur :
@@ -156,7 +156,7 @@ Si `docker run` répond que le nom `layers-l10-petclinic` est déjà utilisé, s
 
 ````solution
 ```bash
-cd ~/layers-l10/prod/petclinic
+cd ~/byte-layers/docker/l10/prod/petclinic
 docker build -t layers-l10-petclinic:1-naive .
 docker rm -f layers-l10-petclinic 2>/dev/null
 docker run -d --name layers-l10-petclinic -p 127.0.0.1:28400:8080 layers-l10-petclinic:1-naive

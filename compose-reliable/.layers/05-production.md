@@ -10,7 +10,7 @@ Tout est maintenant dans un seul fichier, et il est difficile à vivre pour trav
 Voici le fichier de base : il garde ce qui vaut partout, c'est-à-dire ce que l'application **est**.
 
 ```exec
-cat > ~/layers-l8/reliable/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.yaml <<'EOF'
 name: layers-l8-reliable
 services:
   web:
@@ -55,7 +55,7 @@ EOF
 Le second fichier ne contient que les différences. Il s'appelle ici `compose.prod.yaml` ; ce nom n'a rien d'obligatoire. Sur le port, une précaution s'impose. Quand deux fichiers définissent une même **liste**, Compose additionne les éléments au lieu de remplacer, et le port de développement resterait ouvert. L'étiquette `!override` demande de remplacer :
 
 ```exec
-cat > ~/layers-l8/reliable/compose.prod.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/reliable/compose.prod.yaml <<'EOF'
 services:
   web:
     restart: unless-stopped
@@ -107,9 +107,9 @@ EOF
 `-f` choisit les fichiers à lire, et le dernier complète le précédent. Avant de lancer quoi que ce soit, comparez ce que Compose comprend dans les deux cas. `grep -c` compte les lignes, et `grep -A` affiche aussi celle qui suit :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose config | grep -c read_only
-cd ~/layers-l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml config | grep -c read_only
-cd ~/layers-l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml config | grep -A1 'published'
+cd ~/byte-layers/docker/l8/reliable && docker compose config | grep -c read_only
+cd ~/byte-layers/docker/l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml config | grep -c read_only
+cd ~/byte-layers/docker/l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml config | grep -A1 'published'
 ```
 
 Le fichier de base seul donne `0`, et les deux ensemble donnent `2`. Le seul port publié est `28383`.
@@ -119,7 +119,7 @@ Le fichier de base seul donne `0`, et les deux ensemble donnent `2`. Le seul por
 Appliquez les deux fichiers. Compose remplace les conteneurs dont la configuration change :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait --wait-timeout 30
+cd ~/byte-layers/docker/l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait --wait-timeout 30
 curl -s --retry 5 --retry-delay 1 --retry-all-errors http://localhost:28383
 ```
 
@@ -161,8 +161,8 @@ echo "La production tourne avec les deux fichiers, sur un seul port, en lecture 
 Il reste à ranger. `-v` supprime le volume, `--rmi local` l'image construite, et `rm -rf` le dossier et ses fichiers, secret compris :
 
 ```exec
-cd ~/layers-l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi local
-cd ~ && rm -rf ~/layers-l8/reliable
+cd ~/byte-layers/docker/l8/reliable && docker compose -f compose.yaml -f compose.prod.yaml down -v --rmi local
+cd ~ && rm -rf ~/byte-layers/docker/l8/reliable
 ```
 
 ```verify
@@ -178,8 +178,8 @@ if [ -n "$(docker network ls --filter name=layers-l8-reliable --format '{{.Name}
   echo "Il reste un réseau du projet : docker network rm layers-l8-reliable_default."
   exit 1
 fi
-if [ -e "$HOME/layers-l8/reliable" ]; then
-  echo "Le dossier ~/layers-l8/reliable existe encore."
+if [ -e "$HOME/byte-layers/docker/l8/reliable" ]; then
+  echo "Le dossier ~/byte-layers/docker/l8/reliable existe encore."
   exit 1
 fi
 echo "C'est propre."

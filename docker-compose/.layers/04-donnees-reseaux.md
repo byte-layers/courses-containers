@@ -11,7 +11,7 @@ Regardez la valeur actuelle du compteur, puis faites un `down` suivi d'un `up` :
 
 ```exec
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
-cd ~/layers-l7/counter && docker compose down && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose down && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
 
@@ -24,7 +24,7 @@ Un volume nommé demande deux choses dans le fichier : une section `volumes:` en
 Tant que vous y êtes, `depends_on` dit à Compose de démarrer `cache` avant `web` ; la dernière partie de cette étape dit ce que cela garantit, et ce que cela ne garantit pas.
 
 ```exec
-cat > ~/layers-l7/counter/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/counter/compose.yaml <<'EOF'
 name: layers-l7-counter
 services:
   web:
@@ -57,10 +57,10 @@ Ce tableau détaille ce que ce fichier apporte :
 Appliquez ce fichier, puis faites monter le compteur et refaites le même `down` suivi d'un `up` :
 
 ```exec
-cd ~/layers-l7/counter && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 curl -s http://localhost:28370
-cd ~/layers-l7/counter && docker compose down && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose down && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
 
@@ -89,7 +89,7 @@ echo "Le volume est monté et le compteur a survécu à un down : il vaut $N."
 `down` seul garde les volumes nommés, parce qu'il serait trop facile de perdre des données par erreur. `-v` les supprime aussi. Essayez, et prévoyez la valeur avant de lancer :
 
 ```exec
-cd ~/layers-l7/counter && docker compose down -v && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose down -v && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
 
@@ -104,13 +104,13 @@ J'ai vu la différence entre down et down -v
 Le réseau créé par défaut laisse chaque service parler à tous les autres. Pour une petite application, cela suffit. Mais un service n'a pas à joindre ce qu'il n'utilise pas : si le serveur web tombe aux mains d'un attaquant, autant qu'il n'accède pas à tout. Vous pouvez donc déclarer vos propres réseaux. Commencez par arrêter l'application. Une fois le fichier réécrit, le réseau par défaut n'y figurerait plus, et `down` le laisserait derrière lui :
 
 ```exec
-cd ~/layers-l7/counter && docker compose down
+cd ~/byte-layers/docker/l7/counter && docker compose down
 ```
 
 Ce nouveau fichier crée deux réseaux, et ajoute `probe`, un conteneur qui ne fait qu'attendre, placé là pour tester ce qu'on voit depuis `front` :
 
 ```exec
-cat > ~/layers-l7/counter/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/counter/compose.yaml <<'EOF'
 name: layers-l7-counter
 services:
   web:
@@ -148,8 +148,8 @@ EOF
 `web` est sur les deux réseaux, `cache` seulement sur `back`, `probe` seulement sur `front`. Comme pour un volume, un réseau se déclare en bas du fichier et s'utilise dans le service. Appliquez, puis testez depuis `probe` :
 
 ```exec
-cd ~/layers-l7/counter && docker compose up -d
-cd ~/layers-l7/counter && docker compose exec probe sh -c 'ping -c 1 -W 1 web; ping -c 1 -W 1 cache'
+cd ~/byte-layers/docker/l7/counter && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose exec probe sh -c 'ping -c 1 -W 1 web; ping -c 1 -W 1 cache'
 ```
 
 `ping` envoie un paquet et attend la réponse : `-c 1` en envoie un seul, et `-W 1` n'attend qu'une seconde. `probe` joint `web`, puisqu'ils partagent `front`. Pour `cache`, il répond `bad address 'cache'` : ce nom n'existe même pas de son côté. Et l'application marche toujours, car `web` est sur les deux réseaux :

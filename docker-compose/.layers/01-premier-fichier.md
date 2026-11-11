@@ -59,8 +59,8 @@ Ce fichier dit la même chose que la commande `docker run -d --name ... -p 28370
 Compose cherche par défaut un fichier nommé `compose.yaml` dans le dossier courant. Créez son dossier et son contenu. `cat > fichier <<'EOF'` écrit dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` ; vous pouvez aussi le créer avec votre éditeur :
 
 ```exec
-mkdir -p ~/layers-l7/counter
-cat > ~/layers-l7/counter/compose.yaml <<'EOF'
+mkdir -p ~/byte-layers/docker/l7/counter
+cat > ~/byte-layers/docker/l7/counter/compose.yaml <<'EOF'
 name: layers-l7-counter
 services:
   web:
@@ -70,17 +70,17 @@ services:
 EOF
 ```
 
-Avant de démarrer quoi que ce soit, demandez à Compose de relire le fichier. `docker compose config` affiche ce qu'il a compris, avec toutes les valeurs par défaut, ou une erreur s'il y en a une. Dans tout ce cours, chaque commande commence par `cd ~/layers-l7/counter &&`, ce qui vous permet de la relancer depuis n'importe où :
+Avant de démarrer quoi que ce soit, demandez à Compose de relire le fichier. `docker compose config` affiche ce qu'il a compris, avec toutes les valeurs par défaut, ou une erreur s'il y en a une. Dans tout ce cours, chaque commande commence par `cd ~/byte-layers/docker/l7/counter &&`, ce qui vous permet de la relancer depuis n'importe où :
 
 ```exec
-cd ~/layers-l7/counter && docker compose config
+cd ~/byte-layers/docker/l7/counter && docker compose config
 ```
 
 Si le décalage est faux, Compose le dit à cet endroit, avec un message comme `did not find expected key`. C'est le premier réflexe à prendre : relire avant de lancer.
 
 ```verify
-if ! (cd ~/layers-l7/counter 2>/dev/null && docker compose config -q) 2>/dev/null; then
-  echo "Compose ne lit pas ~/layers-l7/counter/compose.yaml. Lancez la commande qui le crée, puis docker compose config pour lire l'erreur."
+if ! (cd ~/byte-layers/docker/l7/counter 2>/dev/null && docker compose config -q) 2>/dev/null; then
+  echo "Compose ne lit pas ~/byte-layers/docker/l7/counter/compose.yaml. Lancez la commande qui le crée, puis docker compose config pour lire l'erreur."
   exit 1
 fi
 echo "Compose lit votre fichier."
@@ -91,7 +91,7 @@ echo "Compose lit votre fichier."
 `docker compose up` fait exister ce que le fichier décrit, et `-d` le laisse tourner en arrière-plan, comme pour `docker run` :
 
 ```exec
-cd ~/layers-l7/counter && docker compose up -d
+cd ~/byte-layers/docker/l7/counter && docker compose up -d
 ```
 
 Lisez les lignes qui s'affichent : Compose a créé un réseau, `layers-l7-counter_default`, puis un conteneur, `layers-l7-counter-web-1`. Le nom du conteneur suit la forme `<projet>-<service>-<numéro>`. Vous n'avez écrit aucun de ces deux noms : ils viennent du fichier.
@@ -100,14 +100,14 @@ Demandez la page, puis voyez ce qui tourne. Pour `curl`, `-s` masque la progress
 
 ```exec
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370 | grep '<h1>'
-cd ~/layers-l7/counter && docker compose ps
+cd ~/byte-layers/docker/l7/counter && docker compose ps
 ```
 
 Vous devez lire `<h1>Welcome to nginx!</h1>`, puis une ligne par service.
 
 ```verify
 if [ "$(docker inspect layers-l7-counter-web-1 --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "layers-l7-counter-web-1 ne tourne pas. Lancez docker compose up -d dans ~/layers-l7/counter."
+  echo "layers-l7-counter-web-1 ne tourne pas. Lancez docker compose up -d dans ~/byte-layers/docker/l7/counter."
   exit 1
 fi
 if ! curl -s --max-time 5 http://localhost:28370 | grep -q 'Welcome to nginx'; then
@@ -122,13 +122,13 @@ echo "nginx tourne, décrit par votre fichier."
 `docker compose logs` affiche la sortie des conteneurs du projet, et préfixe chaque ligne par le service qui l'a écrite. `--tail 2` ne garde que les 2 dernières lignes de chacun :
 
 ```exec
-cd ~/layers-l7/counter && docker compose logs --tail 2
+cd ~/byte-layers/docker/l7/counter && docker compose logs --tail 2
 ```
 
 `docker compose down` fait l'inverse de `up` : il arrête les conteneurs, les supprime, et supprime le réseau du projet.
 
 ```exec
-cd ~/layers-l7/counter && docker compose down
+cd ~/byte-layers/docker/l7/counter && docker compose down
 ```
 
 Le fichier, lui, reste. C'est toute l'idée : l'application n'existe plus sur la machine, mais sa description est intacte, et un `up` la refait à l'identique.
@@ -142,8 +142,8 @@ if docker network inspect layers-l7-counter_default >/dev/null 2>&1; then
   echo "Le réseau existe encore. Lancez docker compose down."
   exit 1
 fi
-if [ ! -f ~/layers-l7/counter/compose.yaml ]; then
-  echo "Le fichier ~/layers-l7/counter/compose.yaml a disparu : reprenez la section qui le crée."
+if [ ! -f ~/byte-layers/docker/l7/counter/compose.yaml ]; then
+  echo "Le fichier ~/byte-layers/docker/l7/counter/compose.yaml a disparu : reprenez la section qui le crée."
   exit 1
 fi
 echo "Conteneur et réseau supprimés, le fichier est toujours là."

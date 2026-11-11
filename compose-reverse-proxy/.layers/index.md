@@ -20,7 +20,7 @@ Vous allez organiser deux applications comme sur un vrai serveur : un dossier et
 
 **Niveau** : vous savez écrire un fichier Compose avec des services, des volumes et des réseaux, comme dans « Décrire une application avec Compose ». Vous savez qu'un conteneur joint un autre par son nom sur un réseau partagé, comme dans « Relier des conteneurs et publier un port ». Vous n'avez pas besoin de connaître nginx : ce qu'il en faut est expliqué ici.
 
-**Ce qu'il faut** : Docker et Compose qui répondent, `curl`, un éditeur de texte et le port **28380** libre. Tout ce que vous créez porte le préfixe `layers-l8-`, et vos fichiers vivent dans `~/layers-l8/proxy`.
+**Ce qu'il faut** : Docker et Compose qui répondent, `curl`, un éditeur de texte et le port **28380** libre. Tout ce que vous créez porte le préfixe `layers-l8-`, et vos fichiers vivent dans `~/byte-layers/docker/l8/proxy`.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -62,7 +62,7 @@ Plusieurs outils font ce travail. Ce lab utilise nginx, parce que sa configurati
 Vous allez créer un dossier par projet. Sur un serveur, on trouverait la même organisation, par exemple sous `/srv/docker`.
 
 ```exec
-mkdir -p ~/layers-l8/proxy/edge/conf.d ~/layers-l8/proxy/app1/html ~/layers-l8/proxy/app2/conf.d
+mkdir -p ~/byte-layers/docker/l8/proxy/edge/conf.d ~/byte-layers/docker/l8/proxy/app1/html ~/byte-layers/docker/l8/proxy/app2/conf.d
 ```
 
 ```ack
@@ -76,7 +76,7 @@ J'ai compris le plan, et le dossier est prêt
 nginx lit tous les fichiers `.conf` du dossier `/etc/nginx/conf.d`. Pour l'instant, le vôtre ne fait que répondre. Un bloc `server` décrit un site, `listen` donne le port, et un bloc `location` dit quoi faire pour les adresses qui commencent ainsi. `/` les prend donc toutes. `return` répond directement, sans appeler personne. `cat > fichier <<'EOF'` écrit dans le fichier tout ce qui suit, jusqu'à la ligne `EOF` :
 
 ```exec
-cat > ~/layers-l8/proxy/edge/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/edge/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -95,7 +95,7 @@ EOF
 Créez le fichier de départ, puis complétez ses trois blancs dans votre éditeur :
 
 ```exec
-cat > ~/layers-l8/proxy/edge/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/edge/compose.yaml <<'EOF'
 name: layers-l8-edge
 services:
   proxy:
@@ -122,7 +122,7 @@ On monte le **dossier** et non le seul fichier : beaucoup d'éditeurs remplacent
 Démarrez le proxy et interrogez-le. `--retry` patiente pendant son démarrage :
 
 ```exec
-cd ~/layers-l8/proxy/edge && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28380
 ```
 
@@ -139,7 +139,7 @@ Sous `edge:`, décalez de deux espaces de plus et écrivez `name: layers-l8-edge
 ```verify
 P=layers-l8-edge-proxy-1
 if [ "$(docker inspect $P --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "$P ne tourne pas. Complétez ~/layers-l8/proxy/edge/compose.yaml, puis lancez docker compose up -d depuis ce dossier."
+  echo "$P ne tourne pas. Complétez ~/byte-layers/docker/l8/proxy/edge/compose.yaml, puis lancez docker compose up -d depuis ce dossier."
   exit 1
 fi
 if ! docker network inspect layers-l8-edge >/dev/null 2>&1; then
@@ -164,8 +164,8 @@ echo "La porte d'entrée répond, et le réseau partagé existe."
 
 ````solution
 ```bash
-cd ~/layers-l8/proxy/edge && docker compose down
-cat > ~/layers-l8/proxy/edge/compose.yaml <<'EOF'
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose down
+cat > ~/byte-layers/docker/l8/proxy/edge/compose.yaml <<'EOF'
 name: layers-l8-edge
 services:
   proxy:
@@ -180,7 +180,7 @@ networks:
   edge:
     name: layers-l8-edge
 EOF
-cd ~/layers-l8/proxy/edge && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose up -d
 sleep 1
 ```
 ````
@@ -192,8 +192,8 @@ sleep 1
 `app1` est un site statique : une page, et une image qui la copie dans nginx. Ce second nginx n'a rien à voir avec le proxy : c'est un programme de plus, qui sert ici de site web.
 
 ```exec
-echo '<h1>App 1 : un site statique</h1>' > ~/layers-l8/proxy/app1/html/index.html
-cat > ~/layers-l8/proxy/app1/Dockerfile <<'EOF'
+echo '<h1>App 1 : un site statique</h1>' > ~/byte-layers/docker/l8/proxy/app1/html/index.html
+cat > ~/byte-layers/docker/l8/proxy/app1/Dockerfile <<'EOF'
 FROM nginx:1.30-alpine
 COPY html/ /usr/share/nginx/html/
 EOF
@@ -204,7 +204,7 @@ Le fichier Compose de ce projet doit **rejoindre** le réseau du proxy, sans le 
 Le nom du service compte, car il sert d'adresse sur le réseau partagé. Sur ce réseau, deux projets qui appelleraient tous deux leur service `web` répondraient au même nom. Donnez donc à chaque application un nom qui lui soit propre : `app1`, et non `web`.
 
 ```exec
-cat > ~/layers-l8/proxy/app1/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/app1/compose.yaml <<'EOF'
 name: layers-l8-app1
 services:
   app1:
@@ -220,8 +220,8 @@ EOF
 Complétez ce fichier, lancez-le, puis vérifiez depuis le proxy que l'application est joignable par son nom. `wget -qO-` affiche une page sans rien écrire d'autre, et il est présent dans l'image, contrairement à `curl` :
 
 ```exec
-cd ~/layers-l8/proxy/app1 && docker compose up -d --build
-cd ~/layers-l8/proxy/edge && docker compose exec proxy wget -qO- http://app1/
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose up -d --build
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose exec proxy wget -qO- http://app1/
 ```
 
 Vous devez lire le titre de la page. Depuis votre machine, en revanche, `app1` n'a aucun port : seul le proxy pourra l'appeler.
@@ -233,7 +233,7 @@ Le service utilise le réseau sous son nom local, `edge`. Dans la section `netwo
 ```verify
 A=layers-l8-app1-app1-1
 if [ "$(docker inspect $A --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "$A ne tourne pas. Complétez ~/layers-l8/proxy/app1/compose.yaml, puis lancez docker compose up -d --build depuis ce dossier."
+  echo "$A ne tourne pas. Complétez ~/byte-layers/docker/l8/proxy/app1/compose.yaml, puis lancez docker compose up -d --build depuis ce dossier."
   exit 1
 fi
 if [ -n "$(docker port $A)" ]; then
@@ -257,8 +257,8 @@ echo "app1 est joignable par le proxy, et ne publie rien."
 
 ````solution
 ```bash
-cd ~/layers-l8/proxy/app1 && docker compose down
-cat > ~/layers-l8/proxy/app1/compose.yaml <<'EOF'
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose down
+cat > ~/byte-layers/docker/l8/proxy/app1/compose.yaml <<'EOF'
 name: layers-l8-app1
 services:
   app1:
@@ -270,7 +270,7 @@ networks:
     name: layers-l8-edge
     external: true
 EOF
-cd ~/layers-l8/proxy/app1 && docker compose up -d --build
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose up -d --build
 sleep 1
 ```
 ````
@@ -281,7 +281,7 @@ Il reste à dire au proxy d'orienter `/app1/` vers cette application. C'est `pro
 
 La barre oblique à la fin de `proxy_pass http://app1/` compte. Avec elle, nginx remplace le début de l'adresse, `/app1/`, par `/` : `app1` reçoit donc `/index.html` et non `/app1/index.html`, qu'il ne connaît pas. On dit qu'il **retire le préfixe**.
 
-Remplacez le contenu de `~/layers-l8/proxy/edge/conf.d/default.conf` dans votre éditeur par ce qui suit, en complétant le blanc :
+Remplacez le contenu de `~/byte-layers/docker/l8/proxy/edge/conf.d/default.conf` dans votre éditeur par ce qui suit, en complétant le blanc :
 
 ```nginx
 server {
@@ -301,7 +301,7 @@ server {
 nginx ne relit pas sa configuration tout seul. `nginx -t` vérifie le fichier sans rien changer, et il vaut mieux le lancer avant `nginx -s reload`, qui applique la configuration sans interrompre le service. Comme le dossier est monté, vous n'avez pas à recréer le conteneur :
 
 ```exec
-cd ~/layers-l8/proxy/edge && docker compose exec proxy sh -c 'nginx -t && nginx -s reload'
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose exec proxy sh -c 'nginx -t && nginx -s reload'
 ```
 
 Demandez ensuite la page par la porte d'entrée :
@@ -320,7 +320,7 @@ Une seule ligne manque, terminée par un point-virgule, comme toutes les lignes 
 ```verify
 if ! curl -s --max-time 5 http://localhost:28380/app1/ | grep -q 'App 1'; then
   echo "http://localhost:28380/app1/ ne renvoie pas la page de app1."
-  echo "Vérifiez la configuration avec : cd ~/layers-l8/proxy/edge && docker compose exec proxy nginx -t"
+  echo "Vérifiez la configuration avec : cd ~/byte-layers/docker/l8/proxy/edge && docker compose exec proxy nginx -t"
   echo "Puis appliquez-la avec nginx -s reload."
   exit 1
 fi
@@ -333,7 +333,7 @@ echo "La porte d'entrée oriente /app1/ vers app1."
 
 ````solution
 ```bash
-cat > ~/layers-l8/proxy/edge/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/edge/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -359,11 +359,11 @@ sleep 1
 Votre proxy marche, tant que tout est allumé. Essayez maintenant ce qui arrive sur un serveur qui redémarre : les conteneurs ne reviennent pas dans un ordre garanti. Arrêtez `app1`, relancez le proxy avec `docker compose restart`, qui arrête puis redémarre les conteneurs sans les recréer, et regardez son état :
 
 ```exec
-cd ~/layers-l8/proxy/app1 && docker compose down
-cd ~/layers-l8/proxy/edge && docker compose restart
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose down
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose restart
 sleep 2
-cd ~/layers-l8/proxy/edge && docker compose ps -a --format '{{.Service}} : {{.Status}}'
-cd ~/layers-l8/proxy/edge && docker compose logs proxy --tail 1
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose ps -a --format '{{.Service}} : {{.Status}}'
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose logs proxy --tail 1
 ```
 
 Le proxy est `Exited (1)`. Une seule application absente, et **toutes** tombent, puisque la porte d'entrée est fermée. Pas d'inquiétude, voici la cause et le remède.
@@ -383,7 +383,7 @@ Quatre directives y suffisent : `resolver` une fois dans le bloc `server`, et le
 | `rewrite ^/app1/(.*)$ /$1 break;` | retire le préfixe, car une variable dans `proxy_pass` désactive le retrait automatique de la section précédente ; `(.*)` capture la suite de l'adresse, `$1` la réutilise, et `break` dit de s'arrêter là |
 | `proxy_pass $upstream;` | transmet à l'adresse contenue dans la variable |
 
-Comme `app1` est à présent absent, vous verrez une erreur `502 Bad Gateway`, qui concerne cette application et elle seule, au lieu d'une porte fermée pour tout le monde. Remplacez le contenu de `~/layers-l8/proxy/edge/conf.d/default.conf` dans votre éditeur, en complétant les blancs :
+Comme `app1` est à présent absent, vous verrez une erreur `502 Bad Gateway`, qui concerne cette application et elle seule, au lieu d'une porte fermée pour tout le monde. Remplacez le contenu de `~/byte-layers/docker/l8/proxy/edge/conf.d/default.conf` dans votre éditeur, en complétant les blancs :
 
 ```nginx
 server {
@@ -406,7 +406,7 @@ server {
 Le proxy est arrêté, donc il ne s'agit pas d'un rechargement : redémarrez-le, sans que `app1` soit là, et demandez la page :
 
 ```exec
-cd ~/layers-l8/proxy/edge && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose up -d
 sleep 2
 curl -s --max-time 5 http://localhost:28380/
 curl -s --max-time 5 -o /dev/null -w 'app1 absente, code HTTP : %{http_code}\n' http://localhost:28380/app1/
@@ -415,7 +415,7 @@ curl -s --max-time 5 -o /dev/null -w 'app1 absente, code HTTP : %{http_code}\n' 
 La porte répond, et `/app1/` donne le code `502`. Rallumez `app1`, sans toucher au proxy :
 
 ```exec
-cd ~/layers-l8/proxy/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose up -d
 sleep 6
 curl -s --max-time 5 http://localhost:28380/app1/
 ```
@@ -429,7 +429,7 @@ Dans le bloc `location /app1/`, recopiez les trois dernières lignes du tableau,
 ```verify
 P=layers-l8-edge-proxy-1
 if [ "$(docker inspect $P --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "Le proxy ne tourne pas. Lisez : docker compose logs proxy, depuis ~/layers-l8/proxy/edge."
+  echo "Le proxy ne tourne pas. Lisez : docker compose logs proxy, depuis ~/byte-layers/docker/l8/proxy/edge."
   exit 1
 fi
 CONF=$(docker exec $P nginx -T 2>/dev/null)
@@ -450,7 +450,7 @@ echo "Le proxy résout les noms à chaque demande, et ne dépend plus de l'ordre
 
 ````solution
 ```bash
-cat > ~/layers-l8/proxy/edge/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/edge/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -467,9 +467,9 @@ server {
     }
 }
 EOF
-cd ~/layers-l8/proxy/edge && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose up -d
 docker exec layers-l8-edge-proxy-1 nginx -s reload
-cd ~/layers-l8/proxy/app1 && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose up -d
 sleep 6
 ```
 ````
@@ -483,7 +483,7 @@ Vous avez été guidé pas à pas jusqu'ici. La seconde application suit le mêm
 `app2` n'a rien à construire : c'est un nginx qui affiche simplement ce qu'il reçoit, ce qui permet de voir ce qu'un reverse proxy transmet. Voici sa configuration, à déposer dans son dossier :
 
 ```exec
-cat > ~/layers-l8/proxy/app2/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/app2/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     default_type text/plain;
@@ -494,7 +494,7 @@ server {
 EOF
 ```
 
-**Objectif 1.** Écrivez `~/layers-l8/proxy/app2/compose.yaml`, sur le modèle de `app1` : le projet s'appelle `layers-l8-app2`, le service `app2`, avec l'image `nginx:1.30-alpine`, le dossier `./conf.d` monté en lecture seule sur `/etc/nginx/conf.d`, le réseau partagé, et aucun port publié.
+**Objectif 1.** Écrivez `~/byte-layers/docker/l8/proxy/app2/compose.yaml`, sur le modèle de `app1` : le projet s'appelle `layers-l8-app2`, le service `app2`, avec l'image `nginx:1.30-alpine`, le dossier `./conf.d` monté en lecture seule sur `/etc/nginx/conf.d`, le réseau partagé, et aucun port publié.
 
 **Objectif 2.** Ajoutez dans la configuration du proxy un bloc `location /app2/`, sur le modèle de celui de `app1`.
 
@@ -519,8 +519,8 @@ Voici ce que porte chacun de ces en-têtes :
 Lancez `app2` et appliquez la configuration :
 
 ```exec
-cd ~/layers-l8/proxy/app2 && docker compose up -d
-cd ~/layers-l8/proxy/edge && docker compose exec proxy nginx -s reload
+cd ~/byte-layers/docker/l8/proxy/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose exec proxy nginx -s reload
 ```
 
 Testez maintenant avec un nom de site inventé. `-H` ajoute un en-tête à la demande, et aucun DNS n'est nécessaire, puisque `curl` s'adresse à `localhost` :
@@ -543,7 +543,7 @@ Le bloc `location /app2/` reprend les trois lignes de celui de `app1`, en rempla
 ```verify
 A=layers-l8-app2-app2-1
 if [ "$(docker inspect $A --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-  echo "$A ne tourne pas. Écrivez ~/layers-l8/proxy/app2/compose.yaml, puis lancez docker compose up -d depuis ce dossier."
+  echo "$A ne tourne pas. Écrivez ~/byte-layers/docker/l8/proxy/app2/compose.yaml, puis lancez docker compose up -d depuis ce dossier."
   exit 1
 fi
 if [ -n "$(docker port $A)" ]; then
@@ -589,7 +589,7 @@ echo "Deux applications, une seule porte, et app2 sait qui demande quoi."
 La solution complète se trouve aussi dans le dossier `solution/` de ce contenu.
 
 ```bash
-cat > ~/layers-l8/proxy/app2/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/app2/compose.yaml <<'EOF'
 name: layers-l8-app2
 services:
   app2:
@@ -603,7 +603,7 @@ networks:
     name: layers-l8-edge
     external: true
 EOF
-cat > ~/layers-l8/proxy/edge/conf.d/default.conf <<'EOF'
+cat > ~/byte-layers/docker/l8/proxy/edge/conf.d/default.conf <<'EOF'
 server {
     listen 80;
     absolute_redirect off;
@@ -630,7 +630,7 @@ server {
     }
 }
 EOF
-cd ~/layers-l8/proxy/app2 && docker compose up -d
+cd ~/byte-layers/docker/l8/proxy/app2 && docker compose up -d
 docker exec layers-l8-edge-proxy-1 nginx -s reload
 sleep 2
 ```
@@ -642,7 +642,7 @@ sleep 2
 
 ## Dans le bon ordre
 
-Supprimez ce que ce lab a créé : les conteneurs, l'image construite, le réseau partagé et le dossier `~/layers-l8/proxy` doivent disparaître. L'ordre compte : Compose refuse de supprimer un réseau encore utilisé, et le réseau appartient au projet du proxy. Les applications partent donc d'abord, et le proxy en dernier. `--rmi local` supprime l'image construite, et `cd ~` vous fait sortir du dossier avant de l'effacer.
+Supprimez ce que ce lab a créé : les conteneurs, l'image construite, le réseau partagé et le dossier `~/byte-layers/docker/l8/proxy` doivent disparaître. L'ordre compte : Compose refuse de supprimer un réseau encore utilisé, et le réseau appartient au projet du proxy. Les applications partent donc d'abord, et le proxy en dernier. `--rmi local` supprime l'image construite, et `cd ~` vous fait sortir du dossier avant de l'effacer.
 
 ```verify
 if [ -n "$(docker ps -a --format '{{.Names}}' | grep -E '^layers-l8-(edge|app1|app2)-')" ]; then
@@ -650,15 +650,15 @@ if [ -n "$(docker ps -a --format '{{.Names}}' | grep -E '^layers-l8-(edge|app1|a
   exit 1
 fi
 if docker network inspect layers-l8-edge >/dev/null 2>&1; then
-  echo "Le réseau layers-l8-edge existe encore. Lancez docker compose down depuis ~/layers-l8/proxy/edge, après les deux applications."
+  echo "Le réseau layers-l8-edge existe encore. Lancez docker compose down depuis ~/byte-layers/docker/l8/proxy/edge, après les deux applications."
   exit 1
 fi
 if docker image inspect layers-l8-app1-app1 >/dev/null 2>&1; then
   echo "L'image layers-l8-app1-app1 existe encore. Supprimez-la avec docker rmi."
   exit 1
 fi
-if [ -e "$HOME/layers-l8/proxy" ]; then
-  echo "Le dossier ~/layers-l8/proxy existe encore."
+if [ -e "$HOME/byte-layers/docker/l8/proxy" ]; then
+  echo "Le dossier ~/byte-layers/docker/l8/proxy existe encore."
   exit 1
 fi
 echo "C'est propre."
@@ -666,10 +666,10 @@ echo "C'est propre."
 
 ````solution
 ```bash
-cd ~/layers-l8/proxy/app1 && docker compose down --rmi local
-cd ~/layers-l8/proxy/app2 && docker compose down
-cd ~/layers-l8/proxy/edge && docker compose down
-cd ~ && rm -rf ~/layers-l8/proxy
+cd ~/byte-layers/docker/l8/proxy/app1 && docker compose down --rmi local
+cd ~/byte-layers/docker/l8/proxy/app2 && docker compose down
+cd ~/byte-layers/docker/l8/proxy/edge && docker compose down
+cd ~ && rm -rf ~/byte-layers/docker/l8/proxy
 ```
 ````
 

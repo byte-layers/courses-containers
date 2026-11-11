@@ -12,7 +12,7 @@ Trivy a relu le `Dockerfile`. [KICS](https://docs.kics.io/latest/), un scanner d
 KICS tourne dans un conteneur, qui reçoit seulement le dossier du projet. Comme pour Trivy, l'image est désignée par sa version et par son empreinte : en 2026, des [tags `checkmarx/kics`](https://thehackernews.com/2026/04/malicious-kics-docker-images-and-vs.html) ont été remplacés par des versions malveillantes. `-p compose.yaml` limite le scan à ce seul fichier, et `--disable-secrets` désactive la recherche de mots de passe en clair, inutile ici puisqu'ils vivent dans des secrets :
 
 ```exec
-cd ~/layers-l10/prod/petclinic && docker run --rm -v "$PWD:/work" -w /work \
+cd ~/byte-layers/docker/l10/prod/petclinic && docker run --rm -v "$PWD:/work" -w /work \
   checkmarx/kics:v2.2.0@sha256:ef29dbac14b046b1ef65f3280646112e927a61781c5f01bca1aeb723e0b96003 \
   scan -p compose.yaml --no-progress --disable-secrets
 ```

@@ -10,7 +10,7 @@ Un seul conteneur ne justifie pas un fichier. L'intérêt de Compose apparaît a
 L'application tient dans un fichier Python, sans aucune dépendance. Vous n'avez pas besoin de lire Python pour suivre ce cours. Retenez deux choses : elle écoute sur le port 8000, et elle cherche Redis à l'adresse donnée par la variable d'environnement `REDIS_HOST`. Créez ce fichier :
 
 ```exec
-cat > ~/layers-l7/counter/app.py <<'EOF'
+cat > ~/byte-layers/docker/l7/counter/app.py <<'EOF'
 import os, socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -36,7 +36,7 @@ EOF
 Il lui faut une image. Ce `Dockerfile` part de Python, copie le fichier et dit quoi lancer. L'option `-u` demande à Python d'écrire ses logs sans attendre :
 
 ```exec
-cat > ~/layers-l7/counter/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l7/counter/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY app.py .
@@ -49,7 +49,7 @@ EOF
 Remplacez maintenant le fichier Compose. Le service `web` n'a plus de clé `image` : il a une clé `build`, qui demande à Compose de construire l'image à partir du `Dockerfile` du dossier indiqué, ici `.`, le dossier courant. Le service `cache`, lui, utilise une image toute prête :
 
 ```exec
-cat > ~/layers-l7/counter/compose.yaml <<'EOF'
+cat > ~/byte-layers/docker/l7/counter/compose.yaml <<'EOF'
 name: layers-l7-counter
 services:
   web:
@@ -81,7 +81,7 @@ votre machine                 réseau layers-l7-counter_default
 `--build` demande à Compose de construire l'image avant de démarrer. Lancez :
 
 ```exec
-cd ~/layers-l7/counter && docker compose up -d --build
+cd ~/byte-layers/docker/l7/counter && docker compose up -d --build
 ```
 
 Compose construit l'image `layers-l7-counter-web`, puis crée deux conteneurs. Demandez deux fois la page. `--retry` patiente le temps que le serveur démarre :
@@ -96,7 +96,7 @@ Vous devez lire `Bonjour ! Visites : 1`, puis `Bonjour ! Visites : 2`. Les deux 
 ```verify
 for C in layers-l7-counter-web-1 layers-l7-counter-cache-1; do
   if [ "$(docker inspect "$C" --format '{{.State.Running}}' 2>/dev/null)" != "true" ]; then
-    echo "$C ne tourne pas. Lancez docker compose up -d --build dans ~/layers-l7/counter, puis lisez docker compose logs."
+    echo "$C ne tourne pas. Lancez docker compose up -d --build dans ~/byte-layers/docker/l7/counter, puis lisez docker compose logs."
     exit 1
   fi
 done
@@ -116,15 +116,15 @@ echo "web joint cache par son nom, et cache ne publie rien."
 Compose ne reconstruit pas une image à chaque `up`. Modifiez le message d'accueil dans le code, avec `sed`, qui remplace ici `Bonjour` par `Bienvenue` directement dans le fichier. L'option `-i.bak` garde une copie de l'ancien fichier sous le nom `app.py.bak`, et cette écriture marche sur tous les systèmes. Puis relancez sans `--build` :
 
 ```exec
-sed -i.bak 's/"Bonjour"/"Bienvenue"/' ~/layers-l7/counter/app.py
-cd ~/layers-l7/counter && docker compose up -d
+sed -i.bak 's/"Bonjour"/"Bienvenue"/' ~/byte-layers/docker/l7/counter/app.py
+cd ~/byte-layers/docker/l7/counter && docker compose up -d
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
 
 Le message n'a pas changé : l'image existe déjà, Compose la réutilise et ne touche à rien. Votre code est dans l'image, et l'image n'a pas été refaite. Relancez cette fois avec `--build`. Comptez une dizaine de secondes, car Compose doit d'abord arrêter l'ancien `web` : notre programme Python, comme `sleep` dans « Lancer, configurer et observer un conteneur », ignore la demande d'arrêt, et Docker le tue à la fin du délai. Vous retrouverez cette attente à chaque arrêt de `web`.
 
 ```exec
-cd ~/layers-l7/counter && docker compose up -d --build
+cd ~/byte-layers/docker/l7/counter && docker compose up -d --build
 sleep 1
 curl -s --retry 10 --retry-delay 1 --retry-all-errors http://localhost:28370
 ```
@@ -133,7 +133,7 @@ Vous devez lire `Bienvenue ! Visites : ...`. Le compteur continue, car seul `web
 
 ```verify
 if ! curl -s --max-time 5 http://localhost:28370 | grep -q 'Bienvenue'; then
-  echo "Le message n'est pas encore Bienvenue. Lancez docker compose up -d --build dans ~/layers-l7/counter."
+  echo "Le message n'est pas encore Bienvenue. Lancez docker compose up -d --build dans ~/byte-layers/docker/l7/counter."
   exit 1
 fi
 echo "L'image reconstruite est en service."

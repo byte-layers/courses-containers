@@ -44,6 +44,6 @@ Il vous faut Docker qui répond à `docker ps`, `curl`, et le port **28340** lib
 
 Le cours compte cinq étapes à suivre dans l'ordre, pour environ 1 h 15 en tout. Les étapes 2 à 5 s'enchaînent, car le registre n'est supprimé qu'à la fin. Vous connaissez maintenant `docker run` et `docker build` : ces commandes ne sont plus détaillées, et le texte se concentre sur ce qui est nouveau.
 
-Tout ce que vous créez porte le préfixe `layers-l4-`, et vos fichiers vont dans `~/layers-l4`. La dernière étape supprime le tout.
+Tout ce que vous créez porte le préfixe `layers-l4-`, et vos fichiers vont dans `~/byte-layers/docker/l4`. La dernière étape supprime le tout.
 
 Pour vous tester ensuite sans guide, faites le challenge [Publier une image et la retrouver par son digest](https://byte-layers.com/fr/challenges/docker-publish-challenge).

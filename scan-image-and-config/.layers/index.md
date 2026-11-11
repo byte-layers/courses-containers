@@ -20,7 +20,7 @@ Dans ce lab, vous passez un petit projet fictif, `shop`, à trois outils. Il ne 
 
 **Niveau** : vous savez lire un `Dockerfile` et un fichier Compose, et construire une image avec `docker build`. Vous n'avez besoin de connaître aucun des trois scanners.
 
-**Ce qu'il faut** : Docker, un terminal et environ 4 Go d'espace disque, car les bases de vulnérabilités sont volumineuses. Vos fichiers vivent dans `~/layers-scan`, et la dernière étape libère tout cet espace.
+**Ce qu'il faut** : Docker, un terminal et environ 4 Go d'espace disque, car les bases de vulnérabilités sont volumineuses. Vos fichiers vivent dans `~/byte-layers/docker/scan`, et la dernière étape libère tout cet espace.
 
 **Si un téléchargement échoue avec `429 Too Many Requests`** : Docker Hub limite les téléchargements anonymes par adresse IP. Attendez, ou créez un compte gratuit sur Docker Hub et lancez `docker login`.
 
@@ -45,8 +45,8 @@ Le projet contient quatre fichiers et des défauts volontaires : des dépendance
 Commencez par l'application et ses dépendances :
 
 ```exec
-mkdir -p ~/layers-scan/bin ~/layers-scan/shop
-cd ~/layers-scan/shop
+mkdir -p ~/byte-layers/docker/scan/bin ~/byte-layers/docker/scan/shop
+cd ~/byte-layers/docker/scan/shop
 cat > package.json <<'EOF'
 {
   "name": "shop",
@@ -72,7 +72,7 @@ Le fichier `.dockerignore` a une raison précise : vous allez bientôt créer un
 Ajoutez ensuite le `Dockerfile` et le fichier Compose, qui sont les deux fichiers à analyser :
 
 ```exec
-cd ~/layers-scan/shop
+cd ~/byte-layers/docker/scan/shop
 cat > Dockerfile <<'EOF'
 FROM node:18-alpine3.18
 ADD . /app
@@ -125,7 +125,7 @@ Le `sha256` n'est pas un excès de prudence. En 2026, des [images `aquasec/trivy
 Créez maintenant les trois scripts :
 
 ```exec
-cd ~/layers-scan/bin
+cd ~/byte-layers/docker/scan/bin
 cat > trivy <<'EOF'
 #!/bin/sh
 exec docker run --rm -v "$PWD:/work" -w /work -v layers-scan-cache:/cache \
@@ -150,8 +150,8 @@ chmod +x trivy grype kics
 
 ```verify
 for F in shop/Dockerfile shop/compose.yaml shop/package.json bin/trivy bin/grype bin/kics; do
-  if [ ! -s "$HOME/layers-scan/$F" ]; then
-    echo "Le fichier ~/layers-scan/$F manque. Relancez le bloc qui le crée."
+  if [ ! -s "$HOME/byte-layers/docker/scan/$F" ]; then
+    echo "Le fichier ~/byte-layers/docker/scan/$F manque. Relancez le bloc qui le crée."
     exit 1
   fi
 done
@@ -165,7 +165,7 @@ echo "Le projet et les trois scripts sont en place."
 La commande `trivy config` lit les fichiers sans rien construire, et elle ne télécharge pas de base de vulnérabilités. C'est donc le scan le plus rapide, et celui qu'on lance en premier :
 
 ```exec
-cd ~/layers-scan/shop && ~/layers-scan/bin/trivy config .
+cd ~/byte-layers/docker/scan/shop && ~/byte-layers/docker/scan/bin/trivy config .
 ```
 
 Trivy signale trois points sur le `Dockerfile` :
@@ -183,7 +183,7 @@ Remarquez ce qu'il ne signale pas : l'image `node:18` ancienne et les dépendanc
 Vous construisez donc l'image, puis vous l'exportez dans une archive avec `docker save`. Le scanner lit cette archive, ce qui évite de lui donner accès au socket Docker :
 
 ```exec
-cd ~/layers-scan/shop
+cd ~/byte-layers/docker/scan/shop
 docker build -q -t layers-scan-shop:v1 .
 docker save layers-scan-shop:v1 -o shop-v1.tar
 ```
@@ -191,7 +191,7 @@ docker save layers-scan-shop:v1 -o shop-v1.tar
 Lancez ensuite le scan en ne gardant que les sévérités les plus graves. Le premier lancement télécharge une base d'environ 130 Mo :
 
 ```exec
-cd ~/layers-scan/shop && ~/layers-scan/bin/trivy image --input shop-v1.tar --scanners vuln --severity HIGH,CRITICAL --no-progress
+cd ~/byte-layers/docker/scan/shop && ~/byte-layers/docker/scan/bin/trivy image --input shop-v1.tar --scanners vuln --severity HIGH,CRITICAL --no-progress
 ```
 
 Le résultat est long, et il se lit par blocs. Le premier concerne les paquets du système Alpine, et les suivants les paquets Node.js de `node_modules`. Trivy avertit aussi que cette version d'Alpine n'est plus maintenue : même si de nouvelles failles sont publiées, elle ne recevra plus de correctifs.
@@ -201,7 +201,7 @@ Le résultat est long, et il se lit par blocs. Le premier concerne les paquets d
 Grype analyse la même archive, avec sa propre base de vulnérabilités. Le préfixe `docker-archive:` lui indique le type de source, et `--only-fixed` ne garde que les failles pour lesquelles une version corrigée existe, donc celles que vous pouvez traiter tout de suite :
 
 ```exec
-cd ~/layers-scan/shop && ~/layers-scan/bin/grype docker-archive:shop-v1.tar --only-fixed
+cd ~/byte-layers/docker/scan/shop && ~/byte-layers/docker/scan/bin/grype docker-archive:shop-v1.tar --only-fixed
 ```
 
 Comparez les deux listes. Elles ne seront pas identiques, car les deux outils n'utilisent pas les mêmes bases ni les mêmes règles de correspondance. Une faille vue par un seul outil n'est donc pas forcément une erreur, et c'est l'intérêt d'avoir un second avis.
@@ -217,7 +217,7 @@ J'ai lu les résultats de Trivy et de Grype
 KICS analyse les fichiers d'infrastructure. L'option `-p` indique le chemin à scanner :
 
 ```exec
-cd ~/layers-scan/shop && ~/layers-scan/bin/kics scan -p compose.yaml --no-progress; echo "Code de sortie : $?"
+cd ~/byte-layers/docker/scan/shop && ~/byte-layers/docker/scan/bin/kics scan -p compose.yaml --no-progress; echo "Code de sortie : $?"
 ```
 
 KICS trouve 13 résultats, dont 5 de sévérité HIGH. Voici les principaux :
@@ -240,7 +240,7 @@ Le code de sortie mérite un regard : KICS renvoie `50`, et non `0`, parce qu'il
 
 Un scan n'a de valeur que si on traite ce qu'il trouve. Vous avez été guidé jusqu'ici, et vous corrigez maintenant les fichiers à partir des résultats.
 
-🚧 Dans `~/layers-scan/shop/Dockerfile`, remplacez le contenu par ce squelette, puis complétez les `# TODO` :
+🚧 Dans `~/byte-layers/docker/scan/shop/Dockerfile`, remplacez le contenu par ce squelette, puis complétez les `# TODO` :
 
 ```dockerfile
 # TODO : une image de base maintenue, par exemple la 22 en version alpine
@@ -291,7 +291,7 @@ Dans `compose.yaml`, sous `web:`, écrivez `ports:`, puis la ligne `- "127.0.0.1
 ```
 
 ```verify
-D="$HOME/layers-scan/shop"
+D="$HOME/byte-layers/docker/scan/shop"
 if ! grep -q '^FROM node:22-alpine' "$D/Dockerfile" || ! grep -q '^USER node' "$D/Dockerfile" || ! grep -q '^COPY ' "$D/Dockerfile"; then
   echo "Le Dockerfile doit partir de node:22-alpine, utiliser COPY et passer à USER node."
   exit 1
@@ -333,13 +333,13 @@ Le service `web` publie son port avec `ports:` et `- "127.0.0.1:3000:3000"`. Le 
 Vous rejouez maintenant les mêmes scans, cette fois sur les fichiers corrigés et sur une nouvelle image :
 
 ```exec
-cd ~/layers-scan/shop
-~/layers-scan/bin/trivy config .
+cd ~/byte-layers/docker/scan/shop
+~/byte-layers/docker/scan/bin/trivy config .
 docker build -q -t layers-scan-shop:v2 .
 docker save layers-scan-shop:v2 -o shop-v2.tar
-~/layers-scan/bin/trivy image --input shop-v2.tar --scanners vuln --severity HIGH,CRITICAL --no-progress
-~/layers-scan/bin/grype docker-archive:shop-v2.tar --only-fixed
-~/layers-scan/bin/kics scan -p compose.yaml --no-progress; echo "Code de sortie : $?"
+~/byte-layers/docker/scan/bin/trivy image --input shop-v2.tar --scanners vuln --severity HIGH,CRITICAL --no-progress
+~/byte-layers/docker/scan/bin/grype docker-archive:shop-v2.tar --only-fixed
+~/byte-layers/docker/scan/bin/kics scan -p compose.yaml --no-progress; echo "Code de sortie : $?"
 ```
 
 Les listes doivent avoir nettement raccourci. Elles ne seront pas forcément vides : de nouvelles failles sont publiées chaque jour, et le zéro n'est pas l'objectif. Il s'agit de savoir ce qui reste, et de décider en connaissance de cause.
@@ -357,7 +357,7 @@ En intégration continue, on veut qu'un job échoue au-delà d'un certain seuil.
 Essayez avec Trivy, puis lisez le code de sortie :
 
 ```exec
-cd ~/layers-scan/shop && ~/layers-scan/bin/trivy image --input shop-v1.tar --scanners vuln --exit-code 1 --severity CRITICAL --no-progress > /dev/null; echo "Code de sortie : $?"
+cd ~/byte-layers/docker/scan/shop && ~/byte-layers/docker/scan/bin/trivy image --input shop-v1.tar --scanners vuln --exit-code 1 --severity CRITICAL --no-progress > /dev/null; echo "Code de sortie : $?"
 ```
 
 🏢 En entreprise, on commence souvent par bloquer sur CRITICAL seulement, puis on abaisse le seuil. Un seuil trop strict dès le premier jour bloque toutes les livraisons, et l'équipe finit par désactiver le scan.
@@ -376,7 +376,7 @@ Les images et les bases de vulnérabilités occupent plusieurs gigaoctets. Vous 
 docker rmi layers-scan-shop:v1 layers-scan-shop:v2
 docker rmi aquasec/trivy@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c anchore/grype@sha256:6b06708b036f74b2cd70e94b706b4586af96d1932e6ac46255940b2e39dd44a9 checkmarx/kics@sha256:ef29dbac14b046b1ef65f3280646112e927a61781c5f01bca1aeb723e0b96003
 docker volume rm layers-scan-cache
-cd ~ && rm -rf ~/layers-scan
+cd ~ && rm -rf ~/byte-layers/docker/scan
 ```
 
 ## Récap

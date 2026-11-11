@@ -10,7 +10,7 @@ Votre Dockerfile est bien ordonné, mais `COPY . .` regarde encore tous les fich
 Pour rendre le coût visible, ajoutez après `COPY . .` une étape de préparation. `python -m compileall .` précompile le code Python pour un démarrage un peu plus rapide, et `-q` le rend silencieux. Puis simulez ce qui arrive sur un poste de développement : un fichier de logs apparaît dans le dossier.
 
 ```exec
-cat > ~/layers-l3/cache/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY requirements.txt .
@@ -19,14 +19,14 @@ COPY . .
 RUN python -m compileall -q .
 CMD ["flask", "run", "--host", "0.0.0.0"]
 EOF
-docker build -t layers-l3-cache:3.0 ~/layers-l3/cache
+docker build -t layers-l3-cache:3.0 ~/byte-layers/docker/l3/cache
 ```
 
 Écrivez une ligne dans un fichier de logs, puis reconstruisez :
 
 ```exec
-echo "$(date) une requête" >> ~/layers-l3/cache/app.log
-docker build -t layers-l3-cache:3.1 ~/layers-l3/cache
+echo "$(date) une requête" >> ~/byte-layers/docker/l3/cache/app.log
+docker build -t layers-l3-cache:3.1 ~/byte-layers/docker/l3/cache
 ```
 
 `COPY . .` et `RUN python -m compileall` ne sont plus en cache, alors que votre application n'a pas changé d'une ligne. Pire, ce fichier de logs vient d'entrer dans votre image.
@@ -36,30 +36,30 @@ docker build -t layers-l3-cache:3.1 ~/layers-l3/cache
 Un fichier ignoré n'entre pas dans le contexte. Il n'a donc plus aucun effet sur l'empreinte calculée par `COPY`. Cette liste nomme aussi `Dockerfile` et `.dockerignore` : `docker build` les lit quand même, mais ils n'atteignent plus `COPY`. Écrivez ce fichier et construisez une première fois, ce qui prépare le cache :
 
 ```exec
-cat > ~/layers-l3/cache/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l3/cache/.dockerignore <<'EOF'
 *.log
 Dockerfile
 .dockerignore
 EOF
-docker build -t layers-l3-cache:3.2 ~/layers-l3/cache
+docker build -t layers-l3-cache:3.2 ~/byte-layers/docker/l3/cache
 ```
 
 Modifiez à nouveau les logs, et reconstruisez :
 
 ```exec
-echo "$(date) une autre requête" >> ~/layers-l3/cache/app.log
-docker build -t layers-l3-cache:3.3 ~/layers-l3/cache
+echo "$(date) une autre requête" >> ~/byte-layers/docker/l3/cache/app.log
+docker build -t layers-l3-cache:3.3 ~/byte-layers/docker/l3/cache
 ```
 
 Tout est `CACHED` après `FROM`. Sur un vrai projet, les habitués de ce fichier sont `.git`, dont le contenu change à chaque commit, les dossiers de dépendances locaux et les fichiers générés.
 
 ```verify
-SRC="$HOME/layers-l3/cache"
+SRC="$HOME/byte-layers/docker/l3/cache"
 TMP=$(mktemp -d)
 cp -R "$SRC/." "$TMP/" 2>/dev/null
 if [ ! -f "$TMP/Dockerfile" ]; then
   rm -rf "$TMP"
-  echo "Le dossier ~/layers-l3/cache n'est pas là. Reprenez le cours depuis le début."
+  echo "Le dossier ~/byte-layers/docker/l3/cache n'est pas là. Reprenez le cours depuis le début."
   exit 1
 fi
 FIRST=$(docker build -q -t layers-l3-cache:essai "$TMP" 2>/dev/null)
@@ -71,11 +71,11 @@ docker image rm layers-l3-cache:essai >/dev/null 2>&1
 rm -rf "$TMP"
 ID=$(printf '%s\n' "$OUT" | sed -n 's/^#\([0-9]*\) \[.*COPY \. \..*/\1/p' | head -1)
 if [ -z "$ID" ] || ! printf '%s\n' "$OUT" | grep -q "^#$ID CACHED"; then
-  echo "Un fichier de logs fait encore rejouer COPY . . : vérifiez ~/layers-l3/cache/.dockerignore."
+  echo "Un fichier de logs fait encore rejouer COPY . . : vérifiez ~/byte-layers/docker/l3/cache/.dockerignore."
   exit 1
 fi
 if printf '%s\n' "$FOUND" | grep -q '\.log$'; then
-  echo "Un fichier de logs est encore dans l'image : vérifiez ~/layers-l3/cache/.dockerignore."
+  echo "Un fichier de logs est encore dans l'image : vérifiez ~/byte-layers/docker/l3/cache/.dockerignore."
   exit 1
 fi
 echo "Les logs ne touchent plus au cache, et ils restent hors de l'image."

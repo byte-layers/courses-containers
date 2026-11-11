@@ -24,7 +24,7 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 
 - **Niveau** : ce challenge suppose ce qu'enseignent le cours [Écrire le Dockerfile d'une application](https://byte-layers.com/fr/skills/docker-dockerfile) et le lab [Conteneuriser une application pas à pas](https://byte-layers.com/fr/labs/docker-containerize-app).
 - **Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, un éditeur de texte, et les ports 28322 et 28323 libres. La vérification se sert du second pour un essai rapide.
-- **Votre dossier de travail** : `~/layers-l2/quotes` est créé pour vous, avec l'application dedans. Programmer n'est pas nécessaire : la documentation dit tout ce qu'il faut.
+- **Votre dossier de travail** : `~/byte-layers/docker/l2/quotes` est créé pour vous, avec l'application dedans. Programmer n'est pas nécessaire : la documentation dit tout ce qu'il faut.
 - **Les noms comptent** : les vérifications cherchent les noms exacts, tous préfixés par `layers-l2-`. Rien d'autre n'est inspecté ni supprimé sur votre machine.
 - **L'ordre compte** : chaque tâche reprend le Dockerfile de la précédente.
 - **Le tag reste le même** : reconstruisez toujours sous `layers-l2-quotes:1.0`, puis recréez le conteneur. ⚖️ C'est un raccourci, pour que la vérification sache où regarder. Dans un vrai projet, chaque version aurait son propre tag.
@@ -34,8 +34,8 @@ Si vous êtes bloqué, les **indices** se dévoilent un par un, et la **solution
 ## Écrire le Dockerfile et construire l'image
 
 ```setup
-mkdir -p ~/layers-l2/quotes/quotes ~/layers-l2/quotes/data ~/layers-l2/quotes/tests
-cat > ~/layers-l2/quotes/README.md <<'EOF'
+mkdir -p ~/byte-layers/docker/l2/quotes/quotes ~/byte-layers/docker/l2/quotes/data ~/byte-layers/docker/l2/quotes/tests
+cat > ~/byte-layers/docker/l2/quotes/README.md <<'EOF'
 # quotes
 
 Un service qui renvoie une citation au hasard.
@@ -61,9 +61,9 @@ Le service se règle par deux variables d'environnement.
 - GET /health  répond ok
 - GET /hits    le nombre de requêtes notées dans var/hits.log
 EOF
-echo 'bottle==0.13.*' > ~/layers-l2/quotes/requirements.txt
-touch ~/layers-l2/quotes/quotes/__init__.py
-cat > ~/layers-l2/quotes/quotes/__main__.py <<'EOF'
+echo 'bottle==0.13.*' > ~/byte-layers/docker/l2/quotes/requirements.txt
+touch ~/byte-layers/docker/l2/quotes/quotes/__init__.py
+cat > ~/byte-layers/docker/l2/quotes/quotes/__main__.py <<'EOF'
 import os
 import pathlib
 import random
@@ -94,16 +94,16 @@ def hits():
 
 run(host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", "8080")))
 EOF
-cat > ~/layers-l2/quotes/data/quotes.txt <<'EOF'
+cat > ~/byte-layers/docker/l2/quotes/data/quotes.txt <<'EOF'
 Une image ne change jamais.
 Un conteneur est jetable.
 Ce qui marche sur mon poste doit marcher ailleurs.
 EOF
-echo 'API_KEY=valeur-fictive-du-poste-de-dev' > ~/layers-l2/quotes/.env.local
-echo 'def test_rien(): pass' > ~/layers-l2/quotes/tests/test_quotes.py
+echo 'API_KEY=valeur-fictive-du-poste-de-dev' > ~/byte-layers/docker/l2/quotes/.env.local
+echo 'def test_rien(): pass' > ~/byte-layers/docker/l2/quotes/tests/test_quotes.py
 ```
 
-Lisez `~/layers-l2/quotes/README.md`, par exemple avec `cat`. Créez ensuite le fichier `~/layers-l2/quotes/Dockerfile` avec votre éditeur, puis construisez l'image avec `docker build`.
+Lisez `~/byte-layers/docker/l2/quotes/README.md`, par exemple avec `cat`. Créez ensuite le fichier `~/byte-layers/docker/l2/quotes/Dockerfile` avec votre éditeur, puis construisez l'image avec `docker build`.
 
 **Critères :**
 
@@ -127,7 +127,7 @@ Le module se lance avec trois mots, ce qui s'écrit en forme exec `["python", "-
 ```verify
 I=layers-l2-quotes:1.0
 if ! docker image inspect "$I" >/dev/null 2>&1; then
-  echo "ÉCHEC : l'image $I n'existe pas. Écrivez le Dockerfile dans ~/layers-l2/quotes, puis construisez-la sous ce nom."
+  echo "ÉCHEC : l'image $I n'existe pas. Écrivez le Dockerfile dans ~/byte-layers/docker/l2/quotes, puis construisez-la sous ce nom."
   exit 1
 fi
 V=$(docker run --rm --entrypoint python "$I" --version 2>&1)
@@ -153,7 +153,7 @@ echo "RÉUSSI : $I contient Python 3.13 et ses dépendances, et sait démarrer l
 
 ````solution
 ```bash
-cat > ~/layers-l2/quotes/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/quotes/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY . .
@@ -161,7 +161,7 @@ RUN pip install -r requirements.txt
 EXPOSE 8080
 CMD ["python", "-m", "quotes"]
 EOF
-docker build -t layers-l2-quotes:1.0 ~/layers-l2/quotes
+docker build -t layers-l2-quotes:1.0 ~/byte-layers/docker/l2/quotes
 ```
 ````
 
@@ -216,7 +216,7 @@ if [ "$HEALTH" != "ok" ]; then
   echo "  Logs de $C : $(docker logs "$C" 2>&1 | tail -2 | tr '\n' ' ')"
   exit 1
 fi
-if ! grep -qxF "$(curl -s --max-time 5 http://localhost:28322/)" "$HOME/layers-l2/quotes/data/quotes.txt"; then
+if ! grep -qxF "$(curl -s --max-time 5 http://localhost:28322/)" "$HOME/byte-layers/docker/l2/quotes/data/quotes.txt"; then
   echo "ÉCHEC : la page d'accueil de http://localhost:28322/ ne renvoie pas une citation du fichier data/quotes.txt."
   exit 1
 fi
@@ -234,7 +234,7 @@ echo "RÉUSSI : le service répond sur le port 28322, et l'image porte son régl
 
 ````solution
 ```bash
-cat > ~/layers-l2/quotes/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/quotes/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY . .
@@ -243,7 +243,7 @@ ENV HOST=0.0.0.0
 EXPOSE 8080
 CMD ["python", "-m", "quotes"]
 EOF
-docker build -t layers-l2-quotes:1.0 ~/layers-l2/quotes
+docker build -t layers-l2-quotes:1.0 ~/byte-layers/docker/l2/quotes
 docker rm -f layers-l2-quotes
 docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 ```
@@ -301,7 +301,7 @@ echo "RÉUSSI : le service tourne avec l'identifiant d'utilisateur $(docker exec
 
 ````solution
 ```bash
-cat > ~/layers-l2/quotes/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/quotes/Dockerfile <<'EOF'
 FROM python:3.13-alpine
 WORKDIR /app
 COPY . .
@@ -312,7 +312,7 @@ ENV HOST=0.0.0.0
 EXPOSE 8080
 CMD ["python", "-m", "quotes"]
 EOF
-docker build -t layers-l2-quotes:1.0 ~/layers-l2/quotes
+docker build -t layers-l2-quotes:1.0 ~/byte-layers/docker/l2/quotes
 docker rm -f layers-l2-quotes
 docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 ```
@@ -341,7 +341,7 @@ Une fois `.dockerignore` écrit, reconstruisez l'image, supprimez le conteneur e
 ```verify
 C=layers-l2-quotes
 I=layers-l2-quotes:1.0
-DIR="$HOME/layers-l2/quotes"
+DIR="$HOME/byte-layers/docker/l2/quotes"
 OUT=$(mktemp -d)
 if ! printf 'FROM scratch\nCOPY . /\n' | docker build -q -f - -o "type=local,dest=$OUT" "$DIR" >/dev/null 2>&1; then
   echo "ÉCHEC : l'essai de build a échoué sur le dossier $DIR. Le .dockerignore a-t-il exclu tout le projet ?"
@@ -380,14 +380,14 @@ echo "RÉUSSI : le contexte est propre, et le service répond toujours."
 
 ````solution
 ```bash
-cat > ~/layers-l2/quotes/.dockerignore <<'EOF'
+cat > ~/byte-layers/docker/l2/quotes/.dockerignore <<'EOF'
 .env.local
 tests
 Dockerfile
 .dockerignore
 README.md
 EOF
-docker build -t layers-l2-quotes:1.0 ~/layers-l2/quotes
+docker build -t layers-l2-quotes:1.0 ~/byte-layers/docker/l2/quotes
 docker rm -f layers-l2-quotes
 docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 ```
@@ -399,7 +399,7 @@ docker run -d --name layers-l2-quotes -p 28322:8080 layers-l2-quotes:1.0
 
 Supprimez tout ce que ce challenge a créé, avec `docker rm`, `docker image rm` et `rm -rf`.
 
-**Critères :** plus de conteneur `layers-l2-quotes`, plus d'image `layers-l2-quotes:1.0`, plus de dossier `~/layers-l2/quotes`. Vos autres images et vos autres conteneurs ne sont pas concernés. Comme vous avez reconstruit plusieurs fois sous le même tag, `docker images` peut montrer d'anciennes versions restées sans nom, marquées `<none>`. La vérification ne les regarde pas : elles sont sans danger, et `docker image rm <identifiant>` supprime celles que vous reconnaissez.
+**Critères :** plus de conteneur `layers-l2-quotes`, plus d'image `layers-l2-quotes:1.0`, plus de dossier `~/byte-layers/docker/l2/quotes`. Vos autres images et vos autres conteneurs ne sont pas concernés. Comme vous avez reconstruit plusieurs fois sous le même tag, `docker images` peut montrer d'anciennes versions restées sans nom, marquées `<none>`. La vérification ne les regarde pas : elles sont sans danger, et `docker image rm <identifiant>` supprime celles que vous reconnaissez.
 
 ```hint
 Le conteneur d'abord, l'image ensuite, le dossier enfin : `docker rm -f`, `docker image rm`, `rm -rf`.
@@ -415,8 +415,8 @@ if [ -n "$left" ]; then
   echo "ÉCHEC : il reste ces images : $(echo "$left" | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l2/quotes" ]; then
-  echo "ÉCHEC : le dossier ~/layers-l2/quotes existe encore."
+if [ -e "$HOME/byte-layers/docker/l2/quotes" ]; then
+  echo "ÉCHEC : le dossier ~/byte-layers/docker/l2/quotes existe encore."
   exit 1
 fi
 echo "RÉUSSI : tout est propre. Vous savez conteneuriser une application inconnue."
@@ -426,6 +426,6 @@ echo "RÉUSSI : tout est propre. Vous savez conteneuriser une application inconn
 ```bash
 docker rm -f layers-l2-quotes
 docker image rm layers-l2-quotes:1.0
-rm -rf ~/layers-l2/quotes
+rm -rf ~/byte-layers/docker/l2/quotes
 ```
 ````

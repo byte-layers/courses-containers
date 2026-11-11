@@ -22,7 +22,7 @@ Conteneuriser une application, c'est construire une image qui la contient avec t
 
 **Prérequis** : savoir lancer un conteneur et publier un port, ce qu'enseigne [Héberger une page dans un conteneur](https://byte-layers.com/fr/labs/docker-first-web-page).
 
-**Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, un éditeur de texte, et le port **28321** libre. Vos fichiers vont dans `~/layers-l2/app`, et tout ce que vous créez dans Docker porte le préfixe `layers-l2-`, pour ne pas toucher au reste de votre machine.
+**Ce qu'il faut** : Docker qui répond à `docker ps`, `curl`, un éditeur de texte, et le port **28321** libre. Vos fichiers vont dans `~/byte-layers/docker/l2/app`, et tout ce que vous créez dans Docker porte le préfixe `layers-l2-`, pour ne pas toucher au reste de votre machine.
 
 # Récupérer l'application
 
@@ -31,14 +31,14 @@ Conteneuriser une application, c'est construire une image qui la contient avec t
 Une image se construit à partir d'un code source, qu'il faut donc d'abord récupérer. Ce code est sur GitHub, et vous en prenez une version précise, le commit `6b025fc5`, c'est-à-dire un état enregistré du code, pour que ce lab fonctionne encore quand le code évoluera. Vous créez un dossier, puis `curl` télécharge l'archive et le `|` la passe à `tar`, qui la décompresse dedans. `-sSL` n'affiche que les erreurs et suit les redirections de GitHub, et `--strip-components=1` retire le dossier de premier niveau que contient l'archive.
 
 ```exec
-mkdir -p ~/layers-l2/app
-curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/layers-l2/app
+mkdir -p ~/byte-layers/docker/l2/app
+curl -sSL https://github.com/docker/getting-started-app/archive/6b025fc5.tar.gz | tar xz --strip-components=1 -C ~/byte-layers/docker/l2/app
 ```
 
 Listez le dossier pour voir ce que vous avez reçu. `ls -A` montre aussi les fichiers dont le nom commence par un point :
 
 ```exec
-ls -A ~/layers-l2/app
+ls -A ~/byte-layers/docker/l2/app
 ```
 
 Vous devez lire ces fichiers et dossiers :
@@ -57,7 +57,7 @@ src
 Avant d'écrire un Dockerfile, on regarde ce que l'application demande. Trois questions suffisent ici : ce qu'il faut installer, comment elle démarre, et sur quel port elle écoute. Le fichier `package.json` est la fiche d'un projet Node.js, et il répond aux deux premières. Lisez-le :
 
 ```exec
-cat ~/layers-l2/app/package.json
+cat ~/byte-layers/docker/l2/app/package.json
 ```
 
 Voici les parties qui vous intéressent :
@@ -87,7 +87,7 @@ Ce tableau dit ce qu'il faut en tirer.
 Il reste le port. `grep` cherche un mot dans un fichier, et un serveur Node.js écoute avec une fonction nommée `listen` :
 
 ```exec
-grep listen ~/layers-l2/app/src/index.js
+grep listen ~/byte-layers/docker/l2/app/src/index.js
 ```
 
 Vous devez lire la ligne qui donne la réponse, le port 3000 :
@@ -126,7 +126,7 @@ Un **Dockerfile** est un fichier texte qui décrit comment fabriquer une image, 
 Créez le fichier avec ses blancs. La forme `cat > fichier <<'EOF'` écrit dans le fichier les lignes qui suivent, jusqu'à la ligne `EOF` :
 
 ```exec
-cat > ~/layers-l2/app/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/app/Dockerfile <<'EOF'
 # TODO : partir de l'image node:22-alpine, c'est-à-dire Node.js 22 sur Alpine, un Linux minimal
 
 # TODO : se placer dans le dossier /app
@@ -141,12 +141,12 @@ cat > ~/layers-l2/app/Dockerfile <<'EOF'
 EOF
 ```
 
-Ouvrez maintenant `~/layers-l2/app/Dockerfile` dans votre éditeur, remplacez chaque `# TODO` par l'instruction qu'il décrit, et enregistrez. Si vous n'avez pas d'éditeur graphique, `nano ~/layers-l2/app/Dockerfile` en ouvre un dans le terminal : `Ctrl+O` puis `Entrée` enregistrent, et `Ctrl+X` quitte. Une ligne qui commence par `#` est un commentaire : vous pouvez garder les vôtres ou les supprimer, Docker les ignore.
+Ouvrez maintenant `~/byte-layers/docker/l2/app/Dockerfile` dans votre éditeur, remplacez chaque `# TODO` par l'instruction qu'il décrit, et enregistrez. Si vous n'avez pas d'éditeur graphique, `nano ~/byte-layers/docker/l2/app/Dockerfile` en ouvre un dans le terminal : `Ctrl+O` puis `Entrée` enregistrent, et `Ctrl+X` quitte. Une ligne qui commence par `#` est un commentaire : vous pouvez garder les vôtres ou les supprimer, Docker les ignore.
 
 Construisez ensuite l'image. `-t` lui donne un nom et un tag, et le dernier argument est le **contexte de build**, le dossier dont `COPY` peut prendre des fichiers :
 
 ```exec
-docker build -t layers-l2-todo:1.0 ~/layers-l2/app
+docker build -t layers-l2-todo:1.0 ~/byte-layers/docker/l2/app
 ```
 
 Le build compte quatre étapes, de `[1/4]` à `[4/4]`, et celle de `npm ci` est la plus longue. Si Docker répond par une erreur, la ligne fautive est marquée `>>>` et la raison se trouve à la fin du message. Si c'est un `RUN` qui échoue, la dernière ligne dit seulement `exit code`, et la raison est plus haut, dans ce que la commande a écrit. Corrigez le fichier, puis relancez cette même commande autant de fois que nécessaire.
@@ -167,8 +167,8 @@ Le port est celui que vous avez lu dans `src/index.js`. En forme exec, chaque mo
 
 ```verify
 I=layers-l2-todo:1.0
-if [ ! -f "$HOME/layers-l2/app/package.json" ]; then
-  echo "Le code de l'application n'est pas dans ~/layers-l2/app. Refaites l'étape précédente."
+if [ ! -f "$HOME/byte-layers/docker/l2/app/package.json" ]; then
+  echo "Le code de l'application n'est pas dans ~/byte-layers/docker/l2/app. Refaites l'étape précédente."
   exit 1
 fi
 if ! docker image inspect "$I" >/dev/null 2>&1; then
@@ -210,7 +210,7 @@ echo "L'image contient l'application, ses dépendances, et sait comment démarre
 Le Dockerfile complet, écrit par une seule commande, suivie du build :
 
 ```bash
-cat > ~/layers-l2/app/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/app/Dockerfile <<'EOF'
 FROM node:22-alpine
 WORKDIR /app
 COPY . .
@@ -218,7 +218,7 @@ RUN npm ci --omit=dev
 EXPOSE 3000
 CMD ["node", "src/index.js"]
 EOF
-docker build -t layers-l2-todo:1.0 ~/layers-l2/app
+docker build -t layers-l2-todo:1.0 ~/byte-layers/docker/l2/app
 ```
 ````
 
@@ -325,8 +325,8 @@ curl -X POST -H 'Content-Type: application/json' -d '{"name":"Écrire mon Docker
 Un projet réel contient souvent un fichier `.env`, où se rangent des valeurs sensibles comme des mots de passe. Or `COPY . .` copie tout. Créez ce fichier, avec une valeur fictive, reconstruisez sous un autre tag, puis regardez ce que contient l'image. Ce qui suit le nom de l'image remplace la commande de démarrage :
 
 ```exec
-echo 'SESSION_SECRET=valeur-fictive' > ~/layers-l2/app/.env
-docker build -t layers-l2-todo:1.1 ~/layers-l2/app
+echo 'SESSION_SECRET=valeur-fictive' > ~/byte-layers/docker/l2/app/.env
+docker build -t layers-l2-todo:1.1 ~/byte-layers/docker/l2/app
 docker run --rm layers-l2-todo:1.1 ls -A
 ```
 
@@ -346,7 +346,7 @@ src
 Toute personne qui récupère cette image peut lire ce secret. Le projet fournit déjà un `.dockerignore`, le fichier qui liste ce que Docker doit laisser de côté, un motif par ligne. Voyez ce qu'il contient :
 
 ```exec
-cat ~/layers-l2/app/.dockerignore
+cat ~/byte-layers/docker/l2/app/.dockerignore
 ```
 
 Il n'exclut que deux noms :
@@ -360,10 +360,10 @@ Rien ne protège donc `.env`. Exclure `node_modules` a aussi son importance : ce
 
 ## Exclure .env avec le .dockerignore
 
-Ajoutez à `~/layers-l2/app/.dockerignore` la ligne qui exclut le fichier `.env`, en gardant les lignes existantes. Reconstruisez ensuite sous le tag `1.2`, et regardez à nouveau le dossier :
+Ajoutez à `~/byte-layers/docker/l2/app/.dockerignore` la ligne qui exclut le fichier `.env`, en gardant les lignes existantes. Reconstruisez ensuite sous le tag `1.2`, et regardez à nouveau le dossier :
 
 ```exec
-docker build -t layers-l2-todo:1.2 ~/layers-l2/app
+docker build -t layers-l2-todo:1.2 ~/byte-layers/docker/l2/app
 docker run --rm layers-l2-todo:1.2 ls -A
 ```
 
@@ -393,7 +393,7 @@ if [ -z "$LS" ]; then
   exit 1
 fi
 if printf '%s\n' "$LS" | grep -qx '.env'; then
-  echo "Le fichier .env est encore dans $I. Ajoutez-le à ~/layers-l2/app/.dockerignore, puis reconstruisez."
+  echo "Le fichier .env est encore dans $I. Ajoutez-le à ~/byte-layers/docker/l2/app/.dockerignore, puis reconstruisez."
   exit 1
 fi
 if ! printf '%s\n' "$LS" | grep -qx 'src'; then
@@ -405,8 +405,8 @@ echo "Le fichier .env reste hors de l'image, et le code y est toujours."
 
 ````solution
 ```bash
-echo '.env' >> ~/layers-l2/app/.dockerignore
-docker build -t layers-l2-todo:1.2 ~/layers-l2/app
+echo '.env' >> ~/byte-layers/docker/l2/app/.dockerignore
+docker build -t layers-l2-todo:1.2 ~/byte-layers/docker/l2/app
 ```
 ````
 
@@ -449,7 +449,7 @@ Ajoutez ces deux blancs à votre Dockerfile, juste après la ligne `RUN npm ci`,
 Avant de lancer la suite, faites une prévision. Vous allez supprimer le conteneur actuel pour le remplacer. La tâche que vous avez ajoutée sera-t-elle encore là ? Gardez votre réponse en tête, puis construisez sous le tag `1.3` et remplacez le conteneur par un nouveau, avec le même nom et le même port :
 
 ```exec
-docker build -t layers-l2-todo:1.3 ~/layers-l2/app
+docker build -t layers-l2-todo:1.3 ~/byte-layers/docker/l2/app
 docker rm -f layers-l2-todo
 docker run -d --name layers-l2-todo -p 28321:3000 layers-l2-todo:1.3
 ```
@@ -503,7 +503,7 @@ echo "L'application tourne avec l'utilisateur $(docker exec "$C" id -un) et enre
 
 ````solution
 ```bash
-cat > ~/layers-l2/app/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l2/app/Dockerfile <<'EOF'
 FROM node:22-alpine
 WORKDIR /app
 COPY . .
@@ -513,7 +513,7 @@ USER node
 EXPOSE 3000
 CMD ["node", "src/index.js"]
 EOF
-docker build -t layers-l2-todo:1.3 ~/layers-l2/app
+docker build -t layers-l2-todo:1.3 ~/byte-layers/docker/l2/app
 docker rm -f layers-l2-todo
 docker run -d --name layers-l2-todo -p 28321:3000 layers-l2-todo:1.3
 ```
@@ -549,7 +549,7 @@ Cette fois, la commande n'est pas donnée. Vous connaissez `docker rm -f`, pour 
 
 - le conteneur `layers-l2-todo` n'existe plus ;
 - les images `layers-l2-todo:1.0`, `1.1`, `1.2` et `1.3` n'existent plus ;
-- le dossier `~/layers-l2/app` n'existe plus. Le dossier parent `~/layers-l2`, lui, peut rester.
+- le dossier `~/byte-layers/docker/l2/app` n'existe plus. Le dossier parent `~/byte-layers/docker/l2`, lui, peut rester.
 
 ```hint
 Le conteneur d'abord : `docker image rm` refuse une image qu'un conteneur utilise encore.
@@ -565,8 +565,8 @@ if [ -n "$left" ]; then
   echo "Il reste ces images : $(echo "$left" | tr '\n' ' ')"
   exit 1
 fi
-if [ -e "$HOME/layers-l2/app" ]; then
-  echo "Le dossier ~/layers-l2/app existe encore."
+if [ -e "$HOME/byte-layers/docker/l2/app" ]; then
+  echo "Le dossier ~/byte-layers/docker/l2/app existe encore."
   exit 1
 fi
 echo "C'est propre."
@@ -576,7 +576,7 @@ echo "C'est propre."
 ```bash
 docker rm -f layers-l2-todo
 docker image rm layers-l2-todo:1.0 layers-l2-todo:1.1 layers-l2-todo:1.2 layers-l2-todo:1.3
-rm -rf ~/layers-l2/app
+rm -rf ~/byte-layers/docker/l2/app
 ```
 ````
 

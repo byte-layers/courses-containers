@@ -26,7 +26,7 @@ Il faut également `curl` et `tar`, et le port 28360 de votre machine doit être
 
 ## Comment ça se passe
 
-Trois étapes à suivre dans l'ordre, environ 1 h 15 en tout. Chacune donne de vraies commandes à lancer, vérifie le résultat, puis se termine par quelques questions. Tout ce que vous créez porte le préfixe `layers-l6-`, vos fichiers vont dans `~/layers-l6`, et la dernière étape supprime le tout. Vos autres conteneurs et volumes ne sont jamais touchés.
+Trois étapes à suivre dans l'ordre, environ 1 h 15 en tout. Chacune donne de vraies commandes à lancer, vérifie le résultat, puis se termine par quelques questions. Tout ce que vous créez porte le préfixe `layers-l6-`, vos fichiers vont dans `~/byte-layers/docker/l6`, et la dernière étape supprime le tout. Vos autres conteneurs et volumes ne sont jamais touchés.
 
 Pour pratiquer ensuite sur une vraie application, faites le lab « Persister une base, développer en direct ». Pour vous tester sans guide : le challenge « Prouver que les données survivent ».
 

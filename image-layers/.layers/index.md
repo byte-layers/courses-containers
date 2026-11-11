@@ -36,8 +36,8 @@ Ce schéma montre l'image que vous allez construire, avec le conteneur au-dessus
 Créez un dossier et un Dockerfile de démonstration. `head -c 30000000 /dev/urandom` produit 30 millions d'octets aléatoires : c'est un gros fichier qui ne se compresse pas. La ligne suivante le supprime aussitôt.
 
 ```exec
-mkdir -p ~/layers-l3/layers
-cat > ~/layers-l3/layers/Dockerfile <<'EOF'
+mkdir -p ~/byte-layers/docker/l3/layers
+cat > ~/byte-layers/docker/l3/layers/Dockerfile <<'EOF'
 FROM alpine:3.22
 RUN head -c 30000000 /dev/urandom > /gros.bin
 RUN rm /gros.bin
@@ -47,7 +47,7 @@ EOF
 Construisez l'image, puis lisez ses couches avec `docker history`, du sommet vers la base. `-q` réduit la sortie de `docker build` à l'identifiant de l'image, et `--format` ne garde de l'historique que la taille et l'instruction d'origine :
 
 ```exec
-docker build -q -t layers-l3-gros:1.0 ~/layers-l3/layers
+docker build -q -t layers-l3-gros:1.0 ~/byte-layers/docker/l3/layers
 docker history layers-l3-gros:1.0 --format '{{.Size}}  {{.CreatedBy}}'
 ```
 
@@ -68,11 +68,11 @@ docker images alpine:3.22
 Ce qui est fait dans une même couche, en revanche, ne laisse pas de trace. `&&` enchaîne les deux commandes dans une seule instruction `RUN` :
 
 ```exec
-cat > ~/layers-l3/layers/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/layers/Dockerfile <<'EOF'
 FROM alpine:3.22
 RUN head -c 30000000 /dev/urandom > /gros.bin && rm /gros.bin
 EOF
-docker build -q -t layers-l3-gros:1.1 ~/layers-l3/layers
+docker build -q -t layers-l3-gros:1.1 ~/byte-layers/docker/l3/layers
 docker images layers-l3-gros
 docker images alpine:3.22
 ```
@@ -97,11 +97,11 @@ Reste à comprendre comment un conteneur modifie un fichier qui appartient à un
 Pour l'observer, il vous faut une image qui garde son gros fichier, et un conteneur que `sleep 3600` maintient en vie pendant une heure :
 
 ```exec
-cat > ~/layers-l3/layers/Dockerfile <<'EOF'
+cat > ~/byte-layers/docker/l3/layers/Dockerfile <<'EOF'
 FROM alpine:3.22
 RUN head -c 30000000 /dev/urandom > /gros.bin
 EOF
-docker build -q -t layers-l3-cow:1.0 ~/layers-l3/layers
+docker build -q -t layers-l3-cow:1.0 ~/byte-layers/docker/l3/layers
 docker run -d --name layers-l3-cow layers-l3-cow:1.0 sleep 3600
 ```
 
@@ -132,7 +132,7 @@ Il reste à ranger ce que vous avez créé :
 ```exec
 docker rm -f layers-l3-cow
 docker image rm layers-l3-gros:1.0 layers-l3-gros:1.1 layers-l3-cow:1.0
-rm -rf ~/layers-l3/layers
+rm -rf ~/byte-layers/docker/l3/layers
 ```
 
 > 📖 [Comprendre les couches d'une image](https://docs.docker.com/get-started/docker-concepts/building-images/understanding-image-layers/) · [Les pilotes de stockage et le copy-on-write](https://docs.docker.com/engine/storage/drivers/) · [`docker history`](https://docs.docker.com/reference/cli/docker/image/history/)
