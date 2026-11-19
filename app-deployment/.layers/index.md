@@ -8,7 +8,7 @@ tags:
   - deployment
 difficulty: beginner
 duration: 10
-requires: "0.4.0"
+requires: "0.5.0"
 ---
 
 Un site web ouvert dans votre navigateur repose le plus souvent sur trois pièces : un front-end, un back-end et une base de données. Pour le mettre en ligne, il faut les faire tourner quelque part : sur un serveur physique, dans des machines virtuelles, dans des conteneurs, ou avec un orchestrateur. Vous saurez ce que ces mots recouvrent et ce qui distingue ces quatre possibilités.
@@ -64,6 +64,13 @@ C'est la façon la plus directe : un ordinateur, un système d'exploitation, et 
 
 Tout le matériel sert directement l'application, et il n'y a qu'un système à connaître. En revanche, les pièces partagent tout : leurs dépendances peuvent entrer en conflit, une pièce qui consomme trop gêne les autres, et tenir plus de charge demande d'ajouter du matériel.
 
+La scène dessine cette pile, avec le trajet d'une demande du navigateur jusqu'à la base de données. Les deux sections suivantes reprennent la même machine.
+
+```scene
+lesson: assets/deployment.scene.json
+step: physique
+```
+
 ## Sur des machines virtuelles : une vraie machine découpée en plusieurs
 
 Une **machine virtuelle**, ou VM, est un ordinateur simulé par un logiciel, l'**hyperviseur**. Chaque VM a son propre système d'exploitation complet, et elle se comporte comme une machine à part entière.
@@ -85,6 +92,13 @@ La répartition est libre. On peut réunir le front-end et le back-end sur une m
 
 Les pièces sont maintenant bien séparées, mais chaque VM emporte un système entier : elle occupe souvent plusieurs gigaoctets, et met bien plus longtemps à démarrer qu'un simple programme. Pour tenir plus de charge ou remplacer une panne, on duplique toute la machine.
 
+Dans la scène, l'hyperviseur remplace le système de la machine, et chaque VM porte le sien : la plaque rose sous ses pièces.
+
+```scene
+lesson: assets/deployment.scene.json
+step: machines-virtuelles
+```
+
 ## Dans des conteneurs : chaque pièce à part, sur un même système
 
 Un **conteneur** fait tourner une pièce à part du reste de la machine, avec ses propres fichiers et ses dépendances, mais sans système d'exploitation complet : tous les conteneurs d'une machine partagent le **noyau**, la partie du système qui gère les programmes et la mémoire. Un outil, le **moteur de conteneurs**, se charge de les lancer.
@@ -104,6 +118,13 @@ Un **conteneur** fait tourner une pièce à part du reste de la machine, avec se
 ```
 
 Comparez ce schéma au précédent : le système de chaque VM a disparu. Un conteneur est donc plus léger qu'une VM, il démarre bien plus vite, et il se duplique facilement. La contrepartie est une isolation moins forte, puisque le noyau est commun.
+
+La scène fait la même comparaison : les plaques roses des VM ont disparu, et un seul système porte le moteur et les trois conteneurs.
+
+```scene
+lesson: assets/deployment.scene.json
+step: conteneurs
+```
 
 ## Avec un orchestrateur : des conteneurs sur plusieurs machines
 

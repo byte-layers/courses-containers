@@ -1,0 +1,525 @@
+{
+  "format": "bl-scenes/0.2",
+  "id": "app-deployment",
+  "title": "Déployer une application : les possibilités",
+  "lang": "fr",
+  "kit": "feuillete",
+  "legend": [
+    {
+      "kind": "req",
+      "label": "demande"
+    },
+    {
+      "kind": "res",
+      "label": "réponse"
+    }
+  ],
+  "entities": [
+    {
+      "id": "dc",
+      "kind": "zone",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        7.6,
+        7.6
+      ],
+      "tone": "n",
+      "label": "un serveur"
+    },
+    {
+      "id": "nav",
+      "kind": "actor",
+      "at": [
+        -4.6,
+        6.4
+      ],
+      "label": "navigateur",
+      "detail": "Le **navigateur** est le client : il demande une page, et ce qui lui répond est le serveur."
+    },
+    {
+      "id": "hw",
+      "kind": "layer",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        6.4,
+        6.4,
+        0.55
+      ],
+      "tone": "n",
+      "title": "La machine",
+      "sub": "CPU · RAM · disque",
+      "icon": "▤",
+      "detail": "Le **matériel** du serveur : processeur, mémoire, disque, carte réseau. Il est le même dans les trois façons de déployer ; seul ce qui est posé dessus change."
+    },
+    {
+      "id": "os",
+      "kind": "layer",
+      "at": [
+        0,
+        0,
+        0.95
+      ],
+      "size": [
+        6.4,
+        6.4,
+        0.55
+      ],
+      "tone": "r",
+      "title": "Système d'exploitation",
+      "sub": "noyau · services",
+      "icon": "✱",
+      "detail": "Le **système d'exploitation**, avec son **noyau** : la partie qui gère les programmes et la mémoire. Ici, un seul système pour toute la machine."
+    },
+    {
+      "id": "front",
+      "kind": "node",
+      "in": "os",
+      "at": [
+        -2,
+        2
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.1
+      ],
+      "tone": "b",
+      "title": "front-end",
+      "detail": "Le **front-end** : les pages du catalogue et du panier. Ses fichiers sont servis par cette machine et exécutés par le navigateur."
+    },
+    {
+      "id": "back",
+      "kind": "node",
+      "in": "os",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.1
+      ],
+      "tone": "v",
+      "title": "back-end",
+      "detail": "Le **back-end** applique les règles : il calcule le total et valide la commande."
+    },
+    {
+      "id": "db",
+      "kind": "store",
+      "in": "os",
+      "at": [
+        2.1,
+        -1.9
+      ],
+      "size": [
+        1.5,
+        1.5,
+        1.45
+      ],
+      "tone": "y",
+      "title": "base de données",
+      "detail": "La **base de données** garde ce qui doit durer : les produits, les clients, les commandes."
+    },
+    {
+      "id": "hyp",
+      "kind": "layer",
+      "at": [
+        0,
+        0,
+        0.95
+      ],
+      "size": [
+        6.4,
+        6.4,
+        0.55
+      ],
+      "tone": "v",
+      "title": "Hyperviseur",
+      "sub": "simule des ordinateurs",
+      "icon": "◫",
+      "detail": "L'**hyperviseur** est le logiciel qui simule des ordinateurs : les machines virtuelles. Chacune croit avoir son propre matériel."
+    },
+    {
+      "id": "vm1",
+      "kind": "node",
+      "in": "hyp",
+      "at": [
+        -1.45,
+        1.45
+      ],
+      "size": [
+        3.1,
+        3.1,
+        0.22
+      ],
+      "tone": "b"
+    },
+    {
+      "id": "os1",
+      "kind": "program",
+      "in": "vm1",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        2.7,
+        2.7,
+        0.35
+      ],
+      "tone": "r"
+    },
+    {
+      "id": "vfront",
+      "kind": "node",
+      "in": "os1",
+      "at": [
+        -0.65,
+        0.65
+      ],
+      "size": [
+        1.1,
+        1.1,
+        1
+      ],
+      "tone": "b",
+      "title": "front-end",
+      "sub": "VM 1",
+      "detail": "Le front-end et le back-end partagent la **VM 1**, sur son système à elle : la plaque rose dessous."
+    },
+    {
+      "id": "vback",
+      "kind": "node",
+      "in": "os1",
+      "at": [
+        0.65,
+        -0.65
+      ],
+      "size": [
+        1.1,
+        1.1,
+        1
+      ],
+      "tone": "v",
+      "title": "back-end",
+      "sub": "VM 1"
+    },
+    {
+      "id": "vm2",
+      "kind": "node",
+      "in": "hyp",
+      "at": [
+        1.75,
+        -1.75
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "b"
+    },
+    {
+      "id": "os2",
+      "kind": "program",
+      "in": "vm2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        0.35
+      ],
+      "tone": "r"
+    },
+    {
+      "id": "vdb",
+      "kind": "store",
+      "in": "os2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        1
+      ],
+      "tone": "y",
+      "title": "base de données",
+      "sub": "VM 2",
+      "detail": "La base de données a sa VM à elle, avec **son propre système**. On peut la régler finement, et ne donner ses droits qu'à ceux qui l'administrent."
+    },
+    {
+      "id": "engine",
+      "kind": "layer",
+      "at": [
+        0,
+        0,
+        1.9
+      ],
+      "size": [
+        6.4,
+        6.4,
+        0.55
+      ],
+      "tone": "v",
+      "title": "Moteur de conteneurs",
+      "sub": "Docker, par exemple",
+      "icon": "◫",
+      "detail": "Le **moteur de conteneurs** lance les conteneurs. Il tourne sur le système de la machine, et tous les conteneurs partagent le noyau de ce système."
+    },
+    {
+      "id": "c1",
+      "kind": "node",
+      "in": "engine",
+      "at": [
+        -2,
+        2
+      ],
+      "size": [
+        1.9,
+        1.9,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "cfront",
+      "kind": "node",
+      "in": "c1",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        1
+      ],
+      "tone": "b",
+      "title": "front-end",
+      "sub": "conteneur",
+      "detail": "Chaque pièce dans **son conteneur**, avec ses propres fichiers et ses dépendances, mais sans système complet : pas de plaque rose ici."
+    },
+    {
+      "id": "c2",
+      "kind": "node",
+      "in": "engine",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.9,
+        1.9,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "cback",
+      "kind": "node",
+      "in": "c2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        1
+      ],
+      "tone": "v",
+      "title": "back-end",
+      "sub": "conteneur"
+    },
+    {
+      "id": "c3",
+      "kind": "node",
+      "in": "engine",
+      "at": [
+        2,
+        -2
+      ],
+      "size": [
+        1.9,
+        1.9,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "cdb",
+      "kind": "store",
+      "in": "c3",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        1.3
+      ],
+      "tone": "y",
+      "title": "base de données",
+      "sub": "conteneur"
+    }
+  ],
+  "steps": [
+    {
+      "id": "physique",
+      "label": "Serveur physique",
+      "title": "Tout sur une même machine",
+      "body": [
+        "Les trois pièces sont installées directement sur le système de la machine. Elles partagent tout : le système, les dépendances, le matériel."
+      ],
+      "hud": [
+        {
+          "label": "systèmes",
+          "value": 1
+        },
+        {
+          "label": "séparation",
+          "value": "aucune"
+        }
+      ],
+      "flows": [
+        {
+          "path": [
+            "nav",
+            "front",
+            "back",
+            "db"
+          ],
+          "label": "page",
+          "reply": "page",
+          "explain": [
+            "Le navigateur demande une page : la demande arrive au front-end.",
+            "Le front-end passe la demande au back-end, qui applique les règles.",
+            "Le back-end lit ou écrit dans la base de données, sur la même machine.",
+            "La réponse remonte jusqu'au navigateur, qui affiche la page."
+          ]
+        }
+      ],
+      "show": [
+        "dc",
+        "nav",
+        "hw",
+        "os",
+        "front",
+        "back",
+        "db"
+      ]
+    },
+    {
+      "id": "machines-virtuelles",
+      "label": "Machines virtuelles",
+      "title": "Une machine découpée en plusieurs",
+      "body": [
+        "L'hyperviseur simule deux ordinateurs. Chaque VM a son propre système complet : la plaque rose sous ses pièces."
+      ],
+      "hud": [
+        {
+          "label": "systèmes",
+          "value": "1 par VM"
+        },
+        {
+          "label": "séparation",
+          "value": "un système par VM"
+        }
+      ],
+      "flows": [
+        {
+          "path": [
+            "nav",
+            "vfront",
+            "vback",
+            "vdb"
+          ],
+          "label": "page",
+          "reply": "page",
+          "explain": [
+            "Le navigateur demande une page : la demande arrive au front-end.",
+            "Le front-end passe la demande au back-end, qui applique les règles.",
+            "Le back-end interroge la base de données, sur l'autre VM, par le réseau.",
+            "La réponse remonte jusqu'au navigateur, qui affiche la page."
+          ]
+        }
+      ],
+      "show": [
+        "dc",
+        "nav",
+        "hw",
+        "hyp",
+        "vm1",
+        "os1",
+        "vfront",
+        "vback",
+        "vm2",
+        "os2",
+        "vdb"
+      ]
+    },
+    {
+      "id": "conteneurs",
+      "label": "Conteneurs",
+      "title": "Chaque pièce à part, sur un même système",
+      "body": [
+        "Le système de chaque VM a disparu : un seul système, un moteur de conteneurs, et chaque pièce dans son conteneur avec ses dépendances."
+      ],
+      "hud": [
+        {
+          "label": "systèmes",
+          "value": 1
+        },
+        {
+          "label": "séparation",
+          "value": "le noyau commun"
+        }
+      ],
+      "flows": [
+        {
+          "path": [
+            "nav",
+            "cfront",
+            "cback",
+            "cdb"
+          ],
+          "label": "page",
+          "reply": "page",
+          "explain": [
+            "Le navigateur demande une page : la demande arrive au front-end.",
+            "Le front-end passe la demande au back-end, qui applique les règles.",
+            "Le back-end interroge la base de données, dans son propre conteneur.",
+            "La réponse remonte jusqu'au navigateur, qui affiche la page."
+          ]
+        }
+      ],
+      "show": [
+        "dc",
+        "nav",
+        "hw",
+        "os",
+        "engine",
+        "c1",
+        "cfront",
+        "c2",
+        "cback",
+        "c3",
+        "cdb"
+      ]
+    }
+  ]
+}
