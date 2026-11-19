@@ -7,7 +7,7 @@ tags:
   - containers
 difficulty: beginner
 duration: 15
-requires: "0.4.0"
+requires: "0.5.0"
 ---
 
 On imagine souvent un conteneur comme une petite machine. Ce n'en est pas une : en marche, c'est un processus de la machine qui l'héberge, à qui le noyau donne une vue à part et des limites. Vous saurez d'où vient cette isolation, ce qu'il reste d'un conteneur arrêté, et pourquoi il isole moins qu'une machine virtuelle.
@@ -50,7 +50,12 @@ UID      PID       PPID      C    STIME   TTY   TIME       CMD
 root     3422005   3421982   0    22:25   ?     00:00:00   sleep 3600
 ```
 
-Il existe donc bien sur l'hôte, comme n'importe quel programme. Le conteneur ne fait que lui donner sa propre numérotation.
+Il existe donc bien sur l'hôte, comme n'importe quel programme. Le conteneur ne fait que lui donner sa propre numérotation. La scène rejoue ces deux commandes : la même question posée au noyau, une fois depuis le conteneur, une fois depuis l'hôte.
+
+```scene
+lesson: assets/process.scene.json
+step: deux-numeros
+```
 
 ## Ce qu'il voit : les namespaces, et un noyau partagé
 
@@ -72,6 +77,13 @@ Les deux lignes sont identiques. Le numéro dépend de votre machine. Sur Linux,
 ```text
 Linux 6.10.14-linuxkit
 Linux 6.10.14-linuxkit
+```
+
+La scène rejoue les commandes de cette section : chaque conteneur a sa vue, son nom de machine compris, mais toutes les questions arrivent au même noyau.
+
+```scene
+lesson: assets/process.scene.json
+step: noyau-partage
 ```
 
 ## Ce qu'il peut consommer : les cgroups
@@ -123,6 +135,13 @@ Une machine virtuelle simule un ordinateur entier et démarre son propre noyau. 
 
 - **Il démarre très vite.** Une fois l'image téléchargée, lancer un conteneur revient à lancer un processus, soit une fraction de seconde.
 - **Il isole moins.** Une faille du noyau peut concerner tous les conteneurs de la machine, alors qu'une machine virtuelle a son noyau à elle. Pour faire cohabiter des applications qui ne se font pas confiance, ce point compte.
+
+La scène met les deux côte à côte : à gauche, deux machines virtuelles, chacune sur son propre noyau ; à droite, deux conteneurs sur le noyau de l'hôte. Le même appel système y fait un chemin plus long côté VM.
+
+```scene
+lesson: assets/process.scene.json
+step: vm-ou-conteneur
+```
 
 > 📖 [Qu'est-ce qu'un conteneur ?](https://docs.docker.com/get-started/docker-concepts/the-basics/what-is-a-container/) · [Limiter les ressources](https://docs.docker.com/engine/containers/resource_constraints/) · [`docker top`](https://docs.docker.com/reference/cli/docker/container/top/)
 

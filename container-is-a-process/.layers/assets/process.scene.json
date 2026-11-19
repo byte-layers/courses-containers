@@ -1,0 +1,742 @@
+{
+  "format": "bl-scenes/0.2",
+  "id": "container-is-a-process",
+  "title": "Un conteneur est un processus isolé",
+  "lang": "fr",
+  "kit": "feuillete",
+  "legend": [
+    {
+      "kind": "req",
+      "label": "demande"
+    },
+    {
+      "kind": "res",
+      "label": "réponse"
+    }
+  ],
+  "entities": [
+    {
+      "id": "host",
+      "kind": "zone",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        7.2,
+        7.2
+      ],
+      "tone": "v",
+      "label": "l'hôte"
+    },
+    {
+      "id": "hw",
+      "kind": "layer",
+      "at": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        6,
+        6,
+        0.55
+      ],
+      "tone": "n",
+      "title": "Matériel",
+      "sub": "CPU · RAM · disque",
+      "icon": "▤",
+      "detail": "Le **matériel** de l'hôte. Sur macOS et Windows, l'hôte des conteneurs est la machine virtuelle de Docker Desktop : son matériel est simulé, mais le principe est le même."
+    },
+    {
+      "id": "kernel",
+      "kind": "layer",
+      "at": [
+        0,
+        0,
+        0.95
+      ],
+      "size": [
+        6,
+        6,
+        0.55
+      ],
+      "tone": "r",
+      "title": "Noyau (kernel)",
+      "sub": "de l'hôte",
+      "icon": "✱",
+      "detail": "Le **noyau** gère les processus, la mémoire et le matériel. Il n'y en a qu'un sur l'hôte : tous les processus, ceux des conteneurs compris, s'adressent à lui."
+    },
+    {
+      "id": "dockerd",
+      "kind": "program",
+      "in": "kernel",
+      "at": [
+        -1.7,
+        1.7
+      ],
+      "size": [
+        1.4,
+        1.4,
+        0.9
+      ],
+      "tone": "v",
+      "title": "dockerd",
+      "note": "service Docker de l'hôte",
+      "detail": "**dockerd** est le service de Docker sur l'hôte, un processus comme un autre. C'est lui qui répond à `docker top` : il voit les processus avec les numéros de l'hôte."
+    },
+    {
+      "id": "ctr",
+      "kind": "node",
+      "in": "kernel",
+      "at": [
+        1.6,
+        -1.6
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "sleep",
+      "kind": "program",
+      "in": "ctr",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.4,
+        1.4,
+        0.9
+      ],
+      "tone": "y",
+      "title": "sleep 3600",
+      "note": "conteneur layers-l1-iso",
+      "detail": "Le processus `sleep 3600` du conteneur. Vu de l'intérieur, il est le **PID 1** ; vu de l'hôte, `docker top` lui donne un tout autre numéro, comme 3422005. C'est le même processus."
+    },
+    {
+      "id": "ctr2",
+      "kind": "node",
+      "in": "kernel",
+      "at": [
+        -1.6,
+        1.6
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "nginx",
+      "kind": "program",
+      "in": "ctr2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.4,
+        1.4,
+        0.9
+      ],
+      "tone": "b",
+      "title": "nginx",
+      "note": "un autre conteneur",
+      "detail": "Un conteneur **nginx**, un serveur web sans rapport avec le conteneur alpine. Il a sa propre vue, mais il pose ses questions au même noyau."
+    },
+    {
+      "id": "srv-v",
+      "kind": "zone",
+      "at": [
+        -5.2,
+        5.2,
+        0
+      ],
+      "size": [
+        7.2,
+        7.2
+      ],
+      "tone": "n",
+      "label": "machines virtuelles"
+    },
+    {
+      "id": "hw-v",
+      "kind": "layer",
+      "at": [
+        -5.2,
+        5.2,
+        0
+      ],
+      "size": [
+        6,
+        6,
+        0.55
+      ],
+      "tone": "n",
+      "title": "Matériel",
+      "icon": "▤"
+    },
+    {
+      "id": "hyp",
+      "kind": "layer",
+      "at": [
+        -5.2,
+        5.2,
+        0.95
+      ],
+      "size": [
+        6,
+        6,
+        0.55
+      ],
+      "tone": "v",
+      "title": "Hyperviseur",
+      "sub": "simule des ordinateurs",
+      "icon": "◫",
+      "detail": "L'**hyperviseur** est le logiciel qui simule des ordinateurs. Chaque machine virtuelle croit avoir son propre matériel : c'est l'hyperviseur qui le lui fournit."
+    },
+    {
+      "id": "vm1",
+      "kind": "node",
+      "in": "hyp",
+      "at": [
+        -1.6,
+        1.6
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "b"
+    },
+    {
+      "id": "gk1",
+      "kind": "program",
+      "in": "vm1",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        0.35
+      ],
+      "tone": "r"
+    },
+    {
+      "id": "app-v1",
+      "kind": "node",
+      "in": "gk1",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        0.9
+      ],
+      "tone": "b",
+      "title": "App",
+      "sub": "VM 1",
+      "note": "sur son propre noyau",
+      "detail": "Dans une **machine virtuelle**, l'application tourne sur le noyau de la VM : la plaque rose sous elle. Chaque VM démarre le sien, d'où un démarrage plus long."
+    },
+    {
+      "id": "vm2",
+      "kind": "node",
+      "in": "hyp",
+      "at": [
+        1.6,
+        -1.6
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "b"
+    },
+    {
+      "id": "gk2",
+      "kind": "program",
+      "in": "vm2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2,
+        0.35
+      ],
+      "tone": "r"
+    },
+    {
+      "id": "app-v2",
+      "kind": "node",
+      "in": "gk2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        0.9
+      ],
+      "tone": "v",
+      "title": "App",
+      "sub": "VM 2",
+      "note": "sur son propre noyau",
+      "detail": "La seconde VM a, elle aussi, son noyau à elle. Une faille de l'un ne touche pas l'autre : c'est l'isolation forte des machines virtuelles."
+    },
+    {
+      "id": "srv-c",
+      "kind": "zone",
+      "at": [
+        5.2,
+        -5.2,
+        0
+      ],
+      "size": [
+        7.2,
+        7.2
+      ],
+      "tone": "v",
+      "label": "conteneurs"
+    },
+    {
+      "id": "hw-c",
+      "kind": "layer",
+      "at": [
+        5.2,
+        -5.2,
+        0
+      ],
+      "size": [
+        6,
+        6,
+        0.55
+      ],
+      "tone": "n",
+      "title": "Matériel",
+      "icon": "▤"
+    },
+    {
+      "id": "k-c",
+      "kind": "layer",
+      "at": [
+        5.2,
+        -5.2,
+        0.95
+      ],
+      "size": [
+        6,
+        6,
+        0.55
+      ],
+      "tone": "r",
+      "title": "Noyau (kernel)",
+      "sub": "un seul, partagé",
+      "icon": "✱",
+      "detail": "Côté conteneurs, **un seul noyau** : celui de l'hôte. Rien à démarrer pour lancer un conteneur, mais une faille de ce noyau peut concerner tous les conteneurs de la machine."
+    },
+    {
+      "id": "c1",
+      "kind": "node",
+      "in": "k-c",
+      "at": [
+        -1.6,
+        1.6
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "app-c1",
+      "kind": "node",
+      "in": "c1",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        0.9
+      ],
+      "tone": "b",
+      "title": "App",
+      "sub": "conteneur 1",
+      "detail": "Dans un **conteneur**, l'application est un processus de l'hôte : elle parle directement au noyau de l'hôte, sans noyau à elle."
+    },
+    {
+      "id": "c2",
+      "kind": "node",
+      "in": "k-c",
+      "at": [
+        1.6,
+        -1.6
+      ],
+      "size": [
+        2.4,
+        2.4,
+        0.22
+      ],
+      "tone": "g"
+    },
+    {
+      "id": "app-c2",
+      "kind": "node",
+      "in": "c2",
+      "at": [
+        0,
+        0
+      ],
+      "size": [
+        1.3,
+        1.3,
+        0.9
+      ],
+      "tone": "v",
+      "title": "App",
+      "sub": "conteneur 2"
+    }
+  ],
+  "steps": [
+    {
+      "id": "deux-numeros",
+      "label": "Deux numéros",
+      "title": "Le même processus, deux numéros",
+      "body": [
+        "Vu de l'intérieur, `sleep` est le **PID 1**. Vu de l'hôte, c'est un processus ordinaire, avec un tout autre numéro."
+      ],
+      "hud": [
+        {
+          "label": "dedans",
+          "value": "PID 1"
+        },
+        {
+          "label": "sur l'hôte",
+          "value": "PID 3422005"
+        }
+      ],
+      "widgets": [
+        {
+          "kind": "terminal",
+          "title": "vous@poste — bash",
+          "prompt": "vous@poste",
+          "cwd": "~"
+        }
+      ],
+      "script": [
+        {
+          "do": "wait",
+          "ms": 500
+        },
+        {
+          "do": "type",
+          "text": "docker exec layers-l1-iso ps"
+        },
+        {
+          "do": "send",
+          "path": [
+            "sleep",
+            "kernel"
+          ],
+          "label": "ps",
+          "reply": "PID 1",
+          "explain": [
+            "`ps` tourne dans le conteneur et demande au noyau la liste des processus.",
+            "Le noyau lui montre une liste à part : `sleep` y est le PID 1, seul avec `ps`."
+          ]
+        },
+        {
+          "do": "output",
+          "text": "PID   USER     TIME  COMMAND"
+        },
+        {
+          "do": "output",
+          "text": "    1 root      0:00 sleep 3600"
+        },
+        {
+          "do": "output",
+          "text": "    7 root      0:00 ps"
+        },
+        {
+          "do": "prompt"
+        },
+        {
+          "do": "wait",
+          "ms": 700
+        },
+        {
+          "do": "type",
+          "text": "docker top layers-l1-iso"
+        },
+        {
+          "do": "send",
+          "path": [
+            "dockerd",
+            "kernel"
+          ],
+          "label": "docker top",
+          "reply": "PID 3422005",
+          "explain": [
+            "`docker top` passe par Docker, sur l'hôte, qui demande au noyau les processus du conteneur.",
+            "Le noyau répond avec la numérotation de l'hôte : le même `sleep 3600`, PID 3422005."
+          ]
+        },
+        {
+          "do": "output",
+          "text": "UID   PID       PPID      CMD"
+        },
+        {
+          "do": "output",
+          "text": "root  3422005   3421982   sleep 3600"
+        },
+        {
+          "do": "prompt"
+        },
+        {
+          "do": "wait",
+          "ms": 3000
+        }
+      ],
+      "show": [
+        "host",
+        "hw",
+        "kernel",
+        "dockerd",
+        "ctr",
+        "sleep"
+      ]
+    },
+    {
+      "id": "noyau-partage",
+      "label": "Noyau partagé",
+      "title": "Chacun sa vue, un seul noyau",
+      "body": [
+        "Les namespaces donnent au conteneur sa vue : ses processus, son nom de machine. Le noyau, lui, est celui de l'hôte, pour tous les conteneurs."
+      ],
+      "hud": [
+        {
+          "label": "conteneurs",
+          "value": 2
+        },
+        {
+          "label": "noyaux",
+          "value": 1
+        }
+      ],
+      "widgets": [
+        {
+          "kind": "terminal",
+          "title": "vous@poste — bash",
+          "prompt": "vous@poste",
+          "cwd": "~"
+        }
+      ],
+      "script": [
+        {
+          "do": "wait",
+          "ms": 500
+        },
+        {
+          "do": "type",
+          "text": "docker exec layers-l1-iso hostname"
+        },
+        {
+          "do": "send",
+          "path": [
+            "sleep",
+            "kernel"
+          ],
+          "label": "hostname",
+          "reply": "aba0208eddad",
+          "explain": [
+            "`hostname` demande au noyau le nom de la machine, depuis le conteneur.",
+            "Le noyau répond avec le nom propre au conteneur, le début de son identifiant : c'est un namespace."
+          ]
+        },
+        {
+          "do": "output",
+          "text": "aba0208eddad"
+        },
+        {
+          "do": "prompt"
+        },
+        {
+          "do": "wait",
+          "ms": 600
+        },
+        {
+          "do": "type",
+          "text": "docker exec layers-l1-iso uname -sr"
+        },
+        {
+          "do": "send",
+          "path": [
+            "sleep",
+            "kernel"
+          ],
+          "label": "uname -sr",
+          "reply": "Linux 6.10.14",
+          "explain": [
+            "`uname -sr` demande au noyau son nom et sa version, depuis le conteneur alpine.",
+            "Le noyau répond : c'est celui de l'hôte, `Linux 6.10.14-linuxkit` ici."
+          ]
+        },
+        {
+          "do": "output",
+          "text": "Linux 6.10.14-linuxkit"
+        },
+        {
+          "do": "prompt"
+        },
+        {
+          "do": "wait",
+          "ms": 600
+        },
+        {
+          "do": "type",
+          "text": "docker run --rm nginx:1.30-alpine uname -sr"
+        },
+        {
+          "do": "send",
+          "path": [
+            "nginx",
+            "kernel"
+          ],
+          "label": "uname -sr",
+          "reply": "Linux 6.10.14",
+          "explain": [
+            "Même question depuis le conteneur nginx : elle arrive au même noyau.",
+            "Même réponse, mot pour mot : les deux conteneurs partagent le noyau de l'hôte."
+          ]
+        },
+        {
+          "do": "output",
+          "text": "Linux 6.10.14-linuxkit"
+        },
+        {
+          "do": "prompt"
+        },
+        {
+          "do": "wait",
+          "ms": 3000
+        }
+      ],
+      "show": [
+        "host",
+        "hw",
+        {
+          "id": "kernel",
+          "note": "le même pour tous"
+        },
+        "ctr",
+        "sleep",
+        "ctr2",
+        "nginx"
+      ]
+    },
+    {
+      "id": "vm-ou-conteneur",
+      "label": "VM ou conteneur",
+      "title": "Un noyau par VM, un seul pour les conteneurs",
+      "body": [
+        "À gauche, chaque machine virtuelle démarre son propre noyau sur l'hyperviseur. À droite, les conteneurs partagent le noyau de l'hôte.",
+        "Un appel système traverse une couche de plus dans une VM ; un conteneur, lui, n'a rien à démarrer."
+      ],
+      "hud": [
+        {
+          "label": "VM",
+          "value": "1 noyau chacune"
+        },
+        {
+          "label": "conteneurs",
+          "value": "1 noyau partagé"
+        }
+      ],
+      "script": [
+        {
+          "do": "wait",
+          "ms": 600
+        },
+        {
+          "do": "send",
+          "path": [
+            "app-v1",
+            "gk1",
+            "hyp",
+            "hw-v"
+          ],
+          "label": "appel système",
+          "reply": "ok",
+          "explain": [
+            "L'application de la VM fait un appel système : il arrive au noyau de sa VM.",
+            "Ce noyau croit parler à du matériel : c'est l'hyperviseur qui le simule.",
+            "L'hyperviseur transmet la demande au vrai matériel.",
+            "La réponse remonte les mêmes couches, noyau de la VM compris."
+          ]
+        },
+        {
+          "do": "wait",
+          "ms": 600
+        },
+        {
+          "do": "send",
+          "path": [
+            "app-c1",
+            "k-c",
+            "hw-c"
+          ],
+          "label": "appel système",
+          "reply": "ok",
+          "explain": [
+            "L'application du conteneur fait le même appel système : il arrive directement au noyau de l'hôte.",
+            "Le noyau parle au matériel, comme pour n'importe quel processus.",
+            "La réponse revient sans noyau intermédiaire."
+          ]
+        },
+        {
+          "do": "wait",
+          "ms": 2600
+        }
+      ],
+      "show": [
+        "srv-v",
+        "hw-v",
+        "hyp",
+        "vm1",
+        "gk1",
+        "app-v1",
+        "vm2",
+        "gk2",
+        "app-v2",
+        "srv-c",
+        "hw-c",
+        "k-c",
+        "c1",
+        "app-c1",
+        "c2",
+        "app-c2"
+      ]
+    }
+  ]
+}
