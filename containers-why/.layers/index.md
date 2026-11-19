@@ -7,7 +7,7 @@ tags:
   - containers
 difficulty: beginner
 duration: 10
-requires: "0.4.0"
+requires: "0.5.0"
 ---
 
 Un conteneur fait tourner une application à part du reste de la machine, avec ce dont elle a besoin, pour qu'elle se comporte de la même façon partout. Vous saurez quel problème il résout, ce qu'il faut pour en lancer un, et pourquoi on apprend à s'en servir avec Docker.
@@ -28,7 +28,12 @@ Une application a besoin de ses **dépendances** : un environnement d'exécution
 | Installer la seconde application casse la première | l'une veut Node.js 18, l'autre Node.js 22, et la machine n'en a qu'un seul pour les deux |
 | Un nouveau collègue met deux jours à tout faire tourner | la procédure d'installation est longue, et elle n'est jamais tout à fait à jour |
 
-Ces trois ennuis ont la même cause : l'application dépend de l'état de la machine, et cet état change d'une machine à l'autre.
+Ces trois ennuis ont la même cause : l'application dépend de l'état de la machine, et cet état change d'une machine à l'autre. La scène suivante montre le deuxième ennui, couche par couche : sur la machine, un seul Node.js, et deux applications qui n'attendent pas la même version.
+
+```scene
+lesson: assets/containers-why.scene.json
+step: sans-conteneur
+```
 
 ## Un conteneur fait tourner l'application à part, avec ce dont elle a besoin
 
@@ -50,6 +55,13 @@ Un **conteneur** fait tourner une application isolée du reste de la machine, av
      └────────────┘
 ```
 
+La scène reprend cette comparaison avec les couches de chaque machine : le matériel, puis le **noyau**, la partie du système qui partage la machine entre les programmes. À droite, chaque conteneur porte sa version de Node.js, la plaque jaune sous l'application.
+
+```scene
+lesson: assets/containers-why.scene.json
+step: avec-conteneurs
+```
+
 À gauche, les deux applications doivent s'entendre sur une version. À droite, chacune emporte la sienne. Trois choses en découlent :
 
 - **La même chose partout.** Ce qui tourne sur votre poste est ce qui tourne en production, ce qui supprime une grande partie des surprises.
@@ -62,6 +74,13 @@ Pour lancer un conteneur, il faut un point de départ. Retenez cette chaîne : u
 
 ```
 registre  ──téléchargement──►  image  ──lancement──►  conteneur
+```
+
+La scène suit cette chaîne sur la machine de tout à l'heure : l'image arrive du registre, puis Docker lance un conteneur à partir d'elle.
+
+```scene
+lesson: assets/containers-why.scene.json
+step: registre-image
 ```
 
 Vous croiserez ces trois mots très vite, et un prochain cours les met en pratique. Ce tableau vous donne simplement une première idée de ce qu'ils désignent.
